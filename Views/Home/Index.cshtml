@@ -1,0 +1,207 @@
+@using SoftflipSolutions.Models
+@{
+    ViewData["Title"] = "Premium MLM Software";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show m-4 shadow-lg border-0 rounded-4" role="alert" style="position: fixed; z-index: 9999; top: 100px; right: 20px; max-width: 400px; background: rgba(16, 185, 129, 0.9); backdrop-filter: blur(10px); color: white;">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show m-4 shadow-lg border-0 rounded-4" role="alert" style="position: fixed; z-index: 9999; top: 100px; right: 20px; max-width: 400px; background: rgba(239, 68, 68, 0.9); backdrop-filter: blur(10px); color: white;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Hero Section -->
+<section class="hero-wrapper">
+    <div class="grid-bg"></div>
+    <div class="container hero-content">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-up" data-aos-duration="1000">
+                <div class="d-inline-flex align-items-center py-1 px-3 rounded-pill border border-secondary mb-4" style="background: rgba(0, 242, 254, 0.1); border-color: rgba(0,242,254,0.3) !important;">
+                    <span class="badge bg-primary rounded-pill me-2" style="background: linear-gradient(135deg, #00f2fe, #4facfe) !important; color:#000;">New</span>
+                    <span class="text-white text-opacity-75 small fw-medium">Softflip V3 Engine is live</span>
+                </div>
+                <h1 class="hero-title">The Ultimate <br/><span class="glow-text">MLM Platform</span></h1>
+                <p class="lead text-muted mb-5 pe-lg-5" style="font-size: 1.2rem; line-height: 1.8;">
+                    Empower your network marketing business with enterprise-grade architecture. Automate commissions, track genealogies in real-time, and scale globally without limits.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="#demo" class="btn btn-gradient rounded-pill px-5 py-3 fs-5">
+                        Start Building <i class="bi bi-rocket-takeoff ms-2"></i>
+                    </a>
+                </div>
+                
+                <div class="mt-5 pt-4 d-flex align-items-center">
+                    <div class="d-flex me-3">
+                        <img src="https://i.pravatar.cc/100?img=1" class="rounded-circle border border-2 border-dark" width="40" height="40" style="margin-right: -10px; z-index: 3;" />
+                        <img src="https://i.pravatar.cc/100?img=2" class="rounded-circle border border-2 border-dark" width="40" height="40" style="margin-right: -10px; z-index: 2;" />
+                        <img src="https://i.pravatar.cc/100?img=3" class="rounded-circle border border-2 border-dark" width="40" height="40" style="z-index: 1;" />
+                    </div>
+                    <div class="text-muted small">
+                        <div class="fw-bold text-white">Join 10,000+ Leaders</div>
+                        growing their networks daily.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-5 offset-lg-1" data-aos="fade-left" data-aos-duration="1200" data-aos-delay="200">
+                <div class="glass-form-container">
+                    <div class="mb-4">
+                        <h3 class="mb-2">Get a custom quote</h3>
+                        <p class="text-muted small">Tell us about your requirements and our experts will reach out within hours.</p>
+                    </div>
+                    <form asp-action="SubmitEnquiry" method="post">
+                        <div class="mb-3">
+                            <input type="text" class="form-control dark-input" name="Name" placeholder="Your Name" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" class="form-control dark-input" name="Email" placeholder="Work Email" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="tel" class="form-control dark-input" name="Phone" placeholder="Phone Number" required>
+                        </div>
+                        <div class="mb-4">
+                            <textarea class="form-control dark-input" name="Message" rows="3" placeholder="What compensation plan do you need? (Binary, Matrix, etc.)" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-gradient w-100 py-3 rounded-3">Request Pricing</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="features-section">
+    <div class="container">
+        <div class="text-center mb-5 pb-4" data-aos="fade-up">
+            <h2 class="display-5 mb-3">Engineered for <span style="color: var(--primary-color)">Growth</span></h2>
+            <p class="text-muted lead max-w-2xl mx-auto">Everything you need to launch, manage, and scale your MLM enterprise.</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="feature-box">
+                    <div class="icon-wrapper">
+                        <i class="bi bi-diagram-3"></i>
+                    </div>
+                    <h4>Dynamic Genealogy</h4>
+                    <p class="text-muted mt-3 mb-0">Interactive visual trees for Binary, Matrix, Unilevel, and custom board plans. See your network structure in real-time.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="feature-box">
+                    <div class="icon-wrapper">
+                        <i class="bi bi-calculator"></i>
+                    </div>
+                    <h4>Automated Payouts</h4>
+                    <p class="text-muted mt-3 mb-0">Flawless commission calculations. Support for multiple currencies, tax deductions, and complex bonus structures.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                <div class="feature-box">
+                    <div class="icon-wrapper">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                    <h4>Multi-currency E-Wallet</h4>
+                    <p class="text-muted mt-3 mb-0">Secure integrated wallet system. Let your users transfer funds, withdraw via crypto, bank transfer, or cards.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                <div class="feature-box">
+                    <div class="icon-wrapper">
+                        <i class="bi bi-cart3"></i>
+                    </div>
+                    <h4>E-commerce Ready</h4>
+                    <p class="text-muted mt-3 mb-0">Built-in shopping cart to sell physical or digital products integrated directly with the compensation engine.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="500">
+                <div class="feature-box">
+                    <div class="icon-wrapper">
+                        <i class="bi bi-shield-lock"></i>
+                    </div>
+                    <h4>Bank-Grade Security</h4>
+                    <p class="text-muted mt-3 mb-0">End-to-end encryption, regular audits, and advanced fraud detection systems to protect your business.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="600">
+                <div class="feature-box">
+                    <div class="icon-wrapper">
+                        <i class="bi bi-lightning-charge"></i>
+                    </div>
+                    <h4>High Performance</h4>
+                    <p class="text-muted mt-3 mb-0">Built on modern architecture guaranteeing 99.9% uptime even with millions of users hitting the system simultaneously.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Demo Section -->
+<section id="demo" style="background: var(--bg-dark); padding: 120px 0;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="glass-form-container" data-aos="zoom-in" style="background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));">
+                    <div class="row align-items-center">
+                        <div class="col-md-5 mb-5 mb-md-0 text-center text-md-start">
+                            <h2 class="mb-4">Ready to see it live?</h2>
+                            <p class="text-muted mb-4">Book a personalized 1-on-1 demo with our product specialists.</p>
+                            
+                            <div class="d-flex align-items-center mb-3 text-start">
+                                <div class="icon-wrapper" style="width: 40px; height: 40px; font-size: 18px; margin-bottom: 0; margin-right: 15px;">
+                                    <i class="bi bi-check-lg"></i>
+                                </div>
+                                <div>Admin Panel Tour</div>
+                            </div>
+                            <div class="d-flex align-items-center mb-3 text-start">
+                                <div class="icon-wrapper" style="width: 40px; height: 40px; font-size: 18px; margin-bottom: 0; margin-right: 15px;">
+                                    <i class="bi bi-check-lg"></i>
+                                </div>
+                                <div>Plan Simulation</div>
+                            </div>
+                            <div class="d-flex align-items-center text-start">
+                                <div class="icon-wrapper" style="width: 40px; height: 40px; font-size: 18px; margin-bottom: 0; margin-right: 15px;">
+                                    <i class="bi bi-check-lg"></i>
+                                </div>
+                                <div>Q&A Session</div>
+                            </div>
+                        </div>
+                        <div class="col-md-7 border-start border-secondary ps-md-5" style="border-color: rgba(255,255,255,0.1) !important;">
+                            <form asp-action="SubmitDemoRequest" method="post">
+                                <div class="mb-3">
+                                    <label class="form-label text-white-50 small text-uppercase fw-bold">Full Name</label>
+                                    <input type="text" class="form-control dark-input" name="Name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-white-50 small text-uppercase fw-bold">Email</label>
+                                    <input type="email" class="form-control dark-input" name="Email" required>
+                                </div>
+                                <div class="row mb-4">
+                                    <div class="col-6">
+                                        <label class="form-label text-white-50 small text-uppercase fw-bold">Phone</label>
+                                        <input type="tel" class="form-control dark-input" name="Phone" required>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label text-white-50 small text-uppercase fw-bold">Company</label>
+                                        <input type="text" class="form-control dark-input" name="CompanyName" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-gradient w-100 py-3 rounded-3">Schedule Demo</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

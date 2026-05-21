@@ -1,0 +1,59 @@
+@model IEnumerable<SoftflipSolutions.Models.Enquiry>
+@{
+    ViewData["Title"] = "Customer Enquiries";
+    Layout = "_AdminLayout";
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom admin-table-header">
+        <h5 class="mb-0">Recent Submissions</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Date Received</th>
+                    <th>Customer Name</th>
+                    <th>Contact Info</th>
+                    <th>Message Details</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="text-muted small">
+                            <i class="bi bi-clock me-1"></i> @item.CreatedAt.ToString("MMM dd, yyyy HH:mm")
+                        </td>
+                        <td class="fw-bold">@item.Name</td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <a href="mailto:@item.Email" class="text-info text-decoration-none small"><i class="bi bi-envelope me-1"></i> @item.Email</a>
+                                <span class="text-muted small mt-1"><i class="bi bi-telephone me-1"></i> @item.Phone</span>
+                            </div>
+                        </td>
+                        <td class="admin-msg-col">
+                            <div class="text-truncate text-muted small" title="@item.Message">
+                                @item.Message
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-info rounded-pill px-3" onclick="alert('View details functionality to be implemented')">View</button>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="text-muted mb-2"><i class="bi bi-inbox fs-1"></i></div>
+                            <h6>No enquiries found</h6>
+                            <p class="small">When users submit the form, they will appear here.</p>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,63 @@
+@model IEnumerable<SoftflipSolutions.Models.DemoRequest>
+@{
+    ViewData["Title"] = "Demo Requests";
+    Layout = "_AdminLayout";
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom d-flex justify-content-between align-items-center admin-table-header">
+        <h5 class="mb-0">Pending Demos</h5>
+        <span class="badge badge-soft-info px-3 py-2 rounded-pill">Total: @Model.Count()</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Requested On</th>
+                    <th>Prospect Name</th>
+                    <th>Company Name</th>
+                    <th>Contact Info</th>
+                    <th class="text-end">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="text-muted small">
+                            <i class="bi bi-calendar-event me-1"></i> @item.CreatedAt.ToString("MMM dd, yyyy HH:mm")
+                        </td>
+                        <td class="fw-bold">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3 admin-avatar">
+                                    @item.Name.Substring(0, 1).ToUpper()
+                                </div>
+                                @item.Name
+                            </div>
+                        </td>
+                        <td><span class="fw-medium text-white-50">@item.CompanyName</span></td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <a href="mailto:@item.Email" class="text-info text-decoration-none small"><i class="bi bi-envelope me-1"></i> @item.Email</a>
+                                <span class="text-muted small mt-1"><i class="bi bi-telephone me-1"></i> @item.Phone</span>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <span class="badge bg-warning text-dark rounded-pill">New Lead</span>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="text-muted mb-2"><i class="bi bi-calendar-x fs-1"></i></div>
+                            <h6>No demo requests found</h6>
+                            <p class="small">Leads requesting a demo will populate this list.</p>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
