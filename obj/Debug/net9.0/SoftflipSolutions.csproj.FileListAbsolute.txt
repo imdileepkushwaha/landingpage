@@ -137,12 +137,11 @@ C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\SoftflipSolutions.cspr
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\SoftflipSolutions.MvcApplicationPartsAssemblyInfo.cache
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\SoftflipSolutions.RazorAssemblyInfo.cache
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\SoftflipSolutions.RazorAssemblyInfo.cs
+C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\SoftflipSolutions.sourcelink.json
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\rjimswa.dswa.cache.json
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
-C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\scopedcss\bundle\SoftflipSolutions.styles.css
-C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\scopedcss\projectbundle\SoftflipSolutions.bundle.scp.css
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\compressed\yp5igdx636-61n19gt1b8.gz
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\compressed\ku7v1s76ot-xtxxf3hu2r.gz
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\compressed\7y4ctjetib-bqjiyaj88i.gz
@@ -214,7 +213,5 @@ C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\refint\SoftflipSolutio
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\SoftflipSolutions.pdb
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\SoftflipSolutions.genruntimeconfig.cache
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\ref\SoftflipSolutions.dll
-C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\compressed\szdcxts3sa-2g1gv22nw7.gz
-C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\compressed\x6mmpvmuzb-2g1gv22nw7.gz
-C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\compressed\rczz657t6y-09ljerwglt.gz
-C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\compressed\r6cks7xyei-7vn8w8reut.gz
+C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\compressed\r6cks7xyei-n436w5vbrb.gz
+C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\compressed\rczz657t6y-qro8t8aco7.gz

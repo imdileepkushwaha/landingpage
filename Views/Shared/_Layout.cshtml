@@ -3,23 +3,41 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SoftflipSolutions</title>
+    
+    <!-- SEO Meta Tags -->
+    <title>@ViewData["Title"] | SoftflipSolutions - Custom Software & App Development</title>
+    <meta name="description" content="@(ViewData["MetaDescription"] ?? "SoftflipSolutions offers premium multi-level marketing (MLM), E-commerce, Real Estate, and custom software development services globally.")">
+    <meta name="keywords" content="MLM Software, E-commerce App, Custom Software Development, SoftflipSolutions, Web Development, Billing Software, Crypto MLM">
+    <meta name="author" content="SoftflipSolutions">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://www.softflipsolutions.com/" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.softflipsolutions.com/">
+    <meta property="og:title" content="@ViewData["Title"] | SoftflipSolutions">
+    <meta property="og:description" content="@(ViewData["MetaDescription"] ?? "SoftflipSolutions provides cutting-edge enterprise software, from MLM platforms to complete E-commerce solutions. Book a demo today!")">
+    <meta property="og:image" content="https://www.softflipsolutions.com/images/sf-logo.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.softflipsolutions.com/">
+    <meta property="twitter:title" content="@ViewData["Title"] | SoftflipSolutions">
+    <meta property="twitter:description" content="@(ViewData["MetaDescription"] ?? "Premium enterprise software solutions. Transform your business with SoftflipSolutions.")">
+    <meta property="twitter:image" content="https://www.softflipsolutions.com/images/sf-logo.png">
+    
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/SoftflipSolutions.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header class="fixed-top main-header">
-        <nav class="navbar navbar-expand-lg navbar-dark bg-transparent">
+        <nav class="navbar navbar-expand-lg navbar-light bg-transparent">
             <div class="container-fluid px-lg-5">
-                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
-                    <div class="logo-icon me-2">
-                        <i class="bi bi-layers-fill"></i>
-                    </div>
-                    <span class="logo-text">Softflip</span>
+                <a class="navbar-brand d-flex align-items-center logo" asp-area="" asp-controller="Home" asp-action="Index">
+                    <img src="~/images/sf-logo.png" alt="SoftflipSolutions Logo" class="d-inline-block align-text-top me-2">
                 </a>
                 <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
@@ -31,12 +49,31 @@
                             <a class="nav-link custom-nav-link active" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link custom-nav-link" href="#features">Features</a>
+                            <a class="nav-link custom-nav-link" href="/#products">Products</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link custom-nav-link" href="/#services">Services</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link custom-nav-link" href="#demo">Demo</a>
                         </li>
-                        <li class="nav-item ms-lg-4 mt-3 mt-lg-0">
+                        <li class="nav-item ms-lg-3 mt-3 mt-lg-0">
+                            <a href="https://wa.me/919696323296" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-color: rgba(37, 211, 102, 0.3); transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.1);">
+                                <i class="bi bi-whatsapp fs-5" style="color: #25D366;"></i>
+                            </a>
+                        </li>
+                        <li class="nav-item ms-lg-3 mt-3 mt-lg-0">
+                            <a class="contact-pill" href="tel:+919696323296">
+                                <div class="icon-pulse-wrapper me-2">
+                                    <i class="bi bi-telephone-fill"></i>
+                                </div>
+                                <div class="contact-text">
+                                    <span class="small d-block text-muted" style="font-size: 0.7rem; line-height: 1;">Call Sales</span>
+                                    <span class="fw-bold">+91 9696323296</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item ms-lg-3 mt-3 mt-lg-0">
                             <a class="btn btn-gradient rounded-pill px-4" href="#demo">Get Started</a>
                         </li>
                     </ul>
@@ -44,34 +81,133 @@
             </div>
         </nav>
     </header>
-    <main role="main" class="pb-3">
+    <main role="main">
         @RenderBody()
     </main>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - SoftflipSolutions - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <footer class="border-top border-secondary footer text-muted py-4 ">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <div class="mb-3 mb-md-0">
+                &copy; 2026 - SoftflipSolutions - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            </div>
+            <div class="social-links d-flex gap-3 fs-5">
+                <a href="#" class="text-muted hover-white transition-all"><i class="bi bi-facebook"></i></a>
+                <a href="#" class="text-muted hover-white transition-all"><i class="bi bi-instagram"></i></a>
+                <a href="#" class="text-muted hover-white transition-all"><i class="bi bi-linkedin"></i></a>
+            </div>
         </div>
     </footer>
+
+    <!-- Demo Request Modal -->
+    <div class="modal fade" id="demoRequestModal" tabindex="-1" aria-labelledby="demoRequestModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4 modal-content-dark">
+                <div class="modal-header border-bottom border-light pb-3">
+                    <h5 class="modal-title fw-bold" id="demoRequestModalLabel">Book a Demo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form asp-action="SubmitDemoRequest" method="post">
+                        <div class="mb-3">
+                            <input type="text" class="form-control dark-input" name="Name" placeholder="Your Name" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" class="form-control dark-input" name="Email" placeholder="Work Email" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="tel" class="form-control dark-input" name="Phone" placeholder="Phone Number" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" class="form-control dark-input" name="CompanyName" placeholder="Company Name" required>
+                        </div>
+                        <div class="mb-3">
+                            <select class="form-control dark-input" name="Requirement" id="modalRequirement" required>
+                                <option value="" disabled selected>Select Your Requirement</option>
+                                <option value="Binary MLM Software">Binary MLM Software</option>
+                                <option value="Matrix MLM Software">Matrix MLM Software</option>
+                                <option value="Unilevel MLM Software">Unilevel MLM Software</option>
+                                <option value="Generation MLM Software">Generation MLM Software</option>
+                                <option value="Trading Based MLM Software">Trading Based MLM Software</option>
+                                <option value="ROI Based MLM Software">ROI Based MLM Software</option>
+                                <option value="Centralized MLM Software">Centralized MLM Software</option>
+                                <option value="De-Centralized MLM Software">De-Centralized MLM Software</option>
+                                <option value="Token Based MLM Software">Token Based MLM Software</option>
+                                <option value="Product Based MLM Software">Product Based MLM Software</option>
+                                <option value="Ecommerce + MLM Software">Ecommerce + MLM Software</option>
+                                <option value="School Management Software">School Management Software</option>
+                                <option value="Hospital Management Software">Hospital Management Software</option>
+                                <option value="OPD + IPD Billing Software">OPD + IPD Billing Software</option>
+                                <option value="CRM Software">CRM Software</option>
+                                <option value="Billing Software">Billing Software</option>
+                                <option value="Website Development">Website Development</option>
+                                <option value="Library Management Software">Library Management Software</option>
+                                <option value="Microfinance Management Software">Microfinance Management Software</option>
+                                <option value="Multi Recharge Software">Multi Recharge Software</option>
+                                <option value="Credit Cooperative Software">Credit Cooperative Software</option>
+                                                                <option value="Real Estate Software">Real Estate Software</option>
+                                <option value="Crypto Based MLM Software">Crypto Based MLM Software</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <textarea class="form-control dark-input" name="Message" rows="3" placeholder="Tell us more about your needs..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-gradient w-100 py-3 rounded-3">Submit Request</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
-      AOS.init({
-          duration: 1000,
-          once: true,
-      });
+        AOS.init({
+            duration: 800,
+            once: true
+        });
 
-      // Navbar scroll effect
-      $(window).scroll(function() {
-          if ($(this).scrollTop() > 50) {
-              $('.main-header').addClass('scrolled');
-          } else {
-              $('.main-header').removeClass('scrolled');
-          }
-      });
+        // Navbar scroll effect
+        $(window).scroll(function() {
+            if ($(this).scrollTop()> 50) {
+                $('.main-header').addClass('scrolled');
+            } else {
+                $('.main-header').removeClass('scrolled');
+            }
+        });
+
+        // Auto-select dropdown in Modal based on button click
+        document.addEventListener('DOMContentLoaded', function () {
+            var demoModal = document.getElementById('demoRequestModal');
+            if (demoModal) {
+                demoModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var product = button.getAttribute('data-product');
+                    var select = demoModal.querySelector('#modalRequirement');
+                    if (product && select) {
+                        select.value = product;
+                    }
+                });
+            }
+        });
     </script>
     @await RenderSectionAsync("Scripts", required: false)
+
+    <!--Start of Tawk.to Script-->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/696211dbe4ca97197dcdca2f/1jejhbh9r';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
+})();
+</script>
+<!--End of Tawk.to Script-->
 </body>
 </html>
+
+

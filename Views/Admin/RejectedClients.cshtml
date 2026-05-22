@@ -1,0 +1,230 @@
+@{
+    ViewData["Title"] = "Rejected Leads";
+    Layout = "_AdminLayout";
+    
+    var enquiries = ViewBag.Enquiries as List<SoftflipSolutions.Models.Enquiry>;
+    var demoRequests = ViewBag.DemoRequests as List<SoftflipSolutions.Models.DemoRequest>;
+}
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        padding: 24px;
+    }
+
+    .custom-table {
+        border-collapse: separate;
+        border-spacing: 0 16px;
+        margin-top: -16px;
+        width: 100%;
+    }
+    .custom-table thead th {
+        border: none;
+        color: #a0aec0;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 1.5px;
+        padding: 15px 20px;
+        background: rgba(0, 0, 0, 0.2);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .custom-table thead th:first-child {
+        border-radius: 12px 0 0 12px;
+    }
+    .custom-table thead th:last-child {
+        border-radius: 0 12px 12px 0;
+    }
+    .custom-table tbody tr {
+        background: rgba(20, 25, 40, 0.4);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .custom-table tbody tr:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 15px 30px rgba(4, 142, 231, 0.15);
+    }
+    .custom-table tbody td {
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 20px;
+        vertical-align: middle;
+        color: #fff;
+        transition: all 0.4s ease;
+    }
+    .custom-table tbody tr:hover td {
+        border-color: rgba(4, 142, 231, 0.5);
+        background: rgba(4, 142, 231, 0.05);
+    }
+    .custom-table tbody td:first-child {
+        border-left: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px 0 0 16px;
+    }
+    .custom-table tbody td:last-child {
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 0 16px 16px 0;
+    }
+    
+    .nav-pills .nav-link {
+        color: #8b9bb4;
+        border-radius: 12px;
+        padding: 10px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+    }
+    
+    .nav-pills .nav-link:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+    }
+    
+    .nav-pills .nav-link.active {
+        background: rgba(220, 53, 69, 0.15); /* Danger red tint */
+        border: 1px solid rgba(220, 53, 69, 0.4);
+        color: #ff6b6b;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.15);
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-white mb-0">
+        <i class="bi bi-x-circle-fill text-danger me-2"></i> Rejected Leads
+    </h2>
+</div>
+
+<div class="glass-card">
+    <ul class="nav nav-pills mb-4" id="rejectedTabs" role="tablist">
+        <li class="nav-item me-2" role="presentation">
+            <button class="nav-link active" id="enquiries-tab" data-bs-toggle="pill" data-bs-target="#enquiries" type="button" role="tab">
+                <i class="bi bi-chat-left-text me-1"></i> General Enquiries
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="demos-tab" data-bs-toggle="pill" data-bs-target="#demos" type="button" role="tab">
+                <i class="bi bi-laptop me-1"></i> Demo Requests
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="rejectedTabsContent">
+        <div class="tab-pane fade show active" id="enquiries" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table custom-table table-borderless align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Rejected On</th>
+                            <th>Client Info</th>
+                            <th>Requirement</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (enquiries != null && enquiries.Any())
+                        {
+                            foreach (var item in enquiries)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="text-white-50"><i class="bi bi-calendar3 me-2"></i>@item.CreatedAt.ToString("MMM dd, yyyy")</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-white">@item.Name</div>
+                                        <div class="small text-white-50">@item.Email</div>
+                                        <div class="small text-white-50">@item.Phone</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary bg-opacity-25 border border-secondary border-opacity-50 text-white px-3 py-2 rounded-pill">
+                                            @item.Requirement
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-50 rounded-pill px-3 py-1">
+                                            <i class="bi bi-x-circle me-1"></i> Rejected
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="EnquiryDetails" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                            View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <i class="bi bi-folder-x display-4 text-white-50 mb-3 d-block"></i>
+                                    <h5 class="text-white-50">No Rejected Enquiries</h5>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="demos" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table custom-table table-borderless align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Rejected On</th>
+                            <th>Company & Contact</th>
+                            <th>Product Interest</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (demoRequests != null && demoRequests.Any())
+                        {
+                            foreach (var item in demoRequests)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="text-white-50"><i class="bi bi-calendar3 me-2"></i>@item.CreatedAt.ToString("MMM dd, yyyy")</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-white">@item.CompanyName</div>
+                                        <div class="small text-white-50">@item.Name (@item.Email)</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary bg-opacity-25 border border-secondary border-opacity-50 text-white px-3 py-2 rounded-pill">
+                                            @item.Requirement
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-50 rounded-pill px-3 py-1">
+                                            <i class="bi bi-x-circle me-1"></i> Rejected
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="DemoRequestDetails" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                            View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <i class="bi bi-folder-x display-4 text-white-50 mb-3 d-block"></i>
+                                    <h5 class="text-white-50">No Rejected Demo Requests</h5>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

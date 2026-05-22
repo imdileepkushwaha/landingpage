@@ -95,6 +95,10 @@ namespace SoftflipSolutions.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -105,9 +109,47 @@ namespace SoftflipSolutions.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("Requirement")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.HasKey("Id");
 
                     b.ToTable("DemoRequests");
+                });
+
+            modelBuilder.Entity("SoftflipSolutions.Models.DemoRequestNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DemoRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPostConfirmation")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("NoteText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DemoRequestId");
+
+                    b.ToTable("DemoRequestNotes");
                 });
 
             modelBuilder.Entity("SoftflipSolutions.Models.Enquiry", b =>
@@ -140,9 +182,79 @@ namespace SoftflipSolutions.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("Requirement")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Enquiries");
+                });
+
+            modelBuilder.Entity("SoftflipSolutions.Models.EnquiryNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EnquiryId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPostConfirmation")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("NoteText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnquiryId");
+
+                    b.ToTable("EnquiryNotes");
+                });
+
+            modelBuilder.Entity("SoftflipSolutions.Models.DemoRequestNote", b =>
+                {
+                    b.HasOne("SoftflipSolutions.Models.DemoRequest", "DemoRequest")
+                        .WithMany("Notes")
+                        .HasForeignKey("DemoRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DemoRequest");
+                });
+
+            modelBuilder.Entity("SoftflipSolutions.Models.EnquiryNote", b =>
+                {
+                    b.HasOne("SoftflipSolutions.Models.Enquiry", "Enquiry")
+                        .WithMany("Notes")
+                        .HasForeignKey("EnquiryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Enquiry");
+                });
+
+            modelBuilder.Entity("SoftflipSolutions.Models.DemoRequest", b =>
+                {
+                    b.Navigation("Notes");
+                });
+
+            modelBuilder.Entity("SoftflipSolutions.Models.Enquiry", b =>
+                {
+                    b.Navigation("Notes");
                 });
 #pragma warning restore 612, 618
         }

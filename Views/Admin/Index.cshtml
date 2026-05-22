@@ -1,57 +1,99 @@
 @{
-    ViewData["Title"] = "Dashboard Overview";
+    ViewData["Title"] = "Command Center";
     Layout = "_AdminLayout";
 }
 
-<div class="row g-4 mb-4">
-    <div class="col-md-6 col-lg-4">
-        <div class="glass-card d-flex align-items-center h-100 position-relative overflow-hidden">
-            <!-- decorative blur -->
-            <div class="admin-stat-blur-1"></div>
-            
-            <div class="me-4 rounded-3 d-flex align-items-center justify-content-center admin-stat-icon-1">
+
+
+<!-- Welcome Banner -->
+<div class="welcome-banner mb-5 shadow-lg">
+    <div class="welcome-content">
+        <div class="d-inline-flex align-items-center bg-primary bg-opacity-25 border border-primary border-opacity-50 text-info rounded-pill px-3 py-1 mb-3">
+            <span class="spinner-grow spinner-grow-sm text-info me-2" style="width: 10px; height: 10px;" role="status"></span>
+            <small class="fw-semibold text-uppercase tracking-wider">Live System</small>
+        </div>
+        <h2 class="fw-bold text-white mb-3 brand-font">Welcome back to <span style="background: linear-gradient(to right, #00C6FF, #048EE7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Softflip OS</span></h2>
+        <p class="text-white-50 fs-5 mb-0 max-w-2xl">Here is what's happening with your leads and pipeline today.</p>
+    </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon primary">
                 <i class="bi bi-envelope-paper-fill"></i>
             </div>
-            <div>
-                <p class="text-muted mb-1 small fw-medium text-uppercase">Total Enquiries</p>
-                <h3 class="mb-0 display-6 fw-bold">@ViewBag.TotalEnquiries</h3>
+            <div class="stat-value">@ViewBag.TotalEnquiries</div>
+            <div class="stat-label">Total Enquiries</div>
+            <div class="position-absolute" style="bottom: -20px; right: -10px; font-size: 8rem; color: rgba(255,255,255,0.02); z-index: 0;">
+                <i class="bi bi-chat-left-dots-fill"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-lg-4">
-        <div class="glass-card d-flex align-items-center h-100 position-relative overflow-hidden">
-             <!-- decorative blur -->
-            <div class="admin-stat-blur-2"></div>
+    
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="bi bi-laptop-fill"></i>
+            </div>
+            <div class="stat-value">@ViewBag.TotalDemoRequests</div>
+            <div class="stat-label">Demo Requests</div>
+            <div class="position-absolute" style="bottom: -20px; right: -10px; font-size: 8rem; color: rgba(255,255,255,0.02); z-index: 0;">
+                <i class="bi bi-calendar-event-fill"></i>
+            </div>
+        </div>
+    </div>
 
-            <div class="me-4 rounded-3 d-flex align-items-center justify-content-center admin-stat-icon-2">
-                <i class="bi bi-calendar-check-fill"></i>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="bi bi-check-circle-fill"></i>
             </div>
-            <div>
-                <p class="text-muted mb-1 small fw-medium text-uppercase">Demo Requests</p>
-                <h3 class="mb-0 display-6 fw-bold">@ViewBag.TotalDemoRequests</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-12 col-lg-4">
-        <div class="glass-card h-100 d-flex flex-column justify-content-center text-center admin-quick-actions">
-            <h5 class="fw-bold mb-3">Quick Actions</h5>
-            <div class="d-flex justify-content-center gap-3">
-                <a asp-action="Enquiries" class="btn btn-outline-light btn-sm rounded-pill px-3">View Inbox</a>
-                <a asp-action="DemoRequests" class="btn btn-gradient btn-sm rounded-pill px-3 text-dark">Schedule Demo</a>
+            <!-- Using a placeholder for confirmed, assuming we might want to query it later, but showing active leads for now -->
+            <div class="stat-value">Active</div>
+            <div class="stat-label">Pipeline Status</div>
+            <div class="position-absolute" style="bottom: -20px; right: -10px; font-size: 8rem; color: rgba(255,255,255,0.02); z-index: 0;">
+                <i class="bi bi-graph-up-arrow"></i>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="glass-card">
-            <h5 class="mb-4">System Status</h5>
-            <div class="d-flex align-items-center">
-                <div class="spinner-grow spinner-grow-sm text-success me-2" role="status">
-                    <span class="visually-hidden">Loading...</span>
+<!-- Bottom Section: Quick Actions & System -->
+<div class="row g-4">
+    <div class="col-lg-8">
+        <h4 class="mb-4 text-white brand-font">Quick Actions</h4>
+        <div class="row g-3">
+            <div class="col-sm-6">
+                <a asp-action="Enquiries" class="quick-action-btn">
+                    <i class="bi bi-inbox-fill"></i>
+                    <div>
+                        <div class="fs-5">View Inbox</div>
+                        <div class="small text-white-50 mt-1">Check new messages</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-sm-6">
+                <a asp-action="Settings" class="quick-action-btn">
+                    <i class="bi bi-sliders text-warning"></i>
+                    <div>
+                        <div class="fs-5">Platform Settings</div>
+                        <div class="small text-white-50 mt-1">Update SMTP & Security</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <h4 class="mb-4 text-white brand-font">System Health</h4>
+        <div class="system-status">
+            <div>
+                <div class="d-flex align-items-center mb-2">
+                    <i class="bi bi-hdd-network-fill text-success fs-4 me-3"></i>
+                    <h5 class="mb-0 text-white">Softflip Engine v3</h5>
                 </div>
-                <span class="text-muted">Softflip V3 Engine is running smoothly. All services operational.</span>
+                <p class="text-white-50 mb-0 small">All services are operating normally. Database connection is stable and SMTP relay is active.</p>
             </div>
         </div>
     </div>

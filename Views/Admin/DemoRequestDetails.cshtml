@@ -1,0 +1,362 @@
+@model SoftflipSolutions.Models.DemoRequest
+@{
+    ViewData["Title"] = "Demo Request Details";
+    Layout = "_AdminLayout";
+}
+
+<style>
+    .detail-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    
+    .detail-header {
+        background: linear-gradient(135deg, rgba(113, 181, 0, 0.2) 0%, rgba(4, 142, 231, 0.2) 100%);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px 16px 0 0;
+        padding: 1.5rem;
+    }
+    
+    .timeline {
+        border-left: 2px solid rgba(113, 181, 0, 0.3);
+        padding-left: 20px;
+        margin-left: 10px;
+        position: relative;
+    }
+    
+    .timeline-item {
+        margin-bottom: 25px;
+        position: relative;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        background: #048EE7;
+        border: 3px solid #1a1e29;
+        border-radius: 50%;
+        left: -28px;
+        top: 5px;
+        box-shadow: 0 0 10px rgba(4, 142, 231, 0.5);
+    }
+    
+    .timeline-item.post-confirmation::before {
+        background: #20c997;
+        box-shadow: 0 0 10px rgba(32, 201, 151, 0.5);
+    }
+    
+    .note-box {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 15px;
+    }
+
+    .info-label {
+        color: #8b9bb4;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+        font-weight: 600;
+    }
+    
+    .info-value {
+        font-size: 1.05rem;
+        font-weight: 500;
+        color: #fff;
+        margin-bottom: 1.2rem;
+    }
+
+    .btn-gradient-success {
+        background: linear-gradient(90deg, #71B500, #96e300);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 15px rgba(113, 181, 0, 0.4);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-gradient-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(113, 181, 0, 0.6);
+        color: white;
+    }
+
+    .custom-textarea {
+        background: rgba(0, 0, 0, 0.25) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #fff !important;
+        border-radius: 12px;
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        resize: vertical;
+    }
+    
+    .custom-textarea:focus {
+        background: rgba(0, 0, 0, 0.4) !important;
+        border-color: #71B500 !important;
+        box-shadow: 0 0 0 4px rgba(113, 181, 0, 0.15), inset 0 2px 6px rgba(0,0,0,0.2) !important;
+    }
+    
+    .custom-textarea::placeholder {
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .modal-glass {
+        background: rgba(20, 24, 35, 0.8) !important;
+        backdrop-filter: blur(25px);
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    }
+    
+    .modal-input {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        color: #fff !important;
+        transition: all 0.3s;
+    }
+    
+    .modal-input:focus {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border-color: #71B500 !important;
+        box-shadow: 0 0 0 4px rgba(113, 181, 0, 0.15) !important;
+    }
+    
+    .email-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-white mb-0">Demo Request Overview</h2>
+    <div>
+        <a asp-action="DemoRequests" class="btn btn-outline-secondary rounded-pill px-4"><i class="bi bi-arrow-left me-2"></i>Back to List</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Pane: 1/3 User Details -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="detail-card h-100">
+            <div class="detail-header d-flex align-items-center">
+                <div class="bg-success bg-opacity-25 text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-size: 1.5rem; font-weight: bold;">
+                    @Model.Name.Substring(0, 1).ToUpper()
+                </div>
+                <div>
+                    <h4 class="mb-1 text-white">@Model.Name</h4>
+                    <span class="badge @(Model.Status == "Confirmed" ? "bg-success" : Model.Status == "Rejected" ? "bg-danger" : "bg-warning text-dark") rounded-pill px-3">
+                        <i class="bi @(Model.Status == "Confirmed" ? "bi-check-circle" : Model.Status == "Rejected" ? "bi-x-circle" : "bi-hourglass-split") me-1"></i>
+                        @(string.IsNullOrEmpty(Model.Status) ? "Pending" : Model.Status)
+                    </span>
+                </div>
+            </div>
+            
+            <div class="card-body p-4">
+                <div class="info-label"><i class="bi bi-building me-2"></i>Company Name</div>
+                <div class="info-value">@Model.CompanyName</div>
+
+                <div class="info-label"><i class="bi bi-envelope-fill me-2"></i>Email Address</div>
+                <div class="info-value"><a href="mailto:@Model.Email" class="text-success text-decoration-none">@Model.Email</a></div>
+
+                <div class="info-label"><i class="bi bi-telephone-fill me-2"></i>Phone Number</div>
+                <div class="info-value"><a href="tel:@Model.Phone" class="text-white text-decoration-none">@Model.Phone</a></div>
+
+                <div class="info-label"><i class="bi bi-tag-fill me-2"></i>Requested Product</div>
+                <div class="info-value"><span class="badge bg-secondary px-3 py-2">@Model.Requirement</span></div>
+
+                <div class="info-label mt-4"><i class="bi bi-chat-left-text-fill me-2"></i>Message Details</div>
+                <div class="note-box mt-2 text-white-50 fst-italic">
+                    "@Model.Message"
+                </div>
+
+                @if (Model.Status != "Rejected")
+                {
+                    <div class="mt-4 pt-3 border-top border-secondary">
+                        <button class="btn btn-outline-success w-100 rounded-pill py-2" data-bs-toggle="modal" data-bs-target="#emailModal">
+                            <i class="bi bi-envelope-paper-heart me-2"></i> Compose Email
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Pane: 2/3 Call Notes & Actions -->
+    <div class="col-xl-8 col-lg-7">
+        
+        <!-- Workflow Actions -->
+        @if (Model.Status == "Pending" || string.IsNullOrEmpty(Model.Status))
+        {
+            <div class="detail-card mb-4" style="border-left: 4px solid #ffc107;">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        <h5 class="mb-1 text-warning"><i class="bi bi-exclamation-circle-fill me-2"></i>Decision Pending</h5>
+                        <p class="text-muted mb-0 small">Have you conducted the demo? Finalize the status below.</p>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <form asp-action="UpdateDemoRequestStatus" method="post">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="status" value="Confirmed" />
+                            <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm"><i class="bi bi-check2-circle me-2"></i> Confirm Demo</button>
+                        </form>
+                        <form asp-action="UpdateDemoRequestStatus" method="post">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="status" value="Rejected" />
+                            <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm" onclick="return confirm('Are you sure you want to mark this as rejected?');"><i class="bi bi-x-circle me-2"></i> Reject</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- CRM Notes Section -->
+        <div class="detail-card">
+            <div class="detail-header d-flex align-items-center">
+                <i class="bi bi-journal-album text-white fs-4 me-3"></i>
+                <h5 class="mb-0 text-white">Call Logs & Conversations</h5>
+            </div>
+            <div class="card-body p-4">
+                
+                @if (Model.Status != "Rejected")
+                {
+                    <!-- Add Note Form -->
+                    <form asp-action="AddDemoRequestNote" method="post" class="mb-5">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <div class="mb-3">
+                            <label class="form-label text-success small fw-bold text-uppercase" style="letter-spacing: 1px;"><i class="bi bi-pencil-square me-1"></i> Add a New Note</label>
+                            <textarea name="noteText" class="form-control custom-textarea p-3" rows="3" placeholder="Type demo summary or client feedback here..." required></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-gradient-success rounded-pill px-4">
+                                <i class="bi bi-plus-lg me-1"></i> Add Note
+                            </button>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <div class="alert alert-glass mb-5 d-flex align-items-center border-danger">
+                        <i class="bi bi-slash-circle text-danger fs-3 me-3"></i>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-danger">Lead Rejected</h6>
+                            <p class="mb-0 small opacity-75">Further conversations and emails have been disabled for this lead.</p>
+                        </div>
+                    </div>
+                }
+
+                <!-- Notes Timeline -->
+                <h6 class="text-white mb-4 fw-bold"><i class="bi bi-clock-history me-2"></i>History</h6>
+                
+                @if (Model.Notes != null && Model.Notes.Any())
+                {
+                    <div class="timeline">
+                        @foreach (var note in Model.Notes)
+                        {
+                            <div class="timeline-item @(note.IsPostConfirmation ? "post-confirmation" : "")">
+                                <div class="d-flex justify-content-between mb-2 align-items-center">
+                                    <div>
+                                        <span class="badge bg-secondary text-light px-2 py-1"><i class="bi bi-calendar-check me-1"></i> @note.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                        @if (note.IsPostConfirmation)
+                                        {
+                                            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50 ms-2"><i class="bi bi-check-circle me-1"></i> Post-Confirmation Note</span>
+                                        }
+                                    </div>
+                                    <small class="text-muted"><i class="bi bi-clock"></i> @note.CreatedAt.ToString("hh:mm tt")</small>
+                                </div>
+                                <div class="note-box text-light @(note.IsPostConfirmation ? "border-success border-opacity-50 bg-success bg-opacity-10" : "")">
+                                    @note.NoteText
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <div class="text-muted mb-3"><i class="bi bi-journal-x" style="font-size: 3rem;"></i></div>
+                        <h6 class="text-white-50">No conversation history</h6>
+                        <p class="text-muted small">Call logs and notes added will appear in a timeline here.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Email UI Modal (Ultra Premium Design) -->
+<div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content modal-glass border-0" style="border-radius: 24px;">
+            <form asp-action="SendEmail" method="post">
+            <div class="modal-header border-bottom border-secondary border-opacity-25 p-4" style="background: linear-gradient(135deg, rgba(113,181,0,0.15) 0%, rgba(20,24,35,0) 100%); border-radius: 24px 24px 0 0;">
+                <div class="d-flex align-items-center">
+                    <div class="bg-success bg-opacity-25 text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px;">
+                        <i class="bi bi-envelope-paper-heart fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title text-white fw-bold mb-0" id="emailModalLabel">Compose Message</h5>
+                        <small class="text-success fw-medium">Reply to @Model.Name</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white opacity-75" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4 p-md-5">
+                <input type="hidden" name="returnUrl" value="/Admin/DemoRequestDetails/@Model.Id" />
+                <div class="row mb-4 align-items-center">
+                        <label class="col-sm-2 col-form-label text-muted fw-medium">To:</label>
+                        <div class="col-sm-10">
+                            <div class="d-flex align-items-center modal-input rounded-pill px-3 py-2">
+                                <div class="email-avatar bg-secondary bg-opacity-50 text-white me-3">
+                                    @Model.Name.Substring(0, 1).ToUpper()
+                                </div>
+                                <span class="text-white-50 flex-grow-1">@Model.Name &lt;<span class="text-white">@Model.Email</span>&gt;</span>
+                                <input type="hidden" name="toEmail" value="@Model.Email" />
+                            </div>
+                        </div>
+                    </div>
+
+                <div class="row mb-4 align-items-center">
+                    <label class="col-sm-2 col-form-label text-muted fw-medium">Subject:</label>
+                    <div class="col-sm-10">
+                        <input type="text" name="subject" class="form-control modal-input rounded-pill px-4 py-3 fw-medium shadow-none" value="Regarding your Demo Request with SoftflipSolutions" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <label class="form-label text-muted fw-medium mb-3">Message:</label>
+                        <textarea name="message" class="form-control modal-input custom-textarea p-4 shadow-none" rows="8" style="border-radius: 16px; font-size: 0.95rem; line-height: 1.7;" required>Hi @Model.Name,
+
+Thank you for booking a demo with SoftflipSolutions. We received your request for: @Model.Requirement.
+
+We would love to schedule a quick call to give you a personalized walkthrough of our system. Let us know your availability.
+
+Best Regards,
+SoftflipSolutions Team
+</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top border-secondary border-opacity-25 p-4" style="background: rgba(0,0,0,0.2); border-radius: 0 0 24px 24px;">
+                <button type="button" class="btn text-white-50 border-0 me-3 shadow-none hover-white" data-bs-dismiss="modal">Discard</button>
+                <button type="submit" class="btn btn-gradient-success rounded-pill px-5 py-2 fw-bold shadow-lg">
+                    <i class="bi bi-send-fill me-2"></i> Send Message
+                </button>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>

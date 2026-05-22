@@ -1,0 +1,193 @@
+@{
+    ViewData["Title"] = "Platform Settings";
+    Layout = "_AdminLayout";
+}
+
+<style>
+    .settings-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    
+    .nav-pills .nav-link {
+        color: #8b9bb4;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-pills .nav-link:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+    }
+    
+    .nav-pills .nav-link.active {
+        background: linear-gradient(90deg, #048EE7, #00C6FF);
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(4, 142, 231, 0.4);
+    }
+    
+    .settings-input {
+        background: rgba(0, 0, 0, 0.25) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #fff !important;
+        border-radius: 10px;
+        padding: 12px 15px;
+    }
+    
+    .settings-input:focus {
+        background: rgba(0, 0, 0, 0.4) !important;
+        border-color: #048EE7 !important;
+        box-shadow: 0 0 0 4px rgba(4, 142, 231, 0.15) !important;
+    }
+    
+    .settings-label {
+        color: #8b9bb4;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .btn-gradient-primary {
+        background: linear-gradient(90deg, #048EE7, #00C6FF);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 15px rgba(4, 142, 231, 0.4);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-gradient-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(4, 142, 231, 0.6);
+        color: white;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-white mb-0">Platform Settings</h2>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success bg-success bg-opacity-25 text-success border-success border-opacity-50 alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger bg-danger bg-opacity-25 text-danger border-danger border-opacity-50 alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row">
+    <!-- Left Navigation -->
+    <div class="col-md-3 mb-4">
+        <div class="settings-card p-3">
+            <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                <button class="nav-link active text-start mb-2" id="v-pills-security-tab" data-bs-toggle="pill" data-bs-target="#v-pills-security" type="button" role="tab" aria-controls="v-pills-security" aria-selected="true">
+                    <i class="bi bi-shield-lock-fill me-2"></i> Security
+                </button>
+                <button class="nav-link text-start" id="v-pills-smtp-tab" data-bs-toggle="pill" data-bs-target="#v-pills-smtp" type="button" role="tab" aria-controls="v-pills-smtp" aria-selected="false">
+                    <i class="bi bi-envelope-fill me-2"></i> Email (SMTP)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Content -->
+    <div class="col-md-9">
+        <div class="tab-content" id="v-pills-tabContent">
+            
+            <!-- Security Tab -->
+            <div class="tab-pane fade show active" id="v-pills-security" role="tabpanel" aria-labelledby="v-pills-security-tab">
+                <div class="settings-card p-4 p-md-5">
+                    <h4 class="text-white mb-4"><i class="bi bi-shield-lock text-info me-2"></i> Change Password</h4>
+                    <p class="text-muted mb-4">Update your administrator password to keep your account secure.</p>
+                    
+                    <form asp-action="UpdateSecurity" method="post">
+                        <div class="mb-4">
+                            <label class="form-label settings-label">Admin Username</label>
+                            <input type="text" class="form-control settings-input" value="@ViewBag.AdminUsername" disabled>
+                            <div class="form-text text-muted">Username cannot be changed.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label settings-label">Current Password</label>
+                            <input type="password" name="currentPassword" class="form-control settings-input" required>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">New Password</label>
+                                <input type="password" name="newPassword" class="form-control settings-input" required minlength="6">
+                            </div>
+                            <div class="col-md-6 mt-4 mt-md-0">
+                                <label class="form-label settings-label">Confirm New Password</label>
+                                <input type="password" name="confirmPassword" class="form-control settings-input" required minlength="6">
+                            </div>
+                        </div>
+
+                        <div class="text-end pt-3 border-top border-secondary border-opacity-25 mt-5">
+                            <button type="submit" class="btn btn-gradient-primary rounded-pill px-5 py-2">
+                                <i class="bi bi-save2 me-2"></i> Update Security
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- SMTP Tab -->
+            <div class="tab-pane fade" id="v-pills-smtp" role="tabpanel" aria-labelledby="v-pills-smtp-tab">
+                <div class="settings-card p-4 p-md-5">
+                    <h4 class="text-white mb-4"><i class="bi bi-envelope-at text-info me-2"></i> SMTP Configuration</h4>
+                    <p class="text-muted mb-4">Configure your mail server details to allow the CRM to send emails to clients directly from the dashboard.</p>
+                    
+                    <form asp-action="UpdateSmtp" method="post">
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <label class="form-label settings-label">SMTP Host / Server</label>
+                                <input type="text" name="SmtpHost" class="form-control settings-input" placeholder="e.g., smtp.gmail.com" value="@ViewBag.SmtpHost" required>
+                            </div>
+                            <div class="col-md-4 mt-4 mt-md-0">
+                                <label class="form-label settings-label">Port</label>
+                                <input type="number" name="SmtpPort" class="form-control settings-input" placeholder="587" value="@ViewBag.SmtpPort" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label settings-label">Email Address (Sender)</label>
+                            <input type="email" name="SmtpEmail" class="form-control settings-input" placeholder="your@email.com" value="@ViewBag.SmtpEmail" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label settings-label">Email Password (or App Password)</label>
+                            <input type="password" name="SmtpPassword" class="form-control settings-input" placeholder="••••••••••••" value="@ViewBag.SmtpPassword" required>
+                            <div class="form-text text-muted">If using Gmail, generate an 'App Password' from your Google Account settings instead of your real password.</div>
+                        </div>
+
+                        <div class="mb-4 form-check form-switch mt-4">
+                            <input class="form-check-input" type="checkbox" role="switch" id="SmtpEnableSsl" name="SmtpEnableSsl" @(ViewBag.SmtpEnableSsl == true ? "checked" : "") style="width: 40px; height: 20px;">
+                            <label class="form-check-label text-white ms-2" for="SmtpEnableSsl" style="margin-top: 2px;">Enable SSL Encryption</label>
+                        </div>
+
+                        <div class="text-end pt-3 border-top border-secondary border-opacity-25 mt-5">
+                            <button type="submit" class="btn btn-gradient-primary rounded-pill px-5 py-2">
+                                <i class="bi bi-save2 me-2"></i> Save Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

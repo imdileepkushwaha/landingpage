@@ -12,6 +12,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Enquiry> Enquiries { get; set; }
     public DbSet<DemoRequest> DemoRequests { get; set; }
+    public DbSet<EnquiryNote> EnquiryNotes { get; set; }
+    public DbSet<DemoRequestNote> DemoRequestNotes { get; set; }
     public DbSet<AdminUser> AdminUsers { get; set; }
     public DbSet<AdminSetting> AdminSettings { get; set; }
 

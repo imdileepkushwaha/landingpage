@@ -1,11 +1,12 @@
 @using SoftflipSolutions.Models
 @{
-    ViewData["Title"] = "Premium MLM Software";
+    ViewData["Title"] = "Best MLM & Custom Software Company";
+    ViewData["MetaDescription"] = "Leading provider of high-quality MLM software, E-commerce solutions, and custom web applications. Skyrocket your business growth with SoftflipSolutions.";
 }
 
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success alert-dismissible fade show m-4 shadow-lg border-0 rounded-4" role="alert" style="position: fixed; z-index: 9999; top: 100px; right: 20px; max-width: 400px; background: rgba(16, 185, 129, 0.9); backdrop-filter: blur(10px); color: white;">
+    <div class="alert alert-success alert-dismissible fade show m-4 shadow-lg border-0 rounded-4 alert-floating-success" role="alert">
         <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
@@ -13,48 +14,50 @@
 
 @if (TempData["ErrorMessage"] != null)
 {
-    <div class="alert alert-danger alert-dismissible fade show m-4 shadow-lg border-0 rounded-4" role="alert" style="position: fixed; z-index: 9999; top: 100px; right: 20px; max-width: 400px; background: rgba(239, 68, 68, 0.9); backdrop-filter: blur(10px); color: white;">
+    <div class="alert alert-danger alert-dismissible fade show m-4 shadow-lg border-0 rounded-4 alert-floating-danger" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
 
 <!-- Hero Section -->
-<section class="hero-wrapper">
+<section class="hero-wrapper position-relative overflow-hidden">
     <div class="grid-bg"></div>
+    <div class="animated-bg-shape shape-1"></div>
+    <div class="animated-bg-shape shape-2"></div>
     <div class="container hero-content">
         <div class="row align-items-center">
             <div class="col-lg-6 mb-5 mb-lg-0" data-aos="fade-up" data-aos-duration="1000">
-                <div class="d-inline-flex align-items-center py-1 px-3 rounded-pill border border-secondary mb-4" style="background: rgba(0, 242, 254, 0.1); border-color: rgba(0,242,254,0.3) !important;">
-                    <span class="badge bg-primary rounded-pill me-2" style="background: linear-gradient(135deg, #00f2fe, #4facfe) !important; color:#000;">New</span>
-                    <span class="text-white text-opacity-75 small fw-medium">Softflip V3 Engine is live</span>
+                <div class="d-inline-flex align-items-center py-1 px-3 rounded-pill border border-secondary mb-4 floating-element new-badge-container">
+                    <span class="badge bg-primary rounded-pill me-2 glow-pulse new-badge-gradient">New</span>
+                    <span class="text-dark text-opacity-75 small fw-medium">Softflip V3 Engine is live</span>
                 </div>
                 <h1 class="hero-title">The Ultimate <br/><span class="glow-text">MLM Platform</span></h1>
-                <p class="lead text-muted mb-5 pe-lg-5" style="font-size: 1.2rem; line-height: 1.8;">
+                <p class="lead text-muted mb-2 pe-lg-5 lead-text-large">
                     Empower your network marketing business with enterprise-grade architecture. Automate commissions, track genealogies in real-time, and scale globally without limits.
                 </p>
-                <div class="d-flex flex-wrap gap-3">
-                    <a href="#demo" class="btn btn-gradient rounded-pill px-5 py-3 fs-5">
+                <div class="d-flex flex-wrap gap-3 mt-2">
+                    <a href="#demo" class="btn btn-gradient rounded-pill px-5 py-3 fs-5 glow-pulse">
                         Start Building <i class="bi bi-rocket-takeoff ms-2"></i>
                     </a>
                 </div>
                 
-                <div class="mt-5 pt-4 d-flex align-items-center">
+                <div class="mt-5 pt-4 d-flex align-items-center floating-slow">
                     <div class="d-flex me-3">
-                        <img src="https://i.pravatar.cc/100?img=1" class="rounded-circle border border-2 border-dark" width="40" height="40" style="margin-right: -10px; z-index: 3;" />
-                        <img src="https://i.pravatar.cc/100?img=2" class="rounded-circle border border-2 border-dark" width="40" height="40" style="margin-right: -10px; z-index: 2;" />
-                        <img src="https://i.pravatar.cc/100?img=3" class="rounded-circle border border-2 border-dark" width="40" height="40" style="z-index: 1;" />
+                        <img src="https://ui-avatars.com/api/?name=JS&background=00f2fe&color=050810"  width="40" height="40" class="rounded-circle border border-2 border-dark avatar-stack-1" />
+                        <img src="https://ui-avatars.com/api/?name=AM&background=4facfe&color=050810"  width="40" height="40" class="rounded-circle border border-2 border-dark avatar-stack-2" />
+                        <img src="https://ui-avatars.com/api/?name=PK&background=fff&color=050810"  width="40" height="40" class="rounded-circle border border-2 border-dark avatar-stack-3" />
                     </div>
                     <div class="text-muted small">
-                        <div class="fw-bold text-white">Join 10,000+ Leaders</div>
+                        <div class="fw-bold text-dark">Join 10,000+ Leaders</div>
                         growing their networks daily.
                     </div>
                 </div>
             </div>
             
             <div class="col-lg-5 offset-lg-1" data-aos="fade-left" data-aos-duration="1200" data-aos-delay="200">
-                <div class="glass-form-container">
-                    <div class="mb-4">
+                <div class="glass-form-container floating-fast">
+                    <div class="mb-4 text-center">
                         <h3 class="mb-2">Get a custom quote</h3>
                         <p class="text-muted small">Tell us about your requirements and our experts will reach out within hours.</p>
                     </div>
@@ -68,6 +71,34 @@
                         <div class="mb-3">
                             <input type="tel" class="form-control dark-input" name="Phone" placeholder="Phone Number" required>
                         </div>
+                        <div class="mb-3">
+                            <select class="form-control dark-input" name="Requirement" required>
+                                <option value="" disabled selected>Select Your Requirement</option>
+                                <option value="Binary MLM Software">Binary MLM Software</option>
+                                <option value="Matrix MLM Software">Matrix MLM Software</option>
+                                <option value="Unilevel MLM Software">Unilevel MLM Software</option>
+                                <option value="Generation MLM Software">Generation MLM Software</option>
+                                <option value="Trading Based MLM Software">Trading Based MLM Software</option>
+                                <option value="ROI Based MLM Software">ROI Based MLM Software</option>
+                                <option value="Centralized MLM Software">Centralized MLM Software</option>
+                                <option value="De-Centralized MLM Software">De-Centralized MLM Software</option>
+                                <option value="Token Based MLM Software">Token Based MLM Software</option>
+                                <option value="Product Based MLM Software">Product Based MLM Software</option>
+                                <option value="Ecommerce + MLM Software">Ecommerce + MLM Software</option>
+                                <option value="School Management Software">School Management Software</option>
+                                <option value="Hospital Management Software">Hospital Management Software</option>
+                                <option value="OPD + IPD Billing Software">OPD + IPD Billing Software</option>
+                                <option value="CRM Software">CRM Software</option>
+                                <option value="Billing Software">Billing Software</option>
+                                <option value="Website Development">Website Development</option>
+                                <option value="Library Management Software">Library Management Software</option>
+                                <option value="Microfinance Management Software">Microfinance Management Software</option>
+                                <option value="Multi Recharge Software">Multi Recharge Software</option>
+                                <option value="Credit Cooperative Software">Credit Cooperative Software</option>
+                                <option value="Real Estate Software">Real Estate Software</option>
+                                <option value="Crypto Based MLM Software">Crypto Based MLM Software</option>
+                            </select>
+                        </div>
                         <div class="mb-4">
                             <textarea class="form-control dark-input" name="Message" rows="3" placeholder="What compensation plan do you need? (Binary, Matrix, etc.)" required></textarea>
                         </div>
@@ -75,71 +106,372 @@
                     </form>
                 </div>
             </div>
+           
         </div>
     </div>
 </section>
 
-<!-- Features Section -->
-<section id="features" class="features-section">
+<!-- Our Services Section -->
+<section id="services" class="section-services">
+    <div class="container">
+        <div class="text-center mb-2 pb-4" data-aos="fade-up">
+            <h2 class="display-6 fw-bold mb-3">Our Core <span class="text-primary-custom">Services</span></h2>
+            <p class="text-muted lead mx-auto max-w-800">
+                We provide a comprehensive suite of digital solutions designed to scale your business. From enterprise MLM platforms to comprehensive digital marketing.
+            </p>
+        </div>
+        
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-3 col-md-6" data-aos="zoom-in" data-aos-delay="50">
+                <div class="service-card service-card-highlight">
+                    <div class="service-icon-box service-icon-gradient"><i class="bi bi-code-slash"></i></div>
+                    <h4 class="service-title">Software Development</h4>
+                    <p class="text-muted small mt-3 mb-0">Custom enterprise software solutions tailored to streamline your business operations and accelerate growth.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6" data-aos="zoom-in" data-aos-delay="100">
+                <div class="service-card service-card-highlight">
+                    <div class="service-icon-box service-icon-gradient"><i class="bi bi-diagram-3-fill"></i></div>
+                    <h4 class="service-title">MLM Software</h4>
+                    <p class="text-muted small mt-3 mb-0">Advanced, secure, and scalable MLM engines with dynamic compensation plans and real-time genealogy trees.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6" data-aos="zoom-in" data-aos-delay="150">
+                <div class="service-card service-card-highlight">
+                    <div class="service-icon-box service-icon-gradient"><i class="bi bi-palette-fill"></i></div>
+                    <h4 class="service-title">Website Designing</h4>
+                    <p class="text-muted small mt-3 mb-0">Stunning, responsive, and high-converting websites that represent your premium brand effectively.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6" data-aos="zoom-in" data-aos-delay="200">
+                <div class="service-card service-card-highlight">
+                    <div class="service-icon-box service-icon-gradient"><i class="bi bi-phone-fill"></i></div>
+                    <h4 class="service-title">App Development</h4>
+                    <p class="text-muted small mt-3 mb-0">Native and cross-platform mobile applications that engage users on the go with seamless performance.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6" data-aos="zoom-in" data-aos-delay="250">
+                <div class="service-card service-card-highlight">
+                    <div class="service-icon-box service-icon-gradient"><i class="bi bi-megaphone-fill"></i></div>
+                    <h4 class="service-title">Digital Marketing</h4>
+                    <p class="text-muted small mt-3 mb-0">Data-driven marketing strategies to boost your online visibility, capture leads, and maximize your ROI.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6" data-aos="zoom-in" data-aos-delay="300">
+                <div class="service-card service-card-highlight">
+                    <div class="service-icon-box service-icon-gradient"><i class="bi bi-cart-check-fill"></i></div>
+                    <h4 class="service-title">Ecommerce Web Dev</h4>
+                    <p class="text-muted small mt-3 mb-0">Robust online stores with secure payment gateways, inventory management, and seamless shopping experiences.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6" data-aos="zoom-in" data-aos-delay="350">
+                <div class="service-card service-card-highlight">
+                    <div class="service-icon-box service-icon-gradient"><i class="bi bi-hdd-network-fill"></i></div>
+                    <h4 class="service-title">Web Hosting</h4>
+                    <p class="text-muted small mt-3 mb-0">Blazing fast, secure, and reliable cloud hosting solutions guaranteeing 99.9% uptime for your business.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6" data-aos="zoom-in" data-aos-delay="400">
+                <div class="service-card service-card-highlight">
+                    <div class="service-icon-box service-icon-gradient"><i class="bi bi-globe2"></i></div>
+                    <h4 class="service-title">Domain Registration</h4>
+                    <p class="text-muted small mt-3 mb-0">Secure your digital brand identity easily with our quick and hassle-free global domain registration services.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6" data-aos="zoom-in" data-aos-delay="450">
+                <div class="service-card service-card-highlight">
+                    <div class="service-icon-box service-icon-gradient"><i class="bi bi-chat-left-dots-fill"></i></div>
+                    <h4 class="service-title">Bulk SMS</h4>
+                    <p class="text-muted small mt-3 mb-0">Instantly reach thousands of customers with targeted, lightning-fast, and highly reliable SMS campaigns.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6" data-aos="zoom-in" data-aos-delay="500">
+                <div class="service-card service-card-highlight">
+                    <div class="service-icon-box service-icon-gradient"><i class="bi bi-envelope-paper-fill"></i></div>
+                    <h4 class="service-title">Bulk Email</h4>
+                    <p class="text-muted small mt-3 mb-0">Automated and personalized email marketing solutions designed to nurture leads and drive high conversions.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6" data-aos="zoom-in" data-aos-delay="550">
+                <div class="service-card service-card-highlight">
+                    <div class="service-icon-box service-icon-gradient"><i class="bi bi-whatsapp"></i></div>
+                    <h4 class="service-title">Bulk WhatsApp</h4>
+                    <p class="text-muted small mt-3 mb-0">Engage your audience directly on WhatsApp with intelligent automated broadcasting and support tools.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- Our Products Section -->
+<section id="products" class="section-products">
+    <div class="container">
+        <div class="text-center mb-2 pb-4" data-aos="fade-up">
+            <h2 class="display-6 fw-bold mb-3">Our Premium <span class="text-primary-custom">Products</span></h2>
+            <p class="text-muted lead mx-auto max-w-800">
+                Explore our wide range of ready-to-deploy, highly customizable software solutions engineered for performance and scalability.
+            </p>
+        </div>
+        
+        <div class="row g-4 justify-content-center">
+            <!-- 1. Binary MLM Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_binary_mlm_1779466652202.png" alt="Binary MLM Software">
+                    <h5>Binary MLM Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Binary MLM Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 2. Matrix MLM Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_matrix_mlm_1779466667929.png" alt="Matrix MLM Software">
+                    <h5>Matrix MLM Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Matrix MLM Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 3. Unilevel MLM Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_unilevel_mlm_1779466686284.png" alt="Unilevel MLM Software">
+                    <h5>Unilevel MLM Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Unilevel MLM Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 4. Generation MLM Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_generation_mlm_1779466701996.png" alt="Generation MLM Software">
+                    <h5>Generation MLM Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Generation MLM Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 5. Trading Based MLM Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_trading_mlm_1779466719764.png" alt="Trading Based MLM Software">
+                    <h5>Trading Based MLM Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Trading Based MLM Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 6. ROI Based MLM Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_roi_mlm_1779466745351.png" alt="ROI Based MLM Software">
+                    <h5>ROI Based MLM Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="ROI Based MLM Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 7. Centralized MLM Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_centralized_mlm_1779466762518.png" alt="Centralized MLM Software">
+                    <h5>Centralized MLM Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Centralized MLM Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 8. De-Centralized MLM Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_decentralized_mlm_1779466781243.png" alt="De-Centralized MLM Software">
+                    <h5>De-Centralized MLM Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="De-Centralized MLM Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 9. Token Based MLM Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_token_mlm_1779466795911.png" alt="Token Based MLM Software">
+                    <h5>Token Based MLM Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Token Based MLM Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 10. Product Based MLM Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_product_mlm_1779466812039.png" alt="Product Based MLM Software">
+                    <h5>Product Based MLM Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Product Based MLM Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 11. Ecommerce + MLM Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_ecommerce_mlm_1779466835747.png" alt="Ecommerce + MLM Software">
+                    <h5>Ecommerce + MLM Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Ecommerce + MLM Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 12. School Management Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_school_mgmt_1779466851271.png" alt="School Management Software">
+                    <h5>School Management Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="School Management Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 13. Hospital Management Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_hospital_mgmt_1779466867609.png" alt="Hospital Management Software">
+                    <h5>Hospital Management Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Hospital Management Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 14. OPD + IPD Billing Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_opd_billing_1779466887002.png" alt="OPD + IPD Billing Software">
+                    <h5>OPD + IPD Billing Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="OPD + IPD Billing Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 15. CRM Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_crm_software_1779466902348.png" alt="CRM Software">
+                    <h5>CRM Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="CRM Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 16. Billing Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_billing_software_1779466924528.png" alt="Billing Software">
+                    <h5>Billing Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Billing Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 17. Website Development -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/icon_website_dev_1779466950386.png" alt="Website Development">
+                    <h5>Website Development</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Website Development">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 18. Library Management Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/industries/ind_education_1779436447854.png" alt="Library Management Software">
+                    <h5>Library Management Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Library Management Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 19. Microfinance Management Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/industries/ind_crowdfunding_1779436491438.png" alt="Microfinance Management Software">
+                    <h5>Microfinance Management Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Microfinance Management Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 20. Multi Recharge Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/industries/ind_telecom_1779436464801.png" alt="Multi Recharge Software">
+                    <h5>Multi Recharge Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Multi Recharge Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 21. Credit Cooperative Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/prod_billing_1779438757384.png" alt="Credit Cooperative Software">
+                    <h5>Credit Cooperative Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Credit Cooperative Software">Book a Demo</button>
+                </div>
+            </div>
+            <!-- 22. Real Estate Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/products/prod_real_estate_1779438791205.png" alt="Real Estate Software">
+                    <h5>Real Estate Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Real Estate Software">Book a Demo</button>
+                </div>
+            </div>
+
+             <!-- 23. Crypto Based MLM Software -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up">
+                <div class="product-card-new">
+                    <img src="~/images/industries/ind_crypto_1779436432224.png" alt="Crypto Based MLM Software">
+                    <h5>Crypto Based MLM Software</h5>
+                    <button class="btn btn-outline-primary w-100 rounded-pill mt-auto" data-bs-toggle="modal" data-bs-target="#demoRequestModal" data-product="Crypto Based MLM Software">Book a Demo</button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</section>
+
+
+
+<!-- Industries Section -->
+<section id="industries" class="section-industries d-none">
     <div class="container">
         <div class="text-center mb-5 pb-4" data-aos="fade-up">
-            <h2 class="display-5 mb-3">Engineered for <span style="color: var(--primary-color)">Growth</span></h2>
-            <p class="text-muted lead max-w-2xl mx-auto">Everything you need to launch, manage, and scale your MLM enterprise.</p>
+            <h2 class="display-6 fw-bold mb-3">Industries We <span class="text-primary-custom">Serve</span></h2>
+            <p class="text-muted lead mx-auto max-w-800">
+                We have an adroit team of experts who offer diverse solutions for catering to the needs of different industries across the spectrum. We develop the best MLM software for diverse industries including.
+            </p>
         </div>
         
         <div class="row g-4">
-            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
-                <div class="feature-box">
-                    <div class="icon-wrapper">
-                        <i class="bi bi-diagram-3"></i>
-                    </div>
-                    <h4>Dynamic Genealogy</h4>
-                    <p class="text-muted mt-3 mb-0">Interactive visual trees for Binary, Matrix, Unilevel, and custom board plans. See your network structure in real-time.</p>
+            <!-- 1 -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="industry-card">
+                    <img src="~/images/industries/ind_ecommerce_1779436415918.png" alt="E-commerce">
+                    <h5 class="text-dark">E-commerce</h5>
                 </div>
             </div>
-            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
-                <div class="feature-box">
-                    <div class="icon-wrapper">
-                        <i class="bi bi-calculator"></i>
-                    </div>
-                    <h4>Automated Payouts</h4>
-                    <p class="text-muted mt-3 mb-0">Flawless commission calculations. Support for multiple currencies, tax deductions, and complex bonus structures.</p>
+            <!-- 2 -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="industry-card">
+                    <img src="~/images/industries/ind_crypto_1779436432224.png" alt="Crypto Based">
+                    <h5 class="text-dark">Crypto Based</h5>
                 </div>
             </div>
-            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
-                <div class="feature-box">
-                    <div class="icon-wrapper">
-                        <i class="bi bi-wallet2"></i>
-                    </div>
-                    <h4>Multi-currency E-Wallet</h4>
-                    <p class="text-muted mt-3 mb-0">Secure integrated wallet system. Let your users transfer funds, withdraw via crypto, bank transfer, or cards.</p>
+            <!-- 3 -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                <div class="industry-card">
+                    <img src="~/images/industries/ind_education_1779436447854.png" alt="Education">
+                    <h5 class="text-dark">Education</h5>
                 </div>
             </div>
-            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
-                <div class="feature-box">
-                    <div class="icon-wrapper">
-                        <i class="bi bi-cart3"></i>
-                    </div>
-                    <h4>E-commerce Ready</h4>
-                    <p class="text-muted mt-3 mb-0">Built-in shopping cart to sell physical or digital products integrated directly with the compensation engine.</p>
+            <!-- 4 -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                <div class="industry-card">
+                    <img src="~/images/industries/ind_telecom_1779436464801.png" alt="Telecom">
+                    <h5 class="text-dark">Telecom</h5>
                 </div>
             </div>
-            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="500">
-                <div class="feature-box">
-                    <div class="icon-wrapper">
-                        <i class="bi bi-shield-lock"></i>
-                    </div>
-                    <h4>Bank-Grade Security</h4>
-                    <p class="text-muted mt-3 mb-0">End-to-end encryption, regular audits, and advanced fraud detection systems to protect your business.</p>
+            <!-- 5 -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="industry-card">
+                    <img src="~/images/industries/ind_crowdfunding_1779436491438.png" alt="Crowd Funding Industry">
+                    <h5 class="text-dark">Crowd Funding</h5>
                 </div>
             </div>
-            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="600">
-                <div class="feature-box">
-                    <div class="icon-wrapper">
-                        <i class="bi bi-lightning-charge"></i>
-                    </div>
-                    <h4>High Performance</h4>
-                    <p class="text-muted mt-3 mb-0">Built on modern architecture guaranteeing 99.9% uptime even with millions of users hitting the system simultaneously.</p>
+            <!-- 6 -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="industry-card">
+                    <img src="~/images/industries/ind_travel_1779436504841.png" alt="Tour & Travel">
+                    <h5 class="text-dark">Tour & Travel</h5>
+                </div>
+            </div>
+            <!-- 7 -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                <div class="industry-card">
+                    <img src="~/images/industries/ind_mlm_1779436520164.png" alt="Multi Level Marketing Industry">
+                    <h5 class="text-dark">Multi Level Marketing</h5>
+                </div>
+            </div>
+            <!-- 8 -->
+            <div class="col-xl-3 col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                <div class="industry-card">
+                    <img src="~/images/industries/ind_other_1779436535674.png" alt="Other Sectors">
+                    <h5 class="text-dark">Other Sectors</h5>
                 </div>
             </div>
         </div>
@@ -147,54 +479,94 @@
 </section>
 
 <!-- Demo Section -->
-<section id="demo" style="background: var(--bg-dark); padding: 120px 0;">
-    <div class="container">
+<section id="demo" class="section-demo position-relative overflow-hidden">
+    <div class="demo-bg-shape shape-1"></div>
+    <div class="demo-bg-shape shape-2"></div>
+    <div class="container position-relative" style="z-index: 2;">
         <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <div class="glass-form-container" data-aos="zoom-in" style="background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));">
+            <div class="col-lg-11">
+                <div class="glass-form-custom p-4 p-md-5" data-aos="zoom-in">
                     <div class="row align-items-center">
-                        <div class="col-md-5 mb-5 mb-md-0 text-center text-md-start">
-                            <h2 class="mb-4">Ready to see it live?</h2>
-                            <p class="text-muted mb-4">Book a personalized 1-on-1 demo with our product specialists.</p>
+                        <div class="col-md-5 mb-5 mb-md-0 text-center text-md-start text-white pe-md-4">
+                            <h2 class="display-5 fw-bold mb-3">Ready to see it live?</h2>
+                            <p class="lead mb-5 opacity-75">Book a personalized 1-on-1 demo with our product specialists.</p>
                             
-                            <div class="d-flex align-items-center mb-3 text-start">
-                                <div class="icon-wrapper" style="width: 40px; height: 40px; font-size: 18px; margin-bottom: 0; margin-right: 15px;">
-                                    <i class="bi bi-check-lg"></i>
+                            <div class="demo-feature-list text-start">
+                                <div class="demo-feature-card mb-4" data-aos="fade-up" data-aos-delay="100">
+                                    <div class="demo-feature-icon">💻</div>
+                                    <div class="demo-feature-text">
+                                        <h5 class="mb-1 text-white fw-bold">Admin Panel Tour</h5>
+                                        <p class="mb-0 small">Get a complete walkthrough of our powerful dashboard.</p>
+                                    </div>
                                 </div>
-                                <div>Admin Panel Tour</div>
-                            </div>
-                            <div class="d-flex align-items-center mb-3 text-start">
-                                <div class="icon-wrapper" style="width: 40px; height: 40px; font-size: 18px; margin-bottom: 0; margin-right: 15px;">
-                                    <i class="bi bi-check-lg"></i>
+                                <div class="demo-feature-card mb-4" data-aos="fade-up" data-aos-delay="200">
+                                    <div class="demo-feature-icon">📈</div>
+                                    <div class="demo-feature-text">
+                                        <h5 class="mb-1 text-white fw-bold">Plan Simulation</h5>
+                                        <p class="mb-0 small">See live calculations of your compensation plans in action.</p>
+                                    </div>
                                 </div>
-                                <div>Plan Simulation</div>
-                            </div>
-                            <div class="d-flex align-items-center text-start">
-                                <div class="icon-wrapper" style="width: 40px; height: 40px; font-size: 18px; margin-bottom: 0; margin-right: 15px;">
-                                    <i class="bi bi-check-lg"></i>
+                                <div class="demo-feature-card" data-aos="fade-up" data-aos-delay="300">
+                                    <div class="demo-feature-icon">💬</div>
+                                    <div class="demo-feature-text">
+                                        <h5 class="mb-1 text-white fw-bold">Live Q&A Session</h5>
+                                        <p class="mb-0 small">Clear all your doubts directly with our product experts.</p>
+                                    </div>
                                 </div>
-                                <div>Q&A Session</div>
                             </div>
                         </div>
-                        <div class="col-md-7 border-start border-secondary ps-md-5" style="border-color: rgba(255,255,255,0.1) !important;">
+                        <div class="col-md-7 border-start border-secondary border-opacity-50 ps-md-5">
                             <form asp-action="SubmitDemoRequest" method="post">
                                 <div class="mb-3">
-                                    <label class="form-label text-white-50 small text-uppercase fw-bold">Full Name</label>
+                                    <label class="form-label text-muted small text-uppercase fw-bold">Full Name</label>
                                     <input type="text" class="form-control dark-input" name="Name" required>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label text-white-50 small text-uppercase fw-bold">Email</label>
+                                    <label class="form-label text-muted small text-uppercase fw-bold">Email</label>
                                     <input type="email" class="form-control dark-input" name="Email" required>
                                 </div>
-                                <div class="row mb-4">
+                                <div class="row mb-3">
                                     <div class="col-6">
-                                        <label class="form-label text-white-50 small text-uppercase fw-bold">Phone</label>
+                                        <label class="form-label text-muted small text-uppercase fw-bold">Phone</label>
                                         <input type="tel" class="form-control dark-input" name="Phone" required>
                                     </div>
                                     <div class="col-6">
-                                        <label class="form-label text-white-50 small text-uppercase fw-bold">Company</label>
+                                        <label class="form-label text-muted small text-uppercase fw-bold">Company</label>
                                         <input type="text" class="form-control dark-input" name="CompanyName" required>
                                     </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small text-uppercase fw-bold">Requirement</label>
+                                    <select class="form-control dark-input" name="Requirement" required>
+                                        <option value="" disabled selected>Select Your Requirement</option>
+                                        <option value="Binary MLM Software">Binary MLM Software</option>
+                                        <option value="Matrix MLM Software">Matrix MLM Software</option>
+                                        <option value="Unilevel MLM Software">Unilevel MLM Software</option>
+                                        <option value="Generation MLM Software">Generation MLM Software</option>
+                                        <option value="Trading Based MLM Software">Trading Based MLM Software</option>
+                                        <option value="ROI Based MLM Software">ROI Based MLM Software</option>
+                                        <option value="Centralized MLM Software">Centralized MLM Software</option>
+                                        <option value="De-Centralized MLM Software">De-Centralized MLM Software</option>
+                                        <option value="Token Based MLM Software">Token Based MLM Software</option>
+                                        <option value="Product Based MLM Software">Product Based MLM Software</option>
+                                        <option value="Ecommerce + MLM Software">Ecommerce + MLM Software</option>
+                                        <option value="School Management Software">School Management Software</option>
+                                        <option value="Hospital Management Software">Hospital Management Software</option>
+                                        <option value="OPD + IPD Billing Software">OPD + IPD Billing Software</option>
+                                        <option value="CRM Software">CRM Software</option>
+                                        <option value="Billing Software">Billing Software</option>
+                                        <option value="Website Development">Website Development</option>
+                                        <option value="Library Management Software">Library Management Software</option>
+                                        <option value="Microfinance Management Software">Microfinance Management Software</option>
+                                        <option value="Multi Recharge Software">Multi Recharge Software</option>
+                                        <option value="Credit Cooperative Software">Credit Cooperative Software</option>
+                                        <option value="Real Estate Software">Real Estate Software</option>
+                                        <option value="Crypto Based MLM Software">Crypto Based MLM Software</option>
+                                    </select>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label text-muted small text-uppercase fw-bold">Message</label>
+                                    <textarea class="form-control dark-input" name="Message" rows="2" placeholder="Tell us more about your needs..." required></textarea>
                                 </div>
                                 <button type="submit" class="btn btn-gradient w-100 py-3 rounded-3">Schedule Demo</button>
                             </form>
@@ -205,3 +577,8 @@
         </div>
     </div>
 </section>
+
+
+
+
+
