@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "jogvOeFQlns=",
+  "dgSpecHash": "Lq/QaTkEClg=",
   "success": true,
-  "projectFilePath": "C:\\Data\\Work\\Deepak\\Softflip\\landingpage\\SoftflipSolutions.csproj",
+  "projectFilePath": "c:\\Data\\Work\\Deepak\\Softflip\\landingpage\\SoftflipSolutions.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\dilee\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\dilee\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Data\\Work\\Deepak\\Softflip\\landingpage\\SoftflipSolutions.csproj": {}
+    "c:\\Data\\Work\\Deepak\\Softflip\\landingpage\\SoftflipSolutions.csproj": {}
   },
   "projects": {
-    "C:\\Data\\Work\\Deepak\\Softflip\\landingpage\\SoftflipSolutions.csproj": {
+    "c:\\Data\\Work\\Deepak\\Softflip\\landingpage\\SoftflipSolutions.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Data\\Work\\Deepak\\Softflip\\landingpage\\SoftflipSolutions.csproj",
+        "projectUniqueName": "c:\\Data\\Work\\Deepak\\Softflip\\landingpage\\SoftflipSolutions.csproj",
         "projectName": "SoftflipSolutions",
-        "projectPath": "C:\\Data\\Work\\Deepak\\Softflip\\landingpage\\SoftflipSolutions.csproj",
+        "projectPath": "c:\\Data\\Work\\Deepak\\Softflip\\landingpage\\SoftflipSolutions.csproj",
         "packagesPath": "C:\\Users\\dilee\\.nuget\\packages\\",
-        "outputPath": "C:\\Data\\Work\\Deepak\\Softflip\\landingpage\\obj\\",
+        "outputPath": "c:\\Data\\Work\\Deepak\\Softflip\\landingpage\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

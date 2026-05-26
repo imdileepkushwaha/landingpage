@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SoftflipSolutions")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f2258eb8ce7e8f5a9147a768d1763549d80f3706")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b8b3bb6f2b93290a3ee889529e49b862d63808ae")]
 [assembly: System.Reflection.AssemblyProductAttribute("SoftflipSolutions")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SoftflipSolutions")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

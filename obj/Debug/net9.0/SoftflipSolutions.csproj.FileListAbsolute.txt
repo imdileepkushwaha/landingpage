@@ -213,5 +213,5 @@ C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\refint\SoftflipSolutio
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\SoftflipSolutions.pdb
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\SoftflipSolutions.genruntimeconfig.cache
 C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\ref\SoftflipSolutions.dll
-C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\compressed\r6cks7xyei-n436w5vbrb.gz
-C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\compressed\rczz657t6y-qro8t8aco7.gz
+C:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\compressed\rczz657t6y-gz9anx420o.gz
+c:\Data\Work\Deepak\Softflip\landingpage\obj\Debug\net9.0\compressed\r6cks7xyei-g9k5ufgk6t.gz
