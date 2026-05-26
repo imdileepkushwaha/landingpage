@@ -1,0 +1,55 @@
+## Build output
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+publish/
+publish_*/
+[Pp]ublish/
+out/
+
+## Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+## .NET
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+*.DotNetUserSecrets
+
+## ASP.NET / environment-specific config
+appsettings.*.local.json
+secrets.json
+*.pfx
+*.key
+
+## OS / editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*~
+
+## Test / coverage
+[Tt]est[Rr]esult*/
+*.coverage
+*.coveragexml
+
+## Local database / backup dumps (keep schema scripts in repo if needed separately)
+db/*.bak
+db/*.mdf
+db/*.ldf
+
+## Cursor / local tooling
+.cursor/

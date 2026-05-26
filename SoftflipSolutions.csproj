@@ -4,7 +4,13 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**;publish/**;publish_*/**;out/**</DefaultItemExcludes>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+    <None Update="UpdateInlineCss.ps1;UpdateProducts.ps1;db\**\*" CopyToPublishDirectory="Never" CopyToOutputDirectory="Never" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
