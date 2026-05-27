@@ -132,48 +132,87 @@ function getPhoneValidationMessage(iti) {
     }
 }
 
+function initSinglePhoneInput(input) {
+    if (!input || input.dataset.itiInitialized === 'true' || typeof intlTelInput !== 'function') {
+        return;
+    }
+
+    const inModal = !!input.closest('#demoRequestModal');
+    const options = {
+        initialCountry: 'in',
+        separateDialCode: true,
+        nationalMode: true,
+        strictMode: true,
+        autoPlaceholder: 'aggressive',
+        preferredCountries: ['in', 'us', 'gb', 'ae', 'ca', 'au'],
+        utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@24.6.0/build/js/utils.js'
+    };
+
+    if (inModal) {
+        options.dropdownContainer = document.body;
+        options.useFullscreenPopup = true;
+    }
+
+    const iti = intlTelInput(input, options);
+
+    input.dataset.itiInitialized = 'true';
+    updatePhoneInputRules(input, iti);
+
+    input.addEventListener('countrychange', function () {
+        clearPhoneError(input);
+        input.value = '';
+        updatePhoneInputRules(input, iti);
+    });
+
+    input.addEventListener('input', function () {
+        sanitizePhoneInput(input);
+        clearPhoneError(input);
+    });
+
+    input.addEventListener('paste', function (event) {
+        event.preventDefault();
+        const pastedText = (event.clipboardData || window.clipboardData).getData('text') || '';
+        input.value = pastedText.replace(/\D/g, '');
+        sanitizePhoneInput(input);
+        clearPhoneError(input);
+    });
+}
+
 function initPhoneInputs() {
     if (typeof intlTelInput !== 'function') {
         return;
     }
 
     document.querySelectorAll('.phone-input').forEach(function (input) {
-        if (input.dataset.itiInitialized === 'true') {
+        if (input.closest('#demoRequestModal')) {
             return;
         }
 
-        const iti = intlTelInput(input, {
-            initialCountry: 'in',
-            separateDialCode: true,
-            nationalMode: true,
-            strictMode: true,
-            autoPlaceholder: 'aggressive',
-            preferredCountries: ['in', 'us', 'gb', 'ae', 'ca', 'au'],
-            utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@24.6.0/build/js/utils.js'
-        });
-
-        input.dataset.itiInitialized = 'true';
-        updatePhoneInputRules(input, iti);
-
-        input.addEventListener('countrychange', function () {
-            clearPhoneError(input);
-            input.value = '';
-            updatePhoneInputRules(input, iti);
-        });
-
-        input.addEventListener('input', function () {
-            sanitizePhoneInput(input);
-            clearPhoneError(input);
-        });
-
-        input.addEventListener('paste', function (event) {
-            event.preventDefault();
-            const pastedText = (event.clipboardData || window.clipboardData).getData('text') || '';
-            input.value = pastedText.replace(/\D/g, '');
-            sanitizePhoneInput(input);
-            clearPhoneError(input);
-        });
+        initSinglePhoneInput(input);
     });
+}
+
+function initModalPhoneInput() {
+    const demoModal = document.getElementById('demoRequestModal');
+    if (!demoModal || typeof intlTelInput !== 'function') {
+        return;
+    }
+
+    const input = demoModal.querySelector('.phone-input');
+    if (!input) {
+        return;
+    }
+
+    if (input.dataset.itiInitialized === 'true') {
+        const existing = intlTelInput.getInstance(input);
+        if (existing) {
+            existing.destroy();
+        }
+        input.dataset.itiInitialized = 'false';
+        input.removeAttribute('style');
+    }
+
+    initSinglePhoneInput(input);
 }
 
 function setFormSubmitting(form, isSubmitting) {
@@ -330,6 +369,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (demoModal) {
         demoModal.addEventListener('show.bs.modal', function () {
             refreshCaptchaField(demoModal.querySelector('[data-captcha-root="demo-modal"]'));
+        });
+
+        demoModal.addEventListener('shown.bs.modal', function () {
+            initModalPhoneInput();
         });
     }
 

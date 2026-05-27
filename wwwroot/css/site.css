@@ -938,8 +938,13 @@ textarea::placeholder {
   width: 100%;
 }
 
-.phone-field .iti--separate-dial-code .iti__tel-input {
-  padding-left: 92px !important;
+.phone-field .iti--separate-dial-code .iti__tel-input,
+.phone-field .iti--separate-dial-code .phone-input {
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  padding-right: 16px !important;
+  font-size: 16px;
+  line-height: 1.4;
 }
 
 .phone-field .iti__country-container {
@@ -975,6 +980,25 @@ textarea::placeholder {
 }
 
 .glass-form-custom .phone-field .phone-error {
+  color: #ffb4b4 !important;
+}
+
+#demoRequestModal .phone-field .iti {
+  width: 100%;
+}
+
+#demoRequestModal .phone-field .iti__selected-country {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+#demoRequestModal .phone-field .iti__dropdown-content,
+#demoRequestModal .phone-field .iti__country-list {
+  z-index: 2005;
+}
+
+#demoRequestModal .phone-field .phone-error {
   color: #ffb4b4 !important;
 }
 
