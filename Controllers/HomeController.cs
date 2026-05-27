@@ -51,17 +51,21 @@ public class HomeController : Controller
         }
 
         enquiry.Phone = normalizedPhone;
+        enquiry.Message ??= string.Empty;
+        enquiry.Status = "Pending";
+        enquiry.CreatedAt = DateTime.Now;
 
-        if (ModelState.IsValid)
+        ModelState.Clear();
+        if (!TryValidateModel(enquiry))
         {
-            _context.Enquiries.Add(enquiry);
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Thank you for your enquiry. We will contact you soon.";
-            TempData["SubmittedForm"] = "enquiry";
+            TempData["ErrorMessage"] = "Please fill all required fields correctly.";
             return RedirectToAction(nameof(Index));
         }
 
-        TempData["ErrorMessage"] = "Please fill all required fields correctly.";
+        _context.Enquiries.Add(enquiry);
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Thank you for your enquiry. We will contact you soon.";
+        TempData["SubmittedForm"] = "enquiry";
         return RedirectToAction(nameof(Index));
     }
 
@@ -82,17 +86,21 @@ public class HomeController : Controller
         }
 
         request.Phone = normalizedPhone;
+        request.Message ??= string.Empty;
+        request.Status = "Pending";
+        request.CreatedAt = DateTime.Now;
 
-        if (ModelState.IsValid)
+        ModelState.Clear();
+        if (!TryValidateModel(request))
         {
-            _context.DemoRequests.Add(request);
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Demo request submitted successfully.";
-            TempData["SubmittedForm"] = string.IsNullOrWhiteSpace(formSource) ? "demo-section" : formSource;
+            TempData["ErrorMessage"] = "Please fill all required fields correctly.";
             return RedirectToAction(nameof(Index));
         }
 
-        TempData["ErrorMessage"] = "Please fill all required fields correctly.";
+        _context.DemoRequests.Add(request);
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Demo request submitted successfully.";
+        TempData["SubmittedForm"] = string.IsNullOrWhiteSpace(formSource) ? "demo-section" : formSource;
         return RedirectToAction(nameof(Index));
     }
 

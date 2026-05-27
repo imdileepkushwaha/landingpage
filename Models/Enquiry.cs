@@ -17,11 +17,11 @@ public class Enquiry
     public string Email { get; set; }
 
     [Required]
-    [StringLength(20)]
+    [StringLength(25)]
     public string Phone { get; set; }
 
     [Required]
-    [StringLength(50)]
+    [StringLength(100)]
     public string Requirement { get; set; }
 
     public string Message { get; set; } = string.Empty;
