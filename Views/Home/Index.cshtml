@@ -6,7 +6,7 @@
 
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success alert-dismissible fade show m-4 shadow-lg border-0 rounded-4 alert-floating-success" role="alert">
+    <div class="alert alert-success alert-dismissible fade show m-4 shadow-lg border-0 rounded-4 alert-floating-success" role="alert" data-form-success="true" data-submitted-form="@(TempData["SubmittedForm"] ?? "")">
         <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
@@ -37,23 +37,20 @@
                     Empower your network marketing business with enterprise-grade architecture. Automate commissions, track genealogies in real-time, and scale globally without limits.
                 </p>
                 <div class="hero-cta-block mt-2">
-                    <a href="#demo" class="btn btn-gradient rounded-pill px-5 py-3 fs-5 glow-pulse hero-start-btn">
-                        Start Building <i class="bi bi-rocket-takeoff ms-2"></i>
-                    </a>
-
-                    <div class="hero-mobile-contact">
-                        <a href="https://wa.me/919696323296" target="_blank" rel="noopener noreferrer" class="hero-whatsapp-btn btn btn-outline-success rounded-circle d-flex align-items-center justify-content-center" aria-label="Chat on WhatsApp">
-                            <i class="bi bi-whatsapp fs-5"></i>
+                    <div class="hero-cta-row">
+                        <a href="#demo" class="btn btn-gradient rounded-pill hero-cta-btn hero-start-btn">
+                            Start Building <i class="bi bi-rocket-takeoff ms-2"></i>
                         </a>
-                        <a class="contact-pill" href="tel:+919696323296">
-                            <div class="icon-pulse-wrapper me-2">
-                                <i class="bi bi-telephone-fill"></i>
-                            </div>
-                            <div class="contact-text">
-                                <span class="small d-block text-muted hero-contact-label">Call Sales</span>
-                                <span class="fw-bold">+91 9696323296</span>
-                            </div>
-                        </a>
+                        <div class="hero-cta-contact-group">
+                            <a href="tel:+919696323296" class="btn rounded-pill hero-cta-btn hero-contact-btn">
+                                <i class="bi bi-telephone-fill hero-contact-icon"></i>
+                                <span class="hero-contact-label-desktop">Contact Us</span>
+                                <span class="hero-contact-label-mobile">+91 9696323296</span>
+                            </a>
+                            <a href="https://wa.me/919696323296" target="_blank" rel="noopener noreferrer" class="btn rounded-circle hero-cta-btn hero-whatsapp-btn d-inline-flex align-items-center justify-content-center" aria-label="Chat on WhatsApp">
+                                <i class="bi bi-whatsapp"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
                 
@@ -71,21 +68,20 @@
             </div>
             
             <div class="col-lg-5 offset-lg-1" data-aos="fade-left" data-aos-duration="1200" data-aos-delay="200">
-                <div class="glass-form-container floating-fast">
+                <div class="glass-form-container">
                     <div class="mb-4 text-center">
                         <h3 class="mb-2">Get a custom quote</h3>
                         <p class="text-muted small">Tell us about your requirements and our experts will reach out within hours.</p>
                     </div>
-                    <form asp-action="SubmitEnquiry" method="post">
+                    <form asp-action="SubmitEnquiry" method="post" class="lead-form" data-form-type="enquiry">
+                        @Html.AntiForgeryToken()
                         <div class="mb-3">
                             <input type="text" class="form-control dark-input" name="Name" placeholder="Your Name" required>
                         </div>
                         <div class="mb-3">
                             <input type="email" class="form-control dark-input" name="Email" placeholder="Work Email" required>
                         </div>
-                        <div class="mb-3">
-                            <input type="tel" class="form-control dark-input" name="Phone" placeholder="Phone Number" required>
-                        </div>
+                        @await Html.PartialAsync("_PhoneField")
                         <div class="mb-3">
                             <select class="form-control dark-input" name="Requirement" required>
                                 <option value="" disabled selected>Select Your Requirement</option>
@@ -115,8 +111,9 @@
                             </select>
                         </div>
                         <div class="mb-4">
-                            <textarea class="form-control dark-input" name="Message" rows="3" placeholder="What compensation plan do you need? (Binary, Matrix, etc.)" required></textarea>
+                            <textarea class="form-control dark-input" name="Message" rows="3" placeholder="What compensation plan do you need? (Binary, Matrix, etc.)"></textarea>
                         </div>
+                        @await Component.InvokeAsync("CaptchaField", new { prefix = "enquiry" })
                         <button type="submit" class="btn btn-gradient w-100 py-3 rounded-3">Request Pricing</button>
                     </form>
                 </div>
@@ -531,7 +528,9 @@
                             </div>
                         </div>
                         <div class="col-md-7 border-start border-secondary border-opacity-50 ps-md-5">
-                            <form asp-action="SubmitDemoRequest" method="post">
+                            <form asp-action="SubmitDemoRequest" method="post" class="lead-form" data-form-type="demo-section">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="FormSource" value="demo-section" />
                                 <div class="mb-3">
                                     <label class="form-label text-muted small text-uppercase fw-bold">Full Name</label>
                                     <input type="text" class="form-control dark-input" name="Name" required>
@@ -542,8 +541,15 @@
                                 </div>
                                 <div class="row mb-3">
                                     <div class="col-6">
-                                        <label class="form-label text-muted small text-uppercase fw-bold">Phone</label>
-                                        <input type="tel" class="form-control dark-input" name="Phone" required>
+                                @{
+                                    ViewData["ShowPhoneLabel"] = true;
+                                    ViewData["PhoneWrapperClass"] = "";
+                                }
+                                @await Html.PartialAsync("_PhoneField")
+                                @{
+                                    ViewData["ShowPhoneLabel"] = false;
+                                    ViewData["PhoneWrapperClass"] = "mb-3";
+                                }
                                     </div>
                                     <div class="col-6">
                                         <label class="form-label text-muted small text-uppercase fw-bold">Company</label>
@@ -581,8 +587,9 @@
                                 </div>
                                 <div class="mb-4">
                                     <label class="form-label text-muted small text-uppercase fw-bold">Message</label>
-                                    <textarea class="form-control dark-input" name="Message" rows="2" placeholder="Tell us more about your needs..." required></textarea>
+                                    <textarea class="form-control dark-input" name="Message" rows="2" placeholder="Tell us more about your needs..."></textarea>
                                 </div>
+                                @await Component.InvokeAsync("CaptchaField", new { prefix = "demo-section" })
                                 <button type="submit" class="btn btn-gradient w-100 py-3 rounded-3">Schedule Demo</button>
                             </form>
                         </div>

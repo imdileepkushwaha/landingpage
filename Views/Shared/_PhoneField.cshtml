@@ -1,0 +1,22 @@
+@{
+    var showLabel = ViewData["ShowPhoneLabel"] as bool? ?? false;
+    var label = ViewData["PhoneLabel"] as string ?? "Phone";
+    var placeholder = ViewData["PhonePlaceholder"] as string ?? "Phone Number";
+    var wrapperClass = ViewData["PhoneWrapperClass"] as string ?? "mb-3";
+}
+
+<div class="phone-field @wrapperClass">
+    @if (showLabel)
+    {
+        <label class="form-label text-muted small text-uppercase fw-bold">@label</label>
+    }
+    <input type="tel"
+           class="form-control dark-input phone-input"
+           name="Phone"
+           placeholder="@placeholder"
+           required
+           autocomplete="tel"
+           inputmode="numeric"
+           pattern="[0-9]*">
+    <div class="phone-error text-danger small mt-1 d-none"></div>
+</div>

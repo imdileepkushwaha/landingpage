@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.6.0/build/css/intlTelInput.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
@@ -107,16 +108,16 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <form asp-action="SubmitDemoRequest" method="post">
+                    <form asp-action="SubmitDemoRequest" method="post" class="lead-form" data-form-type="demo-modal">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="FormSource" value="demo-modal" />
                         <div class="mb-3">
                             <input type="text" class="form-control dark-input" name="Name" placeholder="Your Name" required>
                         </div>
                         <div class="mb-3">
                             <input type="email" class="form-control dark-input" name="Email" placeholder="Work Email" required>
                         </div>
-                        <div class="mb-3">
-                            <input type="tel" class="form-control dark-input" name="Phone" placeholder="Phone Number" required>
-                        </div>
+                        @await Html.PartialAsync("_PhoneField")
                         <div class="mb-3">
                             <input type="text" class="form-control dark-input" name="CompanyName" placeholder="Company Name" required>
                         </div>
@@ -149,8 +150,9 @@
                             </select>
                         </div>
                         <div class="mb-4">
-                            <textarea class="form-control dark-input" name="Message" rows="3" placeholder="Tell us more about your needs..." required></textarea>
+                            <textarea class="form-control dark-input" name="Message" rows="3" placeholder="Tell us more about your needs..."></textarea>
                         </div>
+                        @await Component.InvokeAsync("CaptchaField", new { prefix = "demo-modal" })
                         <button type="submit" class="btn btn-gradient w-100 py-3 rounded-3">Submit Request</button>
                     </form>
                 </div>
@@ -160,6 +162,8 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.6.0/build/js/intlTelInput.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.6.0/build/js/utils.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>

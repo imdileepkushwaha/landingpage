@@ -1,0 +1,20 @@
+@model SoftflipSolutions.Models.CaptchaFieldViewModel
+
+<div class="captcha-field mb-3" data-captcha-root="@Model.Prefix">
+    <div class="captcha-row">
+        <span class="captcha-question" data-captcha-question>@Model.Challenge.Question</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary captcha-refresh-btn" title="New captcha" aria-label="Refresh captcha">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+        <input type="hidden" name="CaptchaToken" value="@Model.Challenge.Token" data-captcha-token />
+        <input type="number"
+               class="form-control dark-input captcha-answer-input"
+               name="CaptchaAnswer"
+               placeholder="Enter answer"
+               required
+               autocomplete="off"
+               inputmode="numeric"
+               aria-label="Captcha answer"
+               data-captcha-answer />
+    </div>
+</div>

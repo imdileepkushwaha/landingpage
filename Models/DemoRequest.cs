@@ -28,8 +28,7 @@ public class DemoRequest
     [StringLength(100)]
     public string Requirement { get; set; }
 
-    [Required]
-    public string Message { get; set; }
+    public string Message { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 

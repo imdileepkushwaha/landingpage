@@ -6,11 +6,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddMemoryCache();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddSingleton<ICaptchaService, CaptchaService>();
+builder.Services.AddSingleton<IPhoneValidationService, PhoneValidationService>();
 
 builder.Services.AddAuthentication("AdminCookie")
     .AddCookie("AdminCookie", options =>
