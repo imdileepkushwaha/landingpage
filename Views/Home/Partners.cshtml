@@ -1,0 +1,143 @@
+@model IEnumerable<SoftflipSolutions.Models.ChannelPartner>
+@{
+    ViewData["Title"] = "Channel Partners";
+    var partners = Model.ToList();
+    var cities = partners.Select(p => p.City).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().Count();
+}
+
+<section class="pf-hero">
+    <div class="pf-hero-bg" aria-hidden="true">
+        <div class="pf-hero-grid"></div>
+        <div class="pf-hero-glow pf-hero-glow-a"></div>
+        <div class="pf-hero-glow pf-hero-glow-b"></div>
+        <svg class="pf-hero-network" viewBox="0 0 1200 640" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g class="pf-net-lines">
+                <path d="M120 420 C280 280, 420 520, 580 340 S880 180, 1080 300" />
+                <path d="M80 220 C260 160, 400 360, 620 240 S900 420, 1120 260" />
+                <path d="M200 520 C360 440, 520 560, 700 460 S980 500, 1140 420" />
+            </g>
+            <g class="pf-net-nodes">
+                <circle cx="120" cy="420" r="6" /><circle cx="280" cy="300" r="4" />
+                <circle cx="580" cy="340" r="7" /><circle cx="880" cy="220" r="5" />
+                <circle cx="1080" cy="300" r="6" /><circle cx="200" cy="220" r="5" />
+                <circle cx="620" cy="240" r="4" /><circle cx="900" cy="380" r="6" />
+                <circle cx="700" cy="460" r="5" /><circle cx="1140" cy="420" r="4" />
+            </g>
+        </svg>
+    </div>
+
+    <div class="container pf-hero-content">
+        <div class="pf-hero-copy" data-aos="fade-up" data-aos-duration="900">
+            <img src="~/images/sf-logo.png" alt="SoftflipSolutions" class="pf-hero-logo" />
+            <p class="pf-hero-brand">Softflip Solutions</p>
+            <h1 class="pf-hero-title">Authorized partners across India</h1>
+            <p class="pf-hero-lead">Local experts who help businesses choose, deploy, and grow with Softflip software.</p>
+            <div class="pf-hero-actions">
+                <a href="#partner-directory" class="btn btn-gradient rounded-pill px-4 py-2">
+                    Meet partners <i class="bi bi-arrow-down ms-1"></i>
+                </a>
+                <a href="https://wa.me/919696323296?text=Hi%2C%20I%20want%20to%20become%20a%20Softflip%20channel%20partner" target="_blank" rel="noopener noreferrer" class="btn pf-hero-outline rounded-pill px-4 py-2">
+                    Become a partner
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="pf-directory" id="partner-directory">
+    <div class="container">
+        <div class="pf-directory-head" data-aos="fade-up">
+            <div>
+                <h2>Partner directory</h2>
+                <p>Reach an authorized Softflip channel partner near you.</p>
+            </div>
+            @if (partners.Any())
+            {
+                <div class="pf-directory-meta">
+                    <span><strong>@partners.Count</strong> partners</span>
+                    @if (cities > 0)
+                    {
+                        <span><strong>@cities</strong> cities</span>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (partners.Any())
+        {
+            <div class="pf-list">
+                @for (var i = 0; i < partners.Count; i++)
+                {
+                    var p = partners[i];
+                    var initial = string.IsNullOrEmpty(p.CompanyName) ? "?" : p.CompanyName.Substring(0, 1).ToUpper();
+                    <article class="pf-item" data-aos="fade-up" data-aos-delay="@(Math.Min(i * 60, 240))">
+                        <div class="pf-item-brand">
+                            <div class="pf-item-logo">
+                                @if (!string.IsNullOrWhiteSpace(p.LogoPath))
+                                {
+                                    <img src="@p.LogoPath" alt="@p.CompanyName" />
+                                }
+                                else
+                                {
+                                    <span>@initial</span>
+                                }
+                            </div>
+                            <div class="pf-item-copy">
+                                <h3>@p.CompanyName</h3>
+                                <p>
+                                    <i class="bi bi-geo-alt"></i> @p.LocationLabel
+                                    <span class="pf-sep">·</span>
+                                    <i class="bi bi-person"></i> @p.OwnerName
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="pf-item-contact">
+                            @if (!string.IsNullOrWhiteSpace(p.Gstin))
+                            {
+                                <span class="pf-gst"><i class="bi bi-receipt"></i> @p.Gstin</span>
+                            }
+                            <a href="tel:@p.Mobile" class="pf-contact-link">
+                                <i class="bi bi-telephone"></i> @p.Mobile
+                            </a>
+                            <a href="mailto:@p.Email" class="pf-contact-link">
+                                <i class="bi bi-envelope"></i> @p.Email
+                            </a>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="pf-empty" data-aos="fade-up">
+                <div class="pf-empty-ico"><i class="bi bi-handshake"></i></div>
+                <h3>Partners coming soon</h3>
+                <p>Our channel partner network is growing. Want to join first?</p>
+                <a href="https://wa.me/919696323296?text=Hi%2C%20I%20want%20to%20become%20a%20Softflip%20channel%20partner" target="_blank" rel="noopener noreferrer" class="btn btn-gradient rounded-pill px-4">
+                    Talk to Softflip
+                </a>
+            </div>
+        }
+    </div>
+</section>
+
+<section class="pf-cta">
+    <div class="container">
+        <div class="pf-cta-inner" data-aos="fade-up">
+            <div class="pf-cta-copy">
+                <p class="pf-cta-brand">Softflip Solutions</p>
+                <h2>Grow with us as a channel partner</h2>
+                <p>List your company, get a branded partner panel, and help clients adopt Softflip products in your region.</p>
+            </div>
+            <div class="pf-cta-actions">
+                <a href="https://wa.me/919696323296?text=Hi%2C%20I%20want%20to%20become%20a%20Softflip%20channel%20partner" target="_blank" rel="noopener noreferrer" class="btn btn-gradient rounded-pill px-4 py-2">
+                    Apply on WhatsApp
+                </a>
+                <a href="tel:+919696323296" class="btn pf-cta-outline rounded-pill px-4 py-2">
+                    Call +91 9696323296
+                </a>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,52 @@
+@model SoftflipSolutions.Models.ChannelPartner
+@{
+    var initial = string.IsNullOrEmpty(Model.CompanyName) ? "?" : Model.CompanyName[..1].ToUpper();
+    var website = Model.DisplayWebsite;
+}
+
+<div class="vcard-canvas">
+    <div class="vcard-top">
+        <div class="vcard-logo-wrap">
+            @if (!string.IsNullOrWhiteSpace(Model.LogoPath))
+            {
+                <img src="@Model.LogoPath" alt="Logo" />
+            }
+            else
+            {
+                <span class="vcard-logo-fallback">@initial</span>
+            }
+        </div>
+    </div>
+
+    <div class="vcard-divider"></div>
+
+    <div class="vcard-body">
+        <div class="vcard-name">@Model.OwnerName</div>
+        <div class="vcard-role">Owner</div>
+
+        <div class="vcard-contacts">
+            <div class="vcard-contact-row">
+                <span class="vcard-icon"><i class="bi bi-telephone-fill"></i></span>
+                <span class="vcard-contact-val">@Model.Mobile</span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(website))
+            {
+                <div class="vcard-contact-row">
+                    <span class="vcard-icon"><i class="bi bi-link-45deg"></i></span>
+                    <span class="vcard-contact-val">@website</span>
+                </div>
+            }
+            else if (!string.IsNullOrWhiteSpace(Model.Email))
+            {
+                <div class="vcard-contact-row">
+                    <span class="vcard-icon"><i class="bi bi-envelope-fill"></i></span>
+                    <span class="vcard-contact-val">@Model.Email</span>
+                </div>
+            }
+            <div class="vcard-contact-row">
+                <span class="vcard-icon"><i class="bi bi-geo-alt-fill"></i></span>
+                <span class="vcard-contact-val">@Model.FullAddress</span>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,65 @@
+@model IEnumerable<SoftflipSolutions.Models.PartnerClient>
+@{
+    ViewData["Title"] = "Partner Clients";
+    Layout = "_AdminLayout";
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <h5 class="mb-1 text-white">Partner Clients</h5>
+        <p class="mb-0 small text-muted">Clients added by channel partners — each row shows the partner name</p>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th>Contact</th>
+                    <th>Requirement</th>
+                    <th>Budget</th>
+                    <th>Partner</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    <tr>
+                        <td class="text-muted small">@c.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td>
+                            <div class="fw-bold">@c.Name</div>
+                            @if (!string.IsNullOrWhiteSpace(c.Email))
+                            {
+                                <div class="small text-muted">@c.Email</div>
+                            }
+                        </td>
+                        <td>
+                            <div class="small">@c.Mobile</div>
+                            @if (!string.IsNullOrWhiteSpace(c.WhatsApp))
+                            {
+                                <div class="small text-muted"><i class="bi bi-whatsapp"></i> @c.WhatsApp</div>
+                            }
+                        </td>
+                        <td class="small text-muted text-truncate" style="max-width:200px" title="@c.Requirement">@c.Requirement</td>
+                        <td class="small">@(string.IsNullOrWhiteSpace(c.Budget) ? "—" : c.Budget)</td>
+                        <td>
+                            <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-50">
+                                <i class="bi bi-handshake me-1"></i> via @(c.ChannelPartner?.CompanyName ?? "Partner")
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="PartnerClientDetails" asp-route-id="@c.Id" class="btn btn-icon-action" title="View"><i class="bi bi-eye"></i></a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">No partner clients yet.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

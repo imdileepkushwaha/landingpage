@@ -4,145 +4,9 @@
     Layout = "_AdminLayout";
 }
 
-<style>
-    .detail-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    }
-    
-    .detail-header {
-        background: linear-gradient(135deg, rgba(113, 181, 0, 0.2) 0%, rgba(4, 142, 231, 0.2) 100%);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 16px 16px 0 0;
-        padding: 1.5rem;
-    }
-    
-    .timeline {
-        border-left: 2px solid rgba(113, 181, 0, 0.3);
-        padding-left: 20px;
-        margin-left: 10px;
-        position: relative;
-    }
-    
-    .timeline-item {
-        margin-bottom: 25px;
-        position: relative;
-    }
-    
-    .timeline-item::before {
-        content: '';
-        position: absolute;
-        width: 14px;
-        height: 14px;
-        background: #048EE7;
-        border: 3px solid #1a1e29;
-        border-radius: 50%;
-        left: -28px;
-        top: 5px;
-        box-shadow: 0 0 10px rgba(4, 142, 231, 0.5);
-    }
-    
-    .timeline-item.post-confirmation::before {
-        background: #20c997;
-        box-shadow: 0 0 10px rgba(32, 201, 151, 0.5);
-    }
-    
-    .note-box {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        padding: 15px;
-    }
 
-    .info-label {
-        color: #8b9bb4;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 4px;
-        font-weight: 600;
-    }
-    
-    .info-value {
-        font-size: 1.05rem;
-        font-weight: 500;
-        color: #fff;
-        margin-bottom: 1.2rem;
-    }
-
-    .btn-gradient-success {
-        background: linear-gradient(90deg, #71B500, #96e300);
-        color: white;
-        border: none;
-        box-shadow: 0 4px 15px rgba(113, 181, 0, 0.4);
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .btn-gradient-success:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(113, 181, 0, 0.6);
-        color: white;
-    }
-
-    .custom-textarea {
-        background: rgba(0, 0, 0, 0.25) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: #fff !important;
-        border-radius: 12px;
-        box-shadow: inset 0 2px 6px rgba(0,0,0,0.2);
-        transition: all 0.3s ease;
-        resize: vertical;
-    }
-    
-    .custom-textarea:focus {
-        background: rgba(0, 0, 0, 0.4) !important;
-        border-color: #71B500 !important;
-        box-shadow: 0 0 0 4px rgba(113, 181, 0, 0.15), inset 0 2px 6px rgba(0,0,0,0.2) !important;
-    }
-    
-    .custom-textarea::placeholder {
-        color: rgba(255, 255, 255, 0.3);
-    }
-
-    .modal-glass {
-        background: rgba(20, 24, 35, 0.8) !important;
-        backdrop-filter: blur(25px);
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-    }
-    
-    .modal-input {
-        background: rgba(255, 255, 255, 0.05) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        color: #fff !important;
-        transition: all 0.3s;
-    }
-    
-    .modal-input:focus {
-        background: rgba(255, 255, 255, 0.08) !important;
-        border-color: #71B500 !important;
-        box-shadow: 0 0 0 4px rgba(113, 181, 0, 0.15) !important;
-    }
-    
-    .email-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.9rem;
-        font-weight: bold;
-    }
-</style>
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-white mb-0">Demo Request Overview</h2>
-    <div>
-        <a asp-action="DemoRequests" class="btn btn-outline-secondary rounded-pill px-4"><i class="bi bi-arrow-left me-2"></i>Back to List</a>
-    </div>
+<div class="d-flex justify-content-end align-items-center mb-4">
+    <a asp-action="DemoRequests" class="btn btn-outline-secondary rounded-pill px-4"><i class="bi bi-arrow-left me-2"></i>Back to List</a>
 </div>
 
 <div class="row g-4">
@@ -312,7 +176,7 @@
                 <button type="button" class="btn-close btn-close-white opacity-75" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <div class="modal-body p-4 p-md-5">
+            <div class="modal-body p-4">
                 <input type="hidden" name="returnUrl" value="/Admin/DemoRequestDetails/@Model.Id" />
                 <div class="row mb-4 align-items-center">
                         <label class="col-sm-2 col-form-label text-muted fw-medium">To:</label>
@@ -350,7 +214,7 @@ SoftflipSolutions Team
                 </div>
             </div>
 
-            <div class="modal-footer border-top border-secondary border-opacity-25 p-4" style="background: rgba(0,0,0,0.2); border-radius: 0 0 24px 24px;">
+            <div class="modal-footer border-top border-secondary border-opacity-25 p-3" style="background: rgb(191 191 191 / 20%); border-radius: 0 0 24px 24px;">
                 <button type="button" class="btn text-white-50 border-0 me-3 shadow-none hover-white" data-bs-dismiss="modal">Discard</button>
                 <button type="submit" class="btn btn-gradient-success rounded-pill px-5 py-2 fw-bold shadow-lg">
                     <i class="bi bi-send-fill me-2"></i> Send Message

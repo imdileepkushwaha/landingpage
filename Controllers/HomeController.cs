@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SoftflipSolutions.Models;
 using SoftflipSolutions.Data;
 using SoftflipSolutions.Services;
@@ -102,6 +103,17 @@ public class HomeController : Controller
         TempData["SuccessMessage"] = "Demo request submitted successfully.";
         TempData["SubmittedForm"] = string.IsNullOrWhiteSpace(formSource) ? "demo-section" : formSource;
         return RedirectToAction(nameof(Index));
+    }
+
+    public async Task<IActionResult> Partners()
+    {
+        ViewData["Title"] = "Channel Partners";
+        ViewData["MetaDescription"] = "Meet Softflip Solutions authorized channel partners across India.";
+        var partners = await _context.ChannelPartners
+            .Where(p => p.IsActive)
+            .OrderBy(p => p.CompanyName)
+            .ToListAsync();
+        return View(partners);
     }
 
     public IActionResult Privacy()

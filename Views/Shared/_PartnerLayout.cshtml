@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Softflip Partner</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/partner-panel.css" asp-append-version="true" />
+</head>
+@{
+    var partner = ViewBag.Partner as SoftflipSolutions.Models.ChannelPartner;
+    var action = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
+    var company = partner?.CompanyName ?? "Partner";
+    var owner = partner?.OwnerName ?? company;
+    var avatarUrl = string.IsNullOrWhiteSpace(partner?.LogoPath)
+        ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(company)}&background=cceef9&color=0077a3&bold=true&size=72"
+        : partner!.LogoPath;
+}
+<body class="partner-body">
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+    <aside class="sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <a class="header-brand" asp-action="Index" asp-controller="Partner">
+                <div class="logo-icon-wrapper partner-logo-wrap">
+                    @if (!string.IsNullOrWhiteSpace(partner?.LogoPath))
+                    {
+                        <img src="@partner.LogoPath" alt="@company" />
+                    }
+                    else
+                    {
+                        <img src="~/admin/img/softflip-logo.png" alt="Softflip" />
+                    }
+                </div>
+                <div class="logo-text-admin">Soft<span>flip</span></div>
+            </a>
+            <button type="button" class="header-toggle d-none d-lg-inline-flex" onclick="toggleSidebar()" aria-label="Collapse sidebar">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        </div>
+        <div class="nav-menu">
+            <div class="nav-section-title">Partner</div>
+            <a class="nav-link @(action == "Index" ? "active" : "")" asp-action="Index" asp-controller="Partner">
+                <i class="bi bi-grid"></i> Dashboard
+            </a>
+
+            <div class="nav-section-title">Clients</div>
+            <a class="nav-link @(new[] { "Clients", "ClientDetails" }.Contains(action) ? "active" : "")" asp-action="Clients" asp-controller="Partner">
+                <i class="bi bi-people"></i> My Clients
+            </a>
+            <a class="nav-link @(action == "AddClient" ? "active" : "")" asp-action="AddClient" asp-controller="Partner">
+                <i class="bi bi-person-plus"></i> Add Client
+            </a>
+
+            <div class="nav-section-title">Catalog</div>
+            <a class="nav-link @(new[] { "Services" }.Contains(action) ? "active" : "")" asp-action="Services" asp-controller="Partner">
+                <i class="bi bi-box-seam"></i> Services
+            </a>
+            <a class="nav-link @(action == "VisitingCard" ? "active" : "")" asp-action="VisitingCard" asp-controller="Partner">
+                <i class="bi bi-person-vcard"></i> Visiting Card
+            </a>
+
+            <div class="nav-section-title">Website</div>
+            <a class="nav-link" href="/Home/Partners" target="_blank" rel="noopener">
+                <i class="bi bi-globe2"></i> Public listing
+            </a>
+        </div>
+        <div class="sidebar-footer">
+            <a asp-action="Logout" asp-controller="Partner" class="sidebar-logout" title="Sign out">
+                <span class="sidebar-logout-ico"><i class="bi bi-box-arrow-right"></i></span>
+                <span class="sidebar-logout-text">
+                    <strong>Sign out</strong>
+                    <small>End partner session</small>
+                </span>
+            </a>
+        </div>
+    </aside>
+
+    <div class="main-content">
+        <header class="top-header">
+            <button type="button" class="header-toggle mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+                <i class="bi bi-list"></i>
+            </button>
+
+            <div class="header-search">
+                <input type="search" id="headerSearch" placeholder="Search clients…" aria-label="Search" />
+                <span class="search-kbd" aria-hidden="true">⌘</span>
+            </div>
+
+            <div class="header-actions">
+                <button type="button" class="header-icon-btn" title="Fullscreen" onclick="toggleFullscreen()">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                </button>
+                <span class="header-divider" aria-hidden="true"></span>
+                <div class="header-dropdown user-profile" data-panel="account">
+                    <button type="button" class="user-avatar-btn header-menu-trigger" id="btnUserMenu" title="Account" aria-expanded="false" aria-controls="panelUserMenu">
+                        <span class="user-avatar-wrap">
+                            <img src="@avatarUrl" alt="@company">
+                            <span class="status-dot"></span>
+                        </span>
+                    </button>
+                    <div class="header-panel user-menu-panel" id="panelUserMenu" hidden>
+                        <div class="user-menu-head">
+                            <img src="@avatarUrl" alt="">
+                            <div>
+                                <strong>@owner</strong>
+                                <small>@company · Channel Partner</small>
+                            </div>
+                        </div>
+                        <div class="user-menu-list">
+                            <a class="user-menu-item" asp-action="Index" asp-controller="Partner">
+                                <i class="bi bi-grid"></i> Dashboard
+                            </a>
+                            <a class="user-menu-item" asp-action="Clients" asp-controller="Partner">
+                                <i class="bi bi-people"></i> My Clients
+                            </a>
+                            <a class="user-menu-item" asp-action="AddClient" asp-controller="Partner">
+                                <i class="bi bi-person-plus"></i> Add Client
+                            </a>
+                        </div>
+                        <div class="user-menu-foot">
+                            <a class="user-menu-item danger" asp-action="Logout" asp-controller="Partner">
+                                <i class="bi bi-box-arrow-right"></i> Sign out
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content-body">
+            @if (action != "Index")
+            {
+                <partial name="_PageHero" />
+            }
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success deal-alert alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger deal-alert alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @RenderBody()
+        </main>
+
+        <footer class="partner-footer">
+            <div>Copyright &copy; @DateTime.Now.Year <span class="brand-accent">Softflip</span> · Partner Panel</div>
+            <div>
+                <a href="/Home/Partners" target="_blank" rel="noopener">Partners page</a>
+                <a asp-action="Logout" asp-controller="Partner">Sign out</a>
+            </div>
+        </footer>
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-collapsed');
+            document.getElementById('adminSidebar').classList.toggle('show');
+            document.getElementById('sidebarBackdrop').classList.toggle('show');
+        }
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen?.();
+            } else {
+                document.exitFullscreen?.();
+            }
+        }
+
+        (function initHeaderMenus() {
+            const closeAll = () => {
+                document.querySelectorAll('.header-panel').forEach(p => { p.hidden = true; });
+                document.querySelectorAll('.header-menu-trigger[aria-expanded]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+            };
+
+            document.querySelectorAll('.header-dropdown').forEach(drop => {
+                const btn = drop.querySelector('.header-menu-trigger');
+                const panel = drop.querySelector('.header-panel');
+                if (!btn || !panel) return;
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const open = panel.hidden;
+                    closeAll();
+                    if (open) {
+                        panel.hidden = false;
+                        btn.setAttribute('aria-expanded', 'true');
+                    }
+                });
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.header-dropdown')) closeAll();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeAll();
+            });
+        })();
+
+        (function initPartnerSearch() {
+            const input = document.getElementById('headerSearch');
+            if (!input) return;
+            input.addEventListener('input', () => {
+                const q = (input.value || '').trim().toLowerCase();
+                document.querySelectorAll('[data-partner-search-row]').forEach(row => {
+                    const hay = (row.getAttribute('data-partner-search') || '').toLowerCase();
+                    row.style.display = !q || hay.includes(q) ? '' : 'none';
+                });
+            });
+        })();
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

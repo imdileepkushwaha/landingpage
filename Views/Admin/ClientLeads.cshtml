@@ -1,0 +1,90 @@
+@model IEnumerable<SoftflipSolutions.Models.ClientLead>
+@{
+    ViewData["Title"] = "External Client Leads";
+    Layout = "_AdminLayout";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success bg-success bg-opacity-25 text-success border-success border-opacity-50 alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-3 admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <div>
+            <h5 class="mb-1 text-white">Pending External Leads</h5>
+            <p class="mb-0 small text-muted">WhatsApp, Just Dial, IndiaMART &amp; other sources</p>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-primary bg-opacity-25 text-info border border-primary border-opacity-50 px-3 py-2 rounded-pill">Total: @Model.Count()</span>
+            <a asp-action="AddClientLead" class="btn btn-sm btn-info rounded-pill px-3 fw-semibold">
+                <i class="bi bi-plus-lg me-1"></i> Add Client
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Client Name</th>
+                    <th>Mobile / WhatsApp</th>
+                    <th>Source</th>
+                    <th>Requirement</th>
+                    <th>Budget</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="text-muted small">
+                            <i class="bi bi-clock me-1"></i> @item.CreatedAt.ToString("MMM dd, yyyy HH:mm")
+                        </td>
+                        <td>
+                            <div class="fw-bold">@item.Name</div>
+                            @if (!string.IsNullOrWhiteSpace(item.Email))
+                            {
+                                <div class="small text-muted">@item.Email</div>
+                            }
+                        </td>
+                        <td>
+                            <a href="https://wa.me/@item.Mobile.Replace("+", "").Replace(" ", "").Replace("-", "")" target="_blank" class="text-info text-decoration-none small">
+                                <i class="bi bi-whatsapp me-1"></i> @item.Mobile
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-50">@item.Source</span>
+                        </td>
+                        <td class="admin-msg-col">
+                            <div class="text-truncate text-muted small" style="max-width: 220px;" title="@item.Requirement">
+                                @item.Requirement
+                            </div>
+                        </td>
+                        <td class="small text-white-50">@(string.IsNullOrWhiteSpace(item.Budget) ? "—" : item.Budget)</td>
+                        <td class="text-end">
+                            <a asp-action="ClientLeadDetails" asp-route-id="@item.Id" class="btn btn-icon-action" title="View"><i class="bi bi-eye"></i></a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="text-muted mb-2"><i class="bi bi-people fs-1"></i></div>
+                            <h6>No external leads yet</h6>
+                            <p class="small mb-3">Add clients from WhatsApp, Just Dial, IndiaMART or any other source.</p>
+                            <a asp-action="AddClientLead" class="btn btn-info rounded-pill px-4">
+                                <i class="bi bi-plus-lg me-1"></i> Add First Client
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

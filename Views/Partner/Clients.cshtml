@@ -1,0 +1,83 @@
+@model IEnumerable<SoftflipSolutions.Models.PartnerClient>
+@{
+    ViewData["Title"] = "My Clients";
+    Layout = "_PartnerLayout";
+    var list = Model.ToList();
+}
+
+<div class="page-toolbar">
+    <h2>My Clients</h2>
+    <div class="toolbar-actions">
+        <span class="toolbar-chip">
+            <i class="bi bi-people"></i>
+            @list.Count total
+        </span>
+        <a asp-action="AddClient" class="btn btn-crm-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Add client
+        </a>
+    </div>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="admin-table-header">
+        <h5><i class="bi bi-people me-2"></i>Client pipeline</h5>
+        <p class="mb-0 small text-muted">Clients interested in Softflip solutions through you</p>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Mobile / WhatsApp</th>
+                    <th>Requirement</th>
+                    <th>Budget</th>
+                    <th>Proposals</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in list)
+                {
+                    var initial = string.IsNullOrEmpty(c.Name) ? "?" : c.Name.Substring(0, 1).ToUpper();
+                    <tr data-partner-search-row data-partner-search="@c.Name @c.Mobile @c.WhatsApp @c.Email @c.Requirement @c.Budget">
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="partner-avatar-sm">@initial</span>
+                                <div>
+                                    <strong>@c.Name</strong>
+                                    @if (!string.IsNullOrWhiteSpace(c.Email))
+                                    {
+                                        <div class="small text-muted">@c.Email</div>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>@c.Mobile</div>
+                            <div class="small text-muted">@(c.WhatsApp ?? "—")</div>
+                        </td>
+                        <td class="small text-muted text-truncate" style="max-width:220px">@c.Requirement</td>
+                        <td>@(c.Budget ?? "—")</td>
+                        <td>
+                            <span class="badge bg-info">@(c.Proposals?.Count ?? 0)</span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="ClientDetails" asp-route-id="@c.Id" class="btn btn-icon-action" title="View">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+                @if (!list.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            No clients yet.
+                            <a asp-action="AddClient" class="ms-1">Add your first client</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

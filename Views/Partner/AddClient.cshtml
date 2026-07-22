@@ -1,0 +1,103 @@
+@model SoftflipSolutions.Models.PartnerClient
+@{
+    ViewData["Title"] = "Add Client";
+    Layout = "_PartnerLayout";
+}
+
+<div class="lead-detail-toolbar">
+    <a asp-action="Clients" class="btn btn-lead-back">
+        <i class="bi bi-arrow-left"></i> Back to clients
+    </a>
+</div>
+
+<div class="add-lead-layout">
+    <aside class="add-lead-aside">
+        <div class="add-lead-aside-card">
+            <div class="add-lead-aside-icon"><i class="bi bi-person-plus"></i></div>
+            <h5>New partner client</h5>
+            <p>Capture an interested client. You can generate a Softflip-branded proposal from their details page.</p>
+            <ul class="add-lead-tips">
+                <li><i class="bi bi-check2-circle"></i> WhatsApp can match mobile</li>
+                <li><i class="bi bi-check2-circle"></i> Email is optional</li>
+                <li><i class="bi bi-check2-circle"></i> Budget helps quote faster</li>
+            </ul>
+        </div>
+    </aside>
+
+    <div class="add-lead-main">
+        <form asp-action="AddClient" method="post" class="add-lead-form">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger deal-alert mb-3"></div>
+
+            <section class="add-lead-section">
+                <div class="add-lead-section-head">
+                    <span class="add-lead-step">1</span>
+                    <div>
+                        <h6>Contact details</h6>
+                        <p>Who is this client?</p>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="lead-info-label" asp-for="Name">Client name *</label>
+                        <div class="add-lead-field">
+                            <i class="bi bi-person"></i>
+                            <input asp-for="Name" class="form-control settings-input" placeholder="Full name" required autocomplete="name" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="lead-info-label" asp-for="Email">Email</label>
+                        <div class="add-lead-field">
+                            <i class="bi bi-envelope"></i>
+                            <input asp-for="Email" type="email" class="form-control settings-input" placeholder="Optional" autocomplete="email" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="lead-info-label" asp-for="Mobile">Mobile *</label>
+                        <div class="add-lead-field">
+                            <i class="bi bi-telephone"></i>
+                            <input asp-for="Mobile" class="form-control settings-input" placeholder="+91 98765 43210" required autocomplete="tel" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="lead-info-label" asp-for="WhatsApp">WhatsApp</label>
+                        <div class="add-lead-field">
+                            <i class="bi bi-whatsapp"></i>
+                            <input asp-for="WhatsApp" class="form-control settings-input" placeholder="Same as mobile if blank" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="add-lead-section">
+                <div class="add-lead-section-head">
+                    <span class="add-lead-step">2</span>
+                    <div>
+                        <h6>Requirement</h6>
+                        <p>What are they looking for?</p>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="lead-info-label" asp-for="Requirement">Requirement *</label>
+                        <textarea asp-for="Requirement" class="form-control settings-input" rows="4" required placeholder="e.g. Binary MLM software with e-commerce"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="lead-info-label" asp-for="Budget">Budget</label>
+                        <div class="add-lead-field">
+                            <i class="bi bi-currency-rupee"></i>
+                            <input asp-for="Budget" class="form-control settings-input" placeholder="e.g. 2-3 Lakh" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="settings-panel-actions">
+                <a asp-action="Clients" class="btn btn-lead-back">Cancel</a>
+                <button type="submit" class="btn btn-crm-primary">
+                    <i class="bi bi-check2-circle me-1"></i> Save client
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,56 +1,92 @@
 @{
-    ViewData["Title"] = "Admin Secure Login";
-    Layout = null; // No layout for login page
+    ViewData["Title"] = "Admin Login";
+    Layout = null;
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Login - SoftflipSolutions</title>
+    <title>Admin Login - Softflip Solutions</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="~/admin/css/admin-style.css" asp-append-version="true" />
 </head>
+<body class="auth-body">
+    <div class="auth-shell">
+        <aside class="auth-brand admin">
+            <div class="auth-brand-top">
+                <img src="~/admin/img/softflip-logo.png" alt="Softflip" class="auth-logo" />
+                <span>Softflip OS</span>
+            </div>
+            <div class="auth-brand-body">
+                <p class="auth-eyebrow">Admin access</p>
+                <h1>Run your CRM from one secure dashboard</h1>
+                <p class="auth-lead">Manage enquiries, deals, partners, and proposals with Softflip Solutions.</p>
+                <ul class="auth-points">
+                    <li><i class="bi bi-check2-circle"></i> Lead pipeline &amp; deal tracking</li>
+                    <li><i class="bi bi-check2-circle"></i> Proposals, invoices &amp; payments</li>
+                    <li><i class="bi bi-check2-circle"></i> Channel partner network</li>
+                </ul>
+            </div>
+            <div class="auth-brand-foot">© @DateTime.Now.Year Softflip Solutions</div>
+        </aside>
 
-<body class="admin-login-body">
-    <!-- <div class="softflip-brand d-none d-md-block">Softflip<span>Solutions</span></div> -->
-    <div class="login-card text-center">
-        <div class="login-icon">
-            <i class="bi bi-shield-lock-fill text-white"></i>
-        </div>
-        <h2 class="mb-2">Admin Portal</h2>
-        <p class="text-white-50 mb-4 small">Secure Access Dashboard</p>
-        
-        @if (ViewBag.Error != null)
-        {
-            <div class="alert alert-glass border-danger p-3 mb-4 text-start d-flex align-items-center">
-                <i class="bi bi-shield-x text-danger fs-4 me-3"></i>
-                <small class="text-white">@ViewBag.Error</small>
+        <main class="auth-panel">
+            <div class="auth-card">
+                <div class="auth-card-ico admin"><i class="bi bi-shield-lock-fill"></i></div>
+                <h2>Welcome back</h2>
+                <p class="auth-sub">Sign in to the admin portal</p>
+
+                @if (ViewBag.Error != null)
+                {
+                    <div class="auth-alert">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span>@ViewBag.Error</span>
+                    </div>
+                }
+
+                <form asp-action="Login" method="post" class="auth-form">
+                    <div class="auth-field">
+                        <label>Username</label>
+                        <div class="auth-input">
+                            <i class="bi bi-person"></i>
+                            <input type="text" name="username" placeholder="Enter username" required autocomplete="username" />
+                        </div>
+                    </div>
+                    <div class="auth-field">
+                        <label>Password</label>
+                        <div class="auth-input">
+                            <i class="bi bi-lock"></i>
+                            <input type="password" name="password" id="adminPassword" placeholder="Enter password" required autocomplete="current-password" />
+                            <button type="button" class="auth-eye" data-pass-toggle data-target="adminPassword" aria-label="Show password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="auth-submit admin">
+                        Sign in <i class="bi bi-arrow-right"></i>
+                    </button>
+                </form>
+
+                <a href="/" class="auth-back"><i class="bi bi-arrow-left"></i> Back to website</a>
             </div>
-        }
-        
-        <form asp-action="Login" method="post" class="text-start">
-            <div class="custom-input-group">
-                <input type="text" class="form-control" name="username" placeholder="Username" required autocomplete="off" />
-                <i class="bi bi-person-fill input-icon"></i>
-            </div>
-            <div class="custom-input-group mb-4">
-                <input type="password" class="form-control" name="password" placeholder="Password" required />
-                <i class="bi bi-key-fill input-icon"></i>
-            </div>
-            
-            <button type="submit" class="btn btn-login w-100 d-flex align-items-center justify-content-center">
-                Authenticate Securely <i class="bi bi-fingerprint ms-2 fs-5"></i>
-            </button>
-        </form>
-        
-        <div class="mt-4 pt-4 border-top border-secondary login-border-top text-center">
-            <a href="/" class="text-white-50 text-decoration-none small hover-white transition-all">
-                <i class="bi bi-arrow-left me-1"></i> Return to Main Website
-            </a>
-        </div>
+        </main>
     </div>
+
+    <script>
+        document.querySelectorAll('[data-pass-toggle]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const input = document.getElementById(btn.getAttribute('data-target'));
+                const icon = btn.querySelector('i');
+                if (!input || !icon) return;
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+                btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            });
+        });
+    </script>
 </body>
 </html>

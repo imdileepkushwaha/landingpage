@@ -1,0 +1,111 @@
+@model SoftflipSolutions.Models.ChannelPartner
+@{
+    ViewData["Title"] = "Visiting Card";
+    Layout = "_PartnerLayout";
+    var cardPath = ViewBag.CardImagePath as string ?? "";
+    var safeFileName = string.Join("_", Model.CompanyName.Split(System.IO.Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries)).Trim();
+    if (string.IsNullOrWhiteSpace(safeFileName)) { safeFileName = "visiting-card"; }
+}
+
+<link rel="stylesheet" href="~/css/visiting-card.css" asp-append-version="true" />
+
+<div class="glass-card p-4 mb-4">
+    <h4 class="mb-1" style="color:#152238">My visiting card</h4>
+    <p class="text-muted small mb-0">Preview aur downloaded PNG same design — logo, icons, address, website.</p>
+</div>
+
+<div class="row g-4 align-items-start">
+    <div class="col-lg-7">
+        <div class="partner-vcard-preview-wrap">
+            <div class="vcard-preview-frame">
+                <partial name="_VisitingCardCanvas" model="Model" />
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="glass-card p-4 mb-4">
+            <h6 class="mb-3" style="color:#152238">PNG preview</h6>
+            @if (!string.IsNullOrWhiteSpace(cardPath))
+            {
+                <img src="@cardPath?v=@DateTime.Now.Ticks" alt="Visiting card" class="partner-vcard-png img-fluid rounded border" id="vcardPngPreview" />
+            }
+        </div>
+
+        <div class="glass-card p-4">
+            <h6 class="mb-3" style="color:#152238">Share</h6>
+            <div class="d-grid gap-2">
+                <a asp-action="DownloadVisitingCard" class="btn btn-crm-primary">
+                    <i class="bi bi-download me-1"></i> Download PNG
+                </a>
+                @if (!string.IsNullOrWhiteSpace(cardPath))
+                {
+                    <button type="button" class="btn btn-success" id="shareVcardWhatsApp"
+                            data-card-url="@cardPath"
+                            data-file-name="@(safeFileName)-visiting-card.png"
+                            data-company="@Model.CompanyName">
+                        <i class="bi bi-whatsapp me-1"></i> Share on WhatsApp
+                    </button>
+                }
+            </div>
+            <p class="small text-muted mt-3 mb-0" id="vcardShareHint">
+                WhatsApp par card <strong>image</strong> ke roop mein share hoga — link nahi.
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var btn = document.getElementById('shareVcardWhatsApp');
+            if (!btn) return;
+
+            var hint = document.getElementById('vcardShareHint');
+
+            btn.addEventListener('click', async function () {
+                var cardUrl = btn.getAttribute('data-card-url');
+                var fileName = btn.getAttribute('data-file-name') || 'visiting-card.png';
+                var company = btn.getAttribute('data-company') || 'my company';
+                var shareText = 'Hi! Here is my visiting card from ' + company + '.';
+
+                btn.disabled = true;
+                var oldHtml = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Preparing…';
+
+                try {
+                    var response = await fetch(cardUrl + '?v=' + Date.now());
+                    if (!response.ok) throw new Error('Could not load card image.');
+                    var blob = await response.blob();
+                    var file = new File([blob], fileName, { type: 'image/png' });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], text: shareText });
+                        if (hint) hint.textContent = 'Card image shared.';
+                        return;
+                    }
+
+                    // Fallback: download PNG, open WhatsApp with text only (no link)
+                    var link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+
+                    window.open('https://wa.me/?text=' + encodeURIComponent(shareText), '_blank', 'noopener');
+
+                    if (hint) {
+                        hint.innerHTML = 'PNG download ho gayi. WhatsApp mein chat khol kar <strong>Attach → Gallery</strong> se image select karein.';
+                    }
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return;
+                    if (hint) hint.textContent = 'Share fail. Pehle Download PNG karein, phir WhatsApp mein attach karein.';
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = oldHtml;
+                }
+            });
+        })();
+    </script>
+}

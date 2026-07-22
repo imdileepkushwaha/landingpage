@@ -1,0 +1,143 @@
+@model SoftflipSolutions.ViewModels.PartnerPerformanceViewModel
+@{
+    ViewData["Title"] = "Partner Performance";
+    Layout = "_AdminLayout";
+}
+
+<div class="page-toolbar">
+    <h2>Partner Performance</h2>
+    <div class="toolbar-actions">
+        <a asp-action="ChannelPartners" class="btn btn-sm btn-crm-outline rounded-pill px-3">
+            <i class="bi bi-shop me-1"></i> All Partners
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-2">
+        <div class="stat-card accent-blue">
+            <div class="stat-card-top">
+                <div class="stat-label">Partners</div>
+                <div class="stat-icon info"><i class="bi bi-shop"></i></div>
+            </div>
+            <div class="stat-value">@Model.TotalPartners</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="stat-card accent-green">
+            <div class="stat-card-top">
+                <div class="stat-label">Active</div>
+                <div class="stat-icon success"><i class="bi bi-check-circle"></i></div>
+            </div>
+            <div class="stat-value">@Model.ActivePartners</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="stat-card accent-yellow">
+            <div class="stat-card-top">
+                <div class="stat-label">Clients</div>
+                <div class="stat-icon warning"><i class="bi bi-building"></i></div>
+            </div>
+            <div class="stat-value">@Model.TotalClients</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="stat-card accent-red">
+            <div class="stat-card-top">
+                <div class="stat-label">Proposals</div>
+                <div class="stat-icon primary"><i class="bi bi-file-earmark-text"></i></div>
+            </div>
+            <div class="stat-value">@Model.TotalProposals</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="stat-card accent-blue">
+            <div class="stat-card-top">
+                <div class="stat-label">Proposal value</div>
+                <div class="stat-icon info"><i class="bi bi-currency-rupee"></i></div>
+            </div>
+            <div class="stat-value" style="font-size:1.35rem;">₹@Model.TotalProposalAmount.ToString("N0")</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="stat-card accent-green">
+            <div class="stat-card-top">
+                <div class="stat-label">Est. commission</div>
+                <div class="stat-icon success"><i class="bi bi-percent"></i></div>
+            </div>
+            <div class="stat-value" style="font-size:1.35rem;">₹@Model.TotalEstimatedCommission.ToString("N0")</div>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-3 admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <div>
+            <h5 class="mb-1">Partner ranking</h5>
+            <p class="mb-0 small text-muted">Clients, proposals, and estimated commission (service %)</p>
+        </div>
+        <span class="badge bg-primary bg-opacity-25 text-info border border-primary border-opacity-50 px-3 py-2 rounded-pill">
+            Ranked by proposal value
+        </span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Partner</th>
+                    <th>Status</th>
+                    <th>Clients</th>
+                    <th>Proposals</th>
+                    <th>Proposal value</th>
+                    <th>Est. commission</th>
+                    <th>Last proposal</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ var rank = 1; }
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td class="text-muted">@rank</td>
+                        <td>
+                            <div class="fw-bold">@row.CompanyName</div>
+                            <div class="small text-muted">@row.OwnerName</div>
+                        </td>
+                        <td>
+                            @if (row.IsActive)
+                            {
+                                <span class="badge bg-success bg-opacity-25 text-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Inactive</span>
+                            }
+                        </td>
+                        <td><span class="badge bg-info bg-opacity-25 text-info">@row.ClientCount</span></td>
+                        <td>@row.ProposalCount</td>
+                        <td class="fw-semibold">₹@row.ProposalAmount.ToString("N2")</td>
+                        <td>₹@row.EstimatedCommission.ToString("N2")</td>
+                        <td class="small">@(row.LastProposalAt?.ToString("dd MMM yyyy") ?? "—")</td>
+                        <td class="text-end">
+                            <a asp-action="ChannelPartnerDetails" asp-route-id="@row.PartnerId" class="btn btn-icon-action" title="View">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    rank++;
+                }
+                @if (!Model.Rows.Any())
+                {
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="bi bi-graph-up-arrow fs-1 d-block mb-2"></i>
+                            No channel partners yet.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

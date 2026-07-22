@@ -1,0 +1,82 @@
+@model IEnumerable<SoftflipSolutions.Models.ServiceCatalog>
+@{
+    ViewData["Title"] = "Services";
+    Layout = "_PartnerLayout";
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom admin-table-header" style="border-color: #eef0f4 !important;">
+        <h5 class="mb-1" style="color:#152238">Available services</h5>
+        <p class="mb-0 small text-muted">Panels &amp; features from Softflip — used when creating client proposals.</p>
+    </div>
+    <div class="p-4">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-box-seam fs-1 d-block mb-2"></i>
+                No services available yet. Contact Softflip admin.
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var svc in Model)
+                {
+                    var panels = svc.Panels?.OrderBy(p => p.SortOrder).ToList() ?? new();
+                    var featureCount = panels.Sum(p => p.Modules?.Count ?? 0);
+                    <div class="col-lg-6">
+                        <div class="glass-card p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <h6 class="mb-0" style="color:#152238">@svc.Name</h6>
+                                <span class="badge bg-info bg-opacity-25 text-info">@panels.Count panels</span>
+                            </div>
+                            <div class="d-flex flex-wrap gap-3 small mb-2" style="color:#374151">
+                                <span><strong>Price:</strong> ₹ @svc.Budget.ToString("N0")</span>
+                                <span><strong>Commission:</strong> @svc.Commission.ToString("0.##")%</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(svc.Description))
+                            {
+                                <p class="small text-muted mb-3">@svc.Description</p>
+                            }
+                            @if (featureCount == 0)
+                            {
+                                <p class="small text-muted mb-0">No panel features listed yet.</p>
+                            }
+                            else
+                            {
+                                <div class="service-module-list" style="max-height:260px;">
+                                    @foreach (var panel in panels)
+                                    {
+                                        <div class="service-module-item">
+                                            <div class="service-module-name"><i class="bi bi-window me-2"></i>@panel.Name</div>
+                                            @if (panel.Modules != null && panel.Modules.Any())
+                                            {
+                                                <ul class="service-submodule-list">
+                                                    @foreach (var mod in panel.Modules.OrderBy(m => m.SortOrder))
+                                                    {
+                                                        if (mod.SubModules != null && mod.SubModules.Any())
+                                                        {
+                                                            foreach (var sub in mod.SubModules.OrderBy(s => s.SortOrder))
+                                                            {
+                                                                <li>@mod.Name — @sub.Name</li>
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            <li>@mod.Name</li>
+                                                        }
+                                                    }
+                                                </ul>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            <p class="small text-muted mt-3 mb-0">@featureCount feature(s) total</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

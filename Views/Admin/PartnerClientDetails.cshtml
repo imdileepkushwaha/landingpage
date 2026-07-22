@@ -1,0 +1,87 @@
+@model SoftflipSolutions.Models.PartnerClient
+@{
+    ViewData["Title"] = Model.Name;
+    Layout = "_AdminLayout";
+    var partner = Model.ChannelPartner;
+}
+
+<div class="lead-detail-toolbar">
+    <a asp-action="PartnerClients" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> Back</a>
+    <div class="lead-detail-meta">
+        <span class="badge bg-warning text-dark"><i class="bi bi-handshake me-1"></i> Partner client · via @(partner?.CompanyName ?? "—")</span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="lead-profile-card">
+            <div class="lead-profile-top">
+                <div class="lead-avatar">@Model.Name.Substring(0, 1).ToUpper()</div>
+                <div>
+                    <h3>@Model.Name</h3>
+                    <span class="badge bg-warning text-dark">via @(partner?.CompanyName ?? "Partner")</span>
+                </div>
+            </div>
+            <div class="lead-profile-body">
+                <div class="lead-info-row">
+                    <div class="lead-info-icon"><i class="bi bi-telephone"></i></div>
+                    <div><div class="lead-info-label">Mobile</div><a href="tel:@Model.Mobile">@Model.Mobile</a></div>
+                </div>
+                <div class="lead-info-row">
+                    <div class="lead-info-icon"><i class="bi bi-whatsapp"></i></div>
+                    <div><div class="lead-info-label">WhatsApp</div><span>@(Model.WhatsApp ?? Model.Mobile)</span></div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Email))
+                {
+                    <div class="lead-info-row">
+                        <div class="lead-info-icon"><i class="bi bi-envelope"></i></div>
+                        <div><div class="lead-info-label">Email</div><a href="mailto:@Model.Email">@Model.Email</a></div>
+                    </div>
+                }
+                <div class="lead-info-row">
+                    <div class="lead-info-icon"><i class="bi bi-tag"></i></div>
+                    <div><div class="lead-info-label">Requirement</div><span>@Model.Requirement</span></div>
+                </div>
+                <div class="lead-info-row">
+                    <div class="lead-info-icon"><i class="bi bi-cash"></i></div>
+                    <div><div class="lead-info-label">Budget</div><span>@(Model.Budget ?? "—")</span></div>
+                </div>
+                @if (partner != null)
+                {
+                    <a asp-action="ChannelPartnerDetails" asp-route-id="@partner.Id" class="btn btn-lead-email mt-2">
+                        <i class="bi bi-handshake"></i> View partner
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="lead-notes-card">
+            <div class="lead-notes-header">
+                <div>
+                    <h5><i class="bi bi-file-earmark-text me-2"></i>Partner proposals</h5>
+                    <p>Quotations created by the partner with their branding.</p>
+                </div>
+            </div>
+            <div class="lead-notes-body">
+                @if (Model.Proposals != null && Model.Proposals.Any())
+                {
+                    @foreach (var p in Model.Proposals)
+                    {
+                        <div class="note-box mb-3">
+                            <div class="d-flex justify-content-between flex-wrap gap-2">
+                                <strong>@p.Title</strong>
+                                <span>₹ @p.Amount.ToString("N0")</span>
+                            </div>
+                            <div class="small text-muted mt-1">@p.CreatedAt.ToString("dd MMM yyyy") · Valid till @p.ValidUntil.ToString("dd MMM yyyy")</div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="lead-empty-notes"><i class="bi bi-file-earmark"></i><h6>No proposals yet</h6></div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

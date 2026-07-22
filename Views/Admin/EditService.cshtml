@@ -1,0 +1,55 @@
+@model SoftflipSolutions.Models.ServiceCatalog
+@{
+    ViewData["Title"] = "Edit Service";
+    Layout = "_AdminLayout";
+    var serviceNames = ViewBag.ServiceNameOptions as string[] ?? Array.Empty<string>();
+}
+
+<div class="glass-card p-4">
+    <div class="mb-4">
+        <a asp-action="ServiceDetails" asp-route-id="@Model.Id" class="btn btn-lead-back mb-3"><i class="bi bi-arrow-left"></i> Back</a>
+        <h4 class="mb-1" style="color:#152238">Edit Service</h4>
+        <p class="text-muted small mb-0">Update name and description. Re-upload Excel from the details page to replace modules.</p>
+    </div>
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+    <form asp-action="EditService" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <div class="row g-3">
+            <div class="col-md-8">
+                <label class="lead-info-label" asp-for="Name"></label>
+                <select asp-for="Name" class="form-control settings-input" required>
+                    <option value="">Select service name</option>
+                    @foreach (var item in serviceNames)
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check form-switch mb-2">
+                    <input asp-for="IsActive" class="form-check-input" />
+                    <label class="form-check-label" asp-for="IsActive" style="color:#152238">Active</label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="lead-info-label" asp-for="Budget"></label>
+                <input asp-for="Budget" type="number" class="form-control settings-input" step="0.01" min="0.01" required />
+            </div>
+            <div class="col-md-4">
+                <label class="lead-info-label" asp-for="Commission"></label>
+                <input asp-for="Commission" type="number" class="form-control settings-input" step="0.01" min="0" max="100" required />
+                <!-- <div class="form-text text-muted">% of budget — proposal PDF mein nahi.</div> -->
+            </div>
+            <div class="col-12">
+                <label class="lead-info-label" asp-for="Description"></label>
+                <textarea asp-for="Description" class="form-control settings-input" rows="3" maxlength="2000"></textarea>
+            </div>
+        </div>
+        <div class="mt-4">
+            <button type="submit" class="btn btn-crm-primary"><i class="bi bi-check2-circle me-1"></i> Save changes</button>
+        </div>
+    </form>
+</div>

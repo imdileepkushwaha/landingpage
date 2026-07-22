@@ -1,0 +1,89 @@
+@{
+    var title = ViewData["Title"]?.ToString() ?? "Dashboard";
+    var action = ViewContext.RouteData.Values["Action"]?.ToString() ?? "Index";
+    var controller = ViewContext.RouteData.Values["Controller"]?.ToString() ?? "Admin";
+    var isPartner = string.Equals(controller, "Partner", StringComparison.OrdinalIgnoreCase);
+    var panelLabel = isPartner ? "Partner Panel" : "Admin Panel";
+    var homeController = isPartner ? "Partner" : "Admin";
+    var sectionName = ViewData["PageSection"]?.ToString();
+    var icon = ViewData["PageIcon"]?.ToString();
+
+    if (string.IsNullOrEmpty(sectionName))
+    {
+        if (isPartner)
+        {
+            sectionName = action switch
+            {
+                "Index" => "Overview",
+                "Clients" or "AddClient" or "ClientDetails" => "Clients",
+                _ => "Partner"
+            };
+        }
+        else
+        {
+            sectionName = action switch
+            {
+                "Index" => "Overview",
+                "Enquiries" or "EnquiryDetails" => "CRM",
+                "DemoRequests" or "DemoRequestDetails" => "CRM",
+                "ClientLeads" or "AddClientLead" or "ClientLeadDetails" => "CRM",
+                "ChannelPartners" or "AddChannelPartner" or "EditChannelPartner" or "ChannelPartnerDetails" => "CRM",
+                "PartnerClients" or "PartnerClientDetails" => "CRM",
+                "ConfirmedClients" or "RejectedClients" => "Pipeline",
+                "Settings" => "System",
+                _ => "Admin"
+            };
+        }
+    }
+
+    if (string.IsNullOrEmpty(icon))
+    {
+        if (isPartner)
+        {
+            icon = action switch
+            {
+                "Index" => "bi-speedometer2",
+                "Clients" => "bi-people",
+                "AddClient" => "bi-person-plus",
+                "ClientDetails" => "bi-person-badge",
+                _ => "bi-shop"
+            };
+        }
+        else
+        {
+            icon = action switch
+            {
+                "Index" => "bi-speedometer2",
+                "Enquiries" or "EnquiryDetails" => "bi-envelope",
+                "DemoRequests" or "DemoRequestDetails" => "bi-laptop",
+                "ClientLeads" or "AddClientLead" or "ClientLeadDetails" => "bi-people",
+                "ChannelPartners" or "AddChannelPartner" or "EditChannelPartner" or "ChannelPartnerDetails" => "bi-shop",
+                "PartnerClients" or "PartnerClientDetails" => "bi-people-fill",
+                "ConfirmedClients" => "bi-kanban",
+                "RejectedClients" => "bi-x-circle",
+                "Settings" => "bi-gear",
+                _ => "bi-speedometer2"
+            };
+        }
+    }
+}
+
+<div class="page-hero">
+    <div class="page-hero-left">
+        <div class="page-hero-icon">
+            <i class="bi @icon"></i>
+        </div>
+        <div class="page-hero-text">
+            <span class="page-hero-badge"><span class="page-hero-dot"></span> @panelLabel</span>
+            <h1 class="page-hero-title">@title</h1>
+        </div>
+    </div>
+    <nav class="page-hero-breadcrumb" aria-label="Breadcrumb">
+        <i class="bi @icon"></i>
+        <a asp-action="Index" asp-controller="@homeController">Home</a>
+        <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+        <span>@sectionName</span>
+        <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+        <span class="bc-current">@title</span>
+    </nav>
+</div>
