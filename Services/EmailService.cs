@@ -7,34 +7,36 @@ namespace SoftflipSolutions.Services;
 
 public interface IEmailService
 {
-    Task<bool> SendEmailAsync(string toEmail, string subject, string htmlMessage);
+    Task<bool> SendEmailAsync(string toEmail, string subject, string htmlMessage, byte[]? attachment = null, string? attachmentName = null);
 }
 
 public class EmailService : IEmailService
 {
     private readonly ApplicationDbContext _context;
+    private readonly ICompanyProfileService _companyProfile;
 
-    public EmailService(ApplicationDbContext context)
+    public EmailService(ApplicationDbContext context, ICompanyProfileService companyProfile)
     {
         _context = context;
+        _companyProfile = companyProfile;
     }
 
-    public async Task<bool> SendEmailAsync(string toEmail, string subject, string htmlMessage)
+    public async Task<bool> SendEmailAsync(string toEmail, string subject, string htmlMessage, byte[]? attachment = null, string? attachmentName = null)
     {
         try
         {
             var settings = await _context.AdminSettings.ToDictionaryAsync(s => s.Key, s => s.Value);
-            
+
             if (!settings.ContainsKey("SmtpHost") || string.IsNullOrEmpty(settings["SmtpHost"]))
-            {
-                return false; // SMTP not configured
-            }
+                return false;
 
             var host = settings["SmtpHost"];
             var port = int.Parse(settings.ContainsKey("SmtpPort") ? settings["SmtpPort"] : "587");
             var email = settings["SmtpEmail"];
             var password = settings["SmtpPassword"];
             var enableSsl = settings.ContainsKey("SmtpEnableSsl") ? bool.Parse(settings["SmtpEnableSsl"]) : true;
+            var company = await _companyProfile.GetAsync();
+            var fromName = string.IsNullOrWhiteSpace(company.CompanyName) ? "Softflip Solutions" : company.CompanyName;
 
             using var client = new SmtpClient(host, port)
             {
@@ -44,12 +46,17 @@ public class EmailService : IEmailService
 
             var mailMessage = new MailMessage
             {
-                From = new MailAddress(email, "SoftflipSolutions"),
+                From = new MailAddress(email, fromName),
                 Subject = subject,
                 Body = htmlMessage,
                 IsBodyHtml = true
             };
             mailMessage.To.Add(toEmail);
+
+            if (attachment != null && attachment.Length > 0)
+            {
+                mailMessage.Attachments.Add(new Attachment(new MemoryStream(attachment), attachmentName ?? "proposal.pdf", "application/pdf"));
+            }
 
             await client.SendMailAsync(mailMessage);
             return true;

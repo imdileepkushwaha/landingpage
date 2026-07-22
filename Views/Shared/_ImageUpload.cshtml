@@ -1,0 +1,78 @@
+@{
+    var inputName = (ViewData["UploadInputName"] as string) ?? "file";
+    var label = ViewData["UploadLabel"] as string;
+    var hint = (ViewData["UploadHint"] as string) ?? "PNG, JPG or WEBP · max 2 MB";
+    var accept = (ViewData["UploadAccept"] as string) ?? ".png,.jpg,.jpeg,.webp";
+    var currentUrl = ViewData["UploadCurrentUrl"] as string;
+    var removeName = ViewData["UploadRemoveName"] as string;
+    var removeId = ViewData["UploadRemoveId"] as string;
+    var variant = (ViewData["UploadVariant"] as string) ?? "logo";
+    var required = ViewData["UploadRequired"] as bool? == true;
+    var uid = "sfup-" + Guid.NewGuid().ToString("N")[..8];
+    var hasCurrent = !string.IsNullOrWhiteSpace(currentUrl);
+    var isSignature = variant == "signature";
+}
+
+<div class="sf-upload @(isSignature ? "sf-upload-signature" : "") @(hasCurrent ? "has-image" : "")" data-sf-upload id="@uid">
+    @if (!string.IsNullOrWhiteSpace(label))
+    {
+        <label class="sf-upload-label">@label</label>
+    }
+
+    <div class="sf-upload-row">
+        <div class="sf-upload-box">
+            <input type="file"
+                   name="@inputName"
+                   id="@(uid)-input"
+                   class="sf-upload-input"
+                   accept="@accept"
+                   @(required ? "required" : null) />
+
+            <div class="sf-upload-empty">
+                <div class="sf-upload-icon">
+                    <i class="bi @(isSignature ? "bi-pen" : "bi-cloud-arrow-up")"></i>
+                </div>
+                <div class="sf-upload-copy">
+                    <strong>Click to upload</strong>
+                    <span>or drag and drop</span>
+                </div>
+                <div class="sf-upload-hint">@hint</div>
+            </div>
+        </div>
+
+        <div class="sf-upload-side">
+            <div class="sf-upload-side-title">
+                <i class="bi bi-eye"></i> Preview
+            </div>
+            <div class="sf-upload-preview-panel">
+                <div class="sf-upload-preview-empty" data-sf-empty>
+                    <i class="bi bi-image"></i>
+                    <span>No image selected</span>
+                </div>
+                <img src="@(currentUrl ?? "")"
+                     alt="Preview"
+                     class="sf-upload-img"
+                     data-sf-preview
+                     @(hasCurrent ? null : "hidden") />
+            </div>
+            <div class="sf-upload-filename" data-sf-filename>@(hasCurrent ? "Current image" : "")</div>
+            <div class="sf-upload-preview-actions">
+                <label for="@(uid)-input" class="btn sf-upload-btn"><i class="bi bi-folder2-open"></i> Browse</label>
+                <button type="button" class="btn sf-upload-btn ghost" data-sf-clear @(hasCurrent ? null : "hidden")>
+                    <i class="bi bi-x-lg"></i> Clear
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(removeName) && hasCurrent)
+    {
+        <div class="sf-upload-remove form-check">
+            <input class="form-check-input" type="checkbox" name="@removeName" value="true"
+                   id="@(removeId ?? uid + "-remove")" data-sf-remove />
+            <label class="form-check-label" for="@(removeId ?? uid + "-remove")">
+                Remove current image on save
+            </label>
+        </div>
+    }
+</div>

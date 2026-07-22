@@ -1,0 +1,185 @@
+@model SoftflipSolutions.Models.ClientLead
+@{
+    ViewData["Title"] = "Add Client Lead";
+    Layout = "_AdminLayout";
+    var sources = ViewBag.LeadSources as List<string> ?? new List<string> { "WhatsApp", "Just Dial", "IndiaMART" };
+    var selectedSource = ViewBag.SelectedSource as string ?? Model.Source;
+    var isKnownSource = !string.IsNullOrEmpty(selectedSource) && sources.Contains(selectedSource);
+    var isOther = !string.IsNullOrEmpty(selectedSource) && !isKnownSource;
+    var activeSource = isOther ? "Other" : (isKnownSource ? selectedSource : "");
+}
+
+<div class="lead-detail-toolbar">
+    <a asp-action="ClientLeads" class="btn btn-lead-back">
+        <i class="bi bi-arrow-left"></i> Back to External Clients
+    </a>
+</div>
+
+<div class="add-lead-layout">
+    <aside class="add-lead-aside">
+        <div class="add-lead-aside-card">
+            <div class="add-lead-aside-icon"><i class="bi bi-person-plus"></i></div>
+            <h5>New external lead</h5>
+            <p>Capture WhatsApp, Just Dial, IndiaMART or any custom source lead in one place.</p>
+            <ul class="add-lead-tips">
+                <li><i class="bi bi-check2-circle"></i> Mobile doubles as WhatsApp</li>
+                <li><i class="bi bi-check2-circle"></i> Email is optional</li>
+                <li><i class="bi bi-check2-circle"></i> Custom sources are reused next time</li>
+            </ul>
+        </div>
+    </aside>
+
+    <div class="add-lead-main">
+        <form asp-action="AddClientLead" method="post" class="add-lead-form" id="addLeadForm">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger deal-alert mb-3"></div>
+
+            <section class="add-lead-section">
+                <div class="add-lead-section-head">
+                    <span class="add-lead-step">1</span>
+                    <div>
+                        <h6>Contact details</h6>
+                        <p>Who is this lead?</p>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="lead-info-label" asp-for="Name">Client name *</label>
+                        <div class="add-lead-field">
+                            <i class="bi bi-person"></i>
+                            <input asp-for="Name" class="form-control settings-input" placeholder="Full name" required autocomplete="name" />
+                        </div>
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="lead-info-label" asp-for="Mobile">Mobile / WhatsApp *</label>
+                        <div class="add-lead-field">
+                            <i class="bi bi-whatsapp"></i>
+                            <input asp-for="Mobile" class="form-control settings-input" placeholder="+91 98765 43210" required autocomplete="tel" />
+                        </div>
+                        <span asp-validation-for="Mobile" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label class="lead-info-label" asp-for="Email">Email <span class="text-muted fw-normal">(optional)</span></label>
+                        <div class="add-lead-field">
+                            <i class="bi bi-envelope"></i>
+                            <input asp-for="Email" type="email" class="form-control settings-input" placeholder="client@email.com" autocomplete="email" />
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="add-lead-section">
+                <div class="add-lead-section-head">
+                    <span class="add-lead-step">2</span>
+                    <div>
+                        <h6>Lead source</h6>
+                        <p>Where did this enquiry come from?</p>
+                    </div>
+                </div>
+
+                <input type="hidden" name="sourceChoice" id="sourceChoice" value="@activeSource" required />
+
+                <div class="add-lead-sources" id="sourceChips">
+                    @foreach (var src in sources)
+                    {
+                        var icon = src.Contains("WhatsApp", StringComparison.OrdinalIgnoreCase) ? "bi-whatsapp"
+                            : src.Contains("Just", StringComparison.OrdinalIgnoreCase) ? "bi-telephone"
+                            : src.Contains("India", StringComparison.OrdinalIgnoreCase) ? "bi-shop"
+                            : "bi-broadcast";
+                        <button type="button" class="add-lead-source-chip @(activeSource == src ? "active" : "")" data-source="@src">
+                            <i class="bi @icon"></i>
+                            <span>@src</span>
+                        </button>
+                    }
+                    <button type="button" class="add-lead-source-chip @(activeSource == "Other" ? "active" : "")" data-source="Other">
+                        <i class="bi bi-plus-circle"></i>
+                        <span>Other</span>
+                    </button>
+                </div>
+
+                <div id="customSourceWrap" class="mt-3" style="@(isOther || activeSource == "Other" ? "" : "display: none;")">
+                    <label class="lead-info-label" for="customSource">Custom source name</label>
+                    <div class="add-lead-field">
+                        <i class="bi bi-tag"></i>
+                        <input type="text" name="customSource" id="customSource" class="form-control settings-input"
+                               value="@(isOther ? selectedSource : "")"
+                               placeholder="e.g. Facebook, Referral, Trade Fair..." />
+                    </div>
+                    <div class="hint-text mt-1">This name will appear in the source list next time.</div>
+                </div>
+                <span asp-validation-for="Source" class="text-danger small"></span>
+            </section>
+
+            <section class="add-lead-section">
+                <div class="add-lead-section-head">
+                    <span class="add-lead-step">3</span>
+                    <div>
+                        <h6>Requirement &amp; budget</h6>
+                        <p>What are they looking for?</p>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="lead-info-label" asp-for="Requirement">Requirement *</label>
+                        <textarea asp-for="Requirement" class="form-control settings-input add-lead-textarea" rows="4" placeholder="Website, ERP, mobile app, support…" required></textarea>
+                        <span asp-validation-for="Requirement" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="lead-info-label" asp-for="Budget">Budget</label>
+                        <div class="add-lead-field">
+                            <i class="bi bi-currency-rupee"></i>
+                            <input asp-for="Budget" class="form-control settings-input" placeholder="50,000 / 1–2 Lakh" />
+                        </div>
+                        <span asp-validation-for="Budget" class="text-danger small"></span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="add-lead-actions">
+                <a asp-action="ClientLeads" class="btn btn-lead-back">Cancel</a>
+                <button type="submit" class="btn btn-crm-primary">
+                    <i class="bi bi-person-plus-fill me-1"></i> Save client lead
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const hidden = document.getElementById('sourceChoice');
+        const wrap = document.getElementById('customSourceWrap');
+        const custom = document.getElementById('customSource');
+        const chips = document.querySelectorAll('#sourceChips [data-source]');
+        const form = document.getElementById('addLeadForm');
+
+        function selectSource(value) {
+            hidden.value = value;
+            chips.forEach(chip => chip.classList.toggle('active', chip.getAttribute('data-source') === value));
+            const other = value === 'Other';
+            wrap.style.display = other ? 'block' : 'none';
+            custom.required = other;
+            if (!other) custom.value = '';
+            if (other) custom.focus();
+        }
+
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => selectSource(chip.getAttribute('data-source')));
+        });
+
+        form.addEventListener('submit', function (e) {
+            if (!hidden.value) {
+                e.preventDefault();
+                alert('Please select a lead source.');
+                return;
+            }
+            if (hidden.value === 'Other' && !custom.value.trim()) {
+                e.preventDefault();
+                custom.focus();
+                alert('Please enter a custom source name.');
+            }
+        });
+    })();
+</script>

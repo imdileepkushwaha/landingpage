@@ -1,0 +1,152 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_PartnerLayout";
+    var partner = ViewBag.Partner as SoftflipSolutions.Models.ChannelPartner;
+    var recent = ViewBag.RecentClients as List<SoftflipSolutions.Models.PartnerClient> ?? new();
+    var clientCount = (int)(ViewBag.ClientCount ?? 0);
+    var proposalCount = (int)(ViewBag.ProposalCount ?? 0);
+    var isListed = partner?.IsActive == true;
+}
+
+<div class="page-toolbar">
+    <h2>Dashboard</h2>
+    <div class="toolbar-actions">
+        <span class="toolbar-chip">
+            <i class="bi bi-shop"></i>
+            Channel Partner
+        </span>
+        <a asp-action="AddClient" class="btn btn-crm-primary btn-sm">
+            <i class="bi bi-person-plus me-1"></i> Add client
+        </a>
+    </div>
+</div>
+
+<div class="welcome-banner">
+    <div class="welcome-content">
+        <h2>Welcome, @(partner?.OwnerName ?? "Partner")</h2>
+        <p>Manage clients and create branded Softflip proposals for @(partner?.CompanyName).</p>
+    </div>
+    <div class="welcome-actions">
+        <a asp-action="Clients" class="btn btn-crm-primary">My Clients</a>
+        <a asp-action="AddClient" class="btn btn-crm-outline">Add Client</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-4">
+        <div class="stat-card accent-blue">
+            <div class="stat-card-top">
+                <div class="stat-label">Clients</div>
+                <div class="stat-icon info"><i class="bi bi-people"></i></div>
+            </div>
+            <div class="stat-value">@clientCount</div>
+            <div class="stat-trend up"><i class="bi bi-arrow-up"></i> In your pipeline</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="stat-card accent-green">
+            <div class="stat-card-top">
+                <div class="stat-label">Proposals</div>
+                <div class="stat-icon success"><i class="bi bi-file-earmark-pdf"></i></div>
+            </div>
+            <div class="stat-value">@proposalCount</div>
+            <div class="stat-trend up"><i class="bi bi-arrow-up"></i> With your branding</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="stat-card @(isListed ? "accent-yellow" : "accent-red")">
+            <div class="stat-card-top">
+                <div class="stat-label">Website listing</div>
+                <div class="stat-icon @(isListed ? "warning" : "primary")"><i class="bi bi-globe2"></i></div>
+            </div>
+            <div class="stat-value">@(isListed ? "Live" : "Off")</div>
+            <div class="stat-trend @(isListed ? "up" : "")">
+                <i class="bi @(isListed ? "bi-check-circle" : "bi-pause-circle")"></i>
+                @(isListed ? "Visible on /Home/Partners" : "Hidden from public page")
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-4">
+        <div class="dash-list-card">
+            <div class="dash-list-header">
+                <h5>Quick Actions</h5>
+            </div>
+            <div class="p-3">
+                <div class="d-flex flex-column gap-2">
+                    <a asp-action="AddClient" class="quick-action-btn">
+                        <i class="bi bi-person-plus"></i>
+                        <div>
+                            <div class="fw-semibold">Add client</div>
+                            <div class="small text-muted">Capture a new opportunity</div>
+                        </div>
+                    </a>
+                    <a asp-action="Clients" class="quick-action-btn">
+                        <i class="bi bi-people"></i>
+                        <div>
+                            <div class="fw-semibold">View all clients</div>
+                            <div class="small text-muted">Open your client list</div>
+                        </div>
+                    </a>
+                    <a href="/Home/Partners" target="_blank" rel="noopener" class="quick-action-btn">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                        <div>
+                            <div class="fw-semibold">Public partners page</div>
+                            <div class="small text-muted">See how you appear online</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="glass-card p-0 overflow-hidden">
+            <div class="admin-table-header">
+                <h5><i class="bi bi-clock-history me-2"></i>Recent clients</h5>
+                <a asp-action="Clients" class="btn btn-sm btn-crm-outline">View all</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-borderless align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Mobile</th>
+                            <th>Requirement</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in recent)
+                        {
+                            <tr data-partner-search-row data-partner-search="@c.Name @c.Mobile @c.Requirement">
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="partner-avatar-sm">@c.Name.Substring(0, 1).ToUpper()</span>
+                                        <strong>@c.Name</strong>
+                                    </div>
+                                </td>
+                                <td>@c.Mobile</td>
+                                <td class="small text-muted text-truncate" style="max-width:220px">@c.Requirement</td>
+                                <td class="text-end">
+                                    <a asp-action="ClientDetails" asp-route-id="@c.Id" class="btn btn-icon-action" title="Open">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                        @if (!recent.Any())
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    No clients yet. <a asp-action="AddClient">Add your first client</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,122 @@
+@model SoftflipSolutions.ViewModels.LeadDocumentsPanelViewModel
+@using SoftflipSolutions.Models
+@{
+    string IconFor(string fileName)
+    {
+        var ext = System.IO.Path.GetExtension(fileName).ToLowerInvariant();
+        return ext switch
+        {
+            ".pdf" => "bi-file-earmark-pdf",
+            ".doc" or ".docx" => "bi-file-earmark-word",
+            ".xls" or ".xlsx" or ".csv" => "bi-file-earmark-excel",
+            ".ppt" or ".pptx" => "bi-file-earmark-ppt",
+            ".png" or ".jpg" or ".jpeg" or ".webp" or ".gif" => "bi-file-earmark-image",
+            ".zip" or ".rar" => "bi-file-earmark-zip",
+            ".dwg" or ".dxf" => "bi-bounding-box",
+            _ => "bi-file-earmark"
+        };
+    }
+
+    string SizeLabel(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:0.#} KB";
+        return $"{bytes / (1024.0 * 1024.0):0.##} MB";
+    }
+}
+
+<div class="lead-docs-card mt-4">
+    <div class="lead-docs-header">
+        <div>
+            <h5><i class="bi bi-folder2-open me-2"></i>Client documents</h5>
+            <p>Upload plans, designs, contracts, and project files for this client.</p>
+        </div>
+        <span class="lead-docs-count">@Model.Documents.Count file@(Model.Documents.Count == 1 ? "" : "s")</span>
+    </div>
+
+    <div class="lead-docs-body">
+        @if (Model.CanEdit)
+        {
+            <form asp-action="UploadLeadDocument" method="post" enctype="multipart/form-data" class="lead-docs-upload">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="leadType" value="@Model.LeadType" />
+                <input type="hidden" name="leadId" value="@Model.LeadId" />
+
+                <div class="lead-docs-upload-grid">
+                    <div>
+                        <label class="lead-info-label">Category</label>
+                        <select name="category" class="form-select settings-input">
+                            <option value="Plan">Plan</option>
+                            <option value="Design">Design</option>
+                            <option value="Project" selected>Project</option>
+                            <option value="Contract">Contract</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="lead-info-label">Title</label>
+                        <input type="text" name="title" class="form-control settings-input" maxlength="200" placeholder="e.g. Floor plan v2" />
+                    </div>
+                    <div class="lead-docs-file-field">
+                        <label class="lead-info-label">File</label>
+                        <input type="file" name="file" class="form-control settings-input" required
+                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.webp,.gif,.txt,.csv,.zip,.rar,.dwg,.dxf" />
+                    </div>
+                    <div class="lead-docs-upload-actions">
+                        <button type="submit" class="btn btn-crm-primary">
+                            <i class="bi bi-cloud-upload"></i> Upload
+                        </button>
+                    </div>
+                </div>
+                <div class="lead-docs-hint">PDF, Office, images, ZIP, CAD · max 15 MB</div>
+            </form>
+        }
+
+        @if (Model.Documents.Any())
+        {
+            <div class="lead-docs-list">
+                @foreach (var doc in Model.Documents)
+                {
+                    <div class="lead-docs-item">
+                        <div class="lead-docs-item-icon"><i class="bi @IconFor(doc.OriginalFileName)"></i></div>
+                        <div class="lead-docs-item-main">
+                            <div class="lead-docs-item-top">
+                                <strong>@doc.Title</strong>
+                                <span class="lead-docs-cat">@doc.Category</span>
+                            </div>
+                            <div class="lead-docs-item-meta">
+                                <span>@doc.OriginalFileName</span>
+                                <span>@SizeLabel(doc.FileSize)</span>
+                                <span>@doc.UploadedAt.ToString("dd MMM yyyy, hh:mm tt")</span>
+                            </div>
+                        </div>
+                        <div class="lead-docs-item-actions">
+                            <a class="btn lead-docs-btn" asp-action="DownloadLeadDocument" asp-route-id="@doc.Id" title="Download">
+                                <i class="bi bi-download"></i>
+                            </a>
+                            @if (Model.CanEdit)
+                            {
+                                <form asp-action="DeleteLeadDocument" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@doc.Id" />
+                                    <button type="submit" class="btn lead-docs-btn danger" title="Delete"
+                                            onclick="return confirm('Delete this document?');">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="lead-docs-empty">
+                <i class="bi bi-folder"></i>
+                <h6>No documents yet</h6>
+                <p>Client plans and project files will show up here.</p>
+            </div>
+        }
+    </div>
+</div>

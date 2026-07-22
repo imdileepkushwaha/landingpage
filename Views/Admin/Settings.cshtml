@@ -1,193 +1,365 @@
 @{
     ViewData["Title"] = "Platform Settings";
     Layout = "_AdminLayout";
+    var company = ViewBag.Company as SoftflipSolutions.Models.CompanyProfile ?? new SoftflipSolutions.Models.CompanyProfile();
+    var activeTab = (ViewBag.ActiveSettingsTab as string) ?? "company";
 }
-
-<style>
-    .settings-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    }
-    
-    .nav-pills .nav-link {
-        color: #8b9bb4;
-        border-radius: 12px;
-        padding: 12px 20px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-    
-    .nav-pills .nav-link:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: #fff;
-    }
-    
-    .nav-pills .nav-link.active {
-        background: linear-gradient(90deg, #048EE7, #00C6FF);
-        color: #fff;
-        box-shadow: 0 4px 15px rgba(4, 142, 231, 0.4);
-    }
-    
-    .settings-input {
-        background: rgba(0, 0, 0, 0.25) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: #fff !important;
-        border-radius: 10px;
-        padding: 12px 15px;
-    }
-    
-    .settings-input:focus {
-        background: rgba(0, 0, 0, 0.4) !important;
-        border-color: #048EE7 !important;
-        box-shadow: 0 0 0 4px rgba(4, 142, 231, 0.15) !important;
-    }
-    
-    .settings-label {
-        color: #8b9bb4;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 600;
-        margin-bottom: 8px;
-    }
-
-    .btn-gradient-primary {
-        background: linear-gradient(90deg, #048EE7, #00C6FF);
-        color: white;
-        border: none;
-        box-shadow: 0 4px 15px rgba(4, 142, 231, 0.4);
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .btn-gradient-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(4, 142, 231, 0.6);
-        color: white;
-    }
-</style>
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-white mb-0">Platform Settings</h2>
-</div>
 
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success bg-success bg-opacity-25 text-success border-success border-opacity-50 alert-dismissible fade show" role="alert">
+    <div class="alert alert-success deal-alert alert-dismissible fade show" role="alert">
         <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
-
 @if (TempData["ErrorMessage"] != null)
 {
-    <div class="alert alert-danger bg-danger bg-opacity-25 text-danger border-danger border-opacity-50 alert-dismissible fade show" role="alert">
+    <div class="alert alert-danger deal-alert alert-dismissible fade show" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
 
 <div class="row">
-    <!-- Left Navigation -->
     <div class="col-md-3 mb-4">
-        <div class="settings-card p-3">
-            <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
-                <button class="nav-link active text-start mb-2" id="v-pills-security-tab" data-bs-toggle="pill" data-bs-target="#v-pills-security" type="button" role="tab" aria-controls="v-pills-security" aria-selected="true">
-                    <i class="bi bi-shield-lock-fill me-2"></i> Security
+        <div class="glass-card settings-nav-card">
+            <div class="settings-nav-head">
+                <span class="settings-nav-head-icon"><i class="bi bi-sliders"></i></span>
+                <div>
+                    <strong>Settings</strong>
+                    <small>Platform preferences</small>
+                </div>
+            </div>
+            <div class="nav flex-column nav-pills settings-nav" id="v-pills-tab" role="tablist">
+                <button class="nav-link @(activeTab == "company" ? "active" : "")" data-bs-toggle="pill" data-bs-target="#tab-company" type="button">
+                    <span class="settings-nav-ico company"><i class="bi bi-building"></i></span>
+                    <span class="settings-nav-text">
+                        <strong>Company</strong>
+                        <small>Brand, bank &amp; UPI</small>
+                    </span>
+                    <i class="bi bi-chevron-right settings-nav-arrow"></i>
                 </button>
-                <button class="nav-link text-start" id="v-pills-smtp-tab" data-bs-toggle="pill" data-bs-target="#v-pills-smtp" type="button" role="tab" aria-controls="v-pills-smtp" aria-selected="false">
-                    <i class="bi bi-envelope-fill me-2"></i> Email (SMTP)
+                <button class="nav-link @(activeTab == "contacts" ? "active" : "")" data-bs-toggle="pill" data-bs-target="#tab-contacts" type="button">
+                    <span class="settings-nav-ico contacts"><i class="bi bi-person-lines-fill"></i></span>
+                    <span class="settings-nav-text">
+                        <strong>Contacts</strong>
+                        <small>Phone &amp; email</small>
+                    </span>
+                    <i class="bi bi-chevron-right settings-nav-arrow"></i>
+                </button>
+                <button class="nav-link @(activeTab == "signature" ? "active" : "")" data-bs-toggle="pill" data-bs-target="#tab-signature" type="button">
+                    <span class="settings-nav-ico signature"><i class="bi bi-pen"></i></span>
+                    <span class="settings-nav-text">
+                        <strong>Signature</strong>
+                        <small>PDF signatory</small>
+                    </span>
+                    <i class="bi bi-chevron-right settings-nav-arrow"></i>
+                </button>
+                <button class="nav-link @(activeTab == "smtp" ? "active" : "")" data-bs-toggle="pill" data-bs-target="#tab-smtp" type="button">
+                    <span class="settings-nav-ico smtp"><i class="bi bi-envelope-fill"></i></span>
+                    <span class="settings-nav-text">
+                        <strong>Email (SMTP)</strong>
+                        <small>Outgoing mail</small>
+                    </span>
+                    <i class="bi bi-chevron-right settings-nav-arrow"></i>
+                </button>
+                <button class="nav-link @(activeTab == "security" ? "active" : "")" data-bs-toggle="pill" data-bs-target="#tab-security" type="button">
+                    <span class="settings-nav-ico security"><i class="bi bi-shield-lock-fill"></i></span>
+                    <span class="settings-nav-text">
+                        <strong>Security</strong>
+                        <small>Admin password</small>
+                    </span>
+                    <i class="bi bi-chevron-right settings-nav-arrow"></i>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Right Content -->
     <div class="col-md-9">
-        <div class="tab-content" id="v-pills-tabContent">
-            
-            <!-- Security Tab -->
-            <div class="tab-pane fade show active" id="v-pills-security" role="tabpanel" aria-labelledby="v-pills-security-tab">
-                <div class="settings-card p-4 p-md-5">
-                    <h4 class="text-white mb-4"><i class="bi bi-shield-lock text-info me-2"></i> Change Password</h4>
-                    <p class="text-muted mb-4">Update your administrator password to keep your account secure.</p>
-                    
-                    <form asp-action="UpdateSecurity" method="post">
-                        <div class="mb-4">
-                            <label class="form-label settings-label">Admin Username</label>
-                            <input type="text" class="form-control settings-input" value="@ViewBag.AdminUsername" disabled>
-                            <div class="form-text text-muted">Username cannot be changed.</div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label settings-label">Current Password</label>
-                            <input type="password" name="currentPassword" class="form-control settings-input" required>
-                        </div>
-
-                        <div class="row mb-4">
+        <div class="tab-content">
+            <div class="tab-pane fade @(activeTab == "company" ? "show active" : "")" id="tab-company">
+                <div class="glass-card p-4 p-md-4">
+                    <h4 class="mb-1"><i class="bi bi-building text-info me-2"></i> Company details</h4>
+                    <p class="text-muted mb-4">Used on proposal &amp; invoice PDFs (logo, name, address, bank &amp; UPI).</p>
+                    <form asp-action="UpdateCompany" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label settings-label">New Password</label>
-                                <input type="password" name="newPassword" class="form-control settings-input" required minlength="6">
+                                <label class="form-label settings-label">Company name</label>
+                                <input type="text" name="CompanyName" class="form-control settings-input" value="@company.CompanyName" required />
                             </div>
-                            <div class="col-md-6 mt-4 mt-md-0">
-                                <label class="form-label settings-label">Confirm New Password</label>
-                                <input type="password" name="confirmPassword" class="form-control settings-input" required minlength="6">
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">Tagline</label>
+                                <input type="text" name="Tagline" class="form-control settings-input" value="@company.Tagline" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label settings-label">Address</label>
+                                <textarea name="Address" class="form-control settings-input" rows="2">@company.Address</textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">GSTIN</label>
+                                <input type="text" name="Gstin" class="form-control settings-input" value="@company.Gstin" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">Website</label>
+                                <input type="text" name="Website" class="form-control settings-input" value="@company.Website" placeholder="https://" />
+                            </div>
+                            <div class="col-12">
+                                @{
+                                    ViewData["UploadInputName"] = "LogoFile";
+                                    ViewData["UploadLabel"] = "Company logo";
+                                    ViewData["UploadHint"] = "PNG, JPG or WEBP · max 2 MB · used on proposals & invoices";
+                                    ViewData["UploadCurrentUrl"] = company.HasLogo ? company.LogoPath : null;
+                                    ViewData["UploadRemoveName"] = company.HasLogo ? "RemoveLogo" : null;
+                                    ViewData["UploadRemoveId"] = "RemoveLogo";
+                                    ViewData["UploadVariant"] = "logo";
+                                }
+                                <partial name="_ImageUpload" />
                             </div>
                         </div>
 
-                        <div class="text-end pt-3 border-top border-secondary border-opacity-25 mt-5">
-                            <button type="submit" class="btn btn-gradient-primary rounded-pill px-5 py-2">
-                                <i class="bi bi-save2 me-2"></i> Update Security
-                            </button>
+                        <div class="mt-4 pt-4 border-top">
+                            <h5 class="mb-1"><i class="bi bi-bank text-info me-2"></i> Bank account</h5>
+                            <p class="text-muted small mb-3">Shown on invoice PDFs for payment.</p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label settings-label">Bank name</label>
+                                    <input type="text" name="BankName" class="form-control settings-input" value="@company.BankName" placeholder="e.g. HDFC Bank" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label settings-label">Account holder name</label>
+                                    <input type="text" name="BankAccountName" class="form-control settings-input" value="@company.BankAccountName" placeholder="Softflip Solutions" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label settings-label">Account number</label>
+                                    <input type="text" name="BankAccountNumber" class="form-control settings-input" value="@company.BankAccountNumber" placeholder="XXXXXXXXXXXX" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label settings-label">IFSC code</label>
+                                    <input type="text" name="BankIfsc" class="form-control settings-input" value="@company.BankIfsc" placeholder="HDFC0001234" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label settings-label">Branch</label>
+                                    <input type="text" name="BankBranch" class="form-control settings-input" value="@company.BankBranch" placeholder="City / branch name" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-top">
+                            <h5 class="mb-1"><i class="bi bi-phone text-info me-2"></i> UPI</h5>
+                            <p class="text-muted small mb-3">Optional — clients can pay via UPI apps.</p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label settings-label">UPI ID</label>
+                                    <input type="text" name="UpiId" class="form-control settings-input" value="@company.UpiId" placeholder="softflip@oksbi" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label settings-label">UPI display name</label>
+                                    <input type="text" name="UpiName" class="form-control settings-input" value="@company.UpiName" placeholder="Softflip Solutions" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-crm-primary"><i class="bi bi-save2 me-1"></i> Save company</button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- SMTP Tab -->
-            <div class="tab-pane fade" id="v-pills-smtp" role="tabpanel" aria-labelledby="v-pills-smtp-tab">
-                <div class="settings-card p-4 p-md-5">
-                    <h4 class="text-white mb-4"><i class="bi bi-envelope-at text-info me-2"></i> SMTP Configuration</h4>
-                    <p class="text-muted mb-4">Configure your mail server details to allow the CRM to send emails to clients directly from the dashboard.</p>
-                    
-                    <form asp-action="UpdateSmtp" method="post">
-                        <div class="row mb-4">
+            <div class="tab-pane fade @(activeTab == "contacts" ? "show active" : "")" id="tab-contacts">
+                <div class="glass-card p-4 p-md-4">
+                    <h4 class="mb-1"><i class="bi bi-person-lines-fill text-info me-2"></i> Contacts</h4>
+                    <p class="text-muted mb-4">Shown on proposals so clients know how to reach you.</p>
+                    <form asp-action="UpdateContacts" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">Contact person</label>
+                                <input type="text" name="ContactPerson" class="form-control settings-input" value="@company.ContactPerson" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">Phone</label>
+                                <input type="text" name="ContactPhone" class="form-control settings-input" value="@company.ContactPhone" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">WhatsApp number</label>
+                                <input type="text" name="ContactWhatsApp" class="form-control settings-input" value="@company.ContactWhatsApp" placeholder="91XXXXXXXXXX" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">Email</label>
+                                <input type="email" name="ContactEmail" class="form-control settings-input" value="@company.ContactEmail" />
+                            </div>
+                        </div>
+                        <div class="text-end mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-crm-primary"><i class="bi bi-save2 me-1"></i> Save contacts</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="tab-pane fade @(activeTab == "signature" ? "show active" : "")" id="tab-signature">
+                <div class="glass-card p-4 p-md-4">
+                    <h4 class="mb-1"><i class="bi bi-pen text-info me-2"></i> Signature</h4>
+                    <p class="text-muted mb-4">Appears at the bottom of proposal &amp; invoice PDFs.</p>
+                    <form asp-action="UpdateSignature" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">Signatory name</label>
+                                <input type="text" name="SignatoryName" class="form-control settings-input" value="@company.SignatoryName" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">Title</label>
+                                <input type="text" name="SignatoryTitle" class="form-control settings-input" value="@company.SignatoryTitle" />
+                            </div>
+                            <div class="col-12">
+                                @{
+                                    ViewData["UploadInputName"] = "SignatureFile";
+                                    ViewData["UploadLabel"] = "Signature image";
+                                    ViewData["UploadHint"] = "PNG preferred · transparent background works best · max 2 MB";
+                                    ViewData["UploadCurrentUrl"] = company.HasSignature ? company.SignaturePath : null;
+                                    ViewData["UploadRemoveName"] = company.HasSignature ? "RemoveSignature" : null;
+                                    ViewData["UploadRemoveId"] = "RemoveSignature";
+                                    ViewData["UploadVariant"] = "signature";
+                                }
+                                <partial name="_ImageUpload" />
+                            </div>
+                        </div>
+                        <div class="text-end mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-crm-primary"><i class="bi bi-save2 me-1"></i> Save signature</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="tab-pane fade @(activeTab == "smtp" ? "show active" : "")" id="tab-smtp">
+                <div class="glass-card settings-panel">
+                    <div class="settings-panel-head">
+                        <div class="settings-panel-ico smtp"><i class="bi bi-envelope-at"></i></div>
+                        <div>
+                            <h4>SMTP configuration</h4>
+                            <p>Required to email proposals and partner welcome messages.</p>
+                        </div>
+                    </div>
+                    <form asp-action="UpdateSmtp" method="post" class="settings-panel-body">
+                        @Html.AntiForgeryToken()
+                        <div class="settings-section-label"><i class="bi bi-hdd-network me-1"></i> Server</div>
+                        <div class="row g-3 mb-4">
                             <div class="col-md-8">
-                                <label class="form-label settings-label">SMTP Host / Server</label>
-                                <input type="text" name="SmtpHost" class="form-control settings-input" placeholder="e.g., smtp.gmail.com" value="@ViewBag.SmtpHost" required>
+                                <label class="form-label settings-label">SMTP host</label>
+                                <div class="settings-input-wrap">
+                                    <i class="bi bi-server settings-input-ico"></i>
+                                    <input type="text" name="SmtpHost" class="form-control settings-input has-ico" placeholder="e.g. smtp.gmail.com" value="@ViewBag.SmtpHost" required>
+                                </div>
                             </div>
-                            <div class="col-md-4 mt-4 mt-md-0">
+                            <div class="col-md-4">
                                 <label class="form-label settings-label">Port</label>
-                                <input type="number" name="SmtpPort" class="form-control settings-input" placeholder="587" value="@ViewBag.SmtpPort" required>
+                                <div class="settings-input-wrap">
+                                    <i class="bi bi-plug settings-input-ico"></i>
+                                    <input type="number" name="SmtpPort" class="form-control settings-input has-ico" placeholder="587" value="@ViewBag.SmtpPort" required>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label settings-label">Email Address (Sender)</label>
-                            <input type="email" name="SmtpEmail" class="form-control settings-input" placeholder="your@email.com" value="@ViewBag.SmtpEmail" required>
+                        <div class="settings-section-label"><i class="bi bi-person-badge me-1"></i> Sender account</div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <label class="form-label settings-label">Email address</label>
+                                <div class="settings-input-wrap">
+                                    <i class="bi bi-envelope settings-input-ico"></i>
+                                    <input type="email" name="SmtpEmail" class="form-control settings-input has-ico" placeholder="your@email.com" value="@ViewBag.SmtpEmail" required>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label settings-label">Password / App password</label>
+                                <div class="settings-input-wrap password">
+                                    <i class="bi bi-key settings-input-ico"></i>
+                                    <input type="password" name="SmtpPassword" class="form-control settings-input has-ico has-toggle" placeholder="••••••••••••" value="@ViewBag.SmtpPassword" required autocomplete="current-password">
+                                    <button type="button" class="settings-pass-toggle" data-pass-toggle aria-label="Show password">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label settings-label">Email Password (or App Password)</label>
-                            <input type="password" name="SmtpPassword" class="form-control settings-input" placeholder="••••••••••••" value="@ViewBag.SmtpPassword" required>
-                            <div class="form-text text-muted">If using Gmail, generate an 'App Password' from your Google Account settings instead of your real password.</div>
+                        <div class="settings-ssl-card mb-4">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch" id="SmtpEnableSsl" name="SmtpEnableSsl" @(ViewBag.SmtpEnableSsl == true ? "checked" : "")>
+                                <label class="form-check-label" for="SmtpEnableSsl">
+                                    <strong>Enable SSL / TLS</strong>
+                                    <span>Encrypt connection to the mail server (recommended)</span>
+                                </label>
+                            </div>
                         </div>
 
-                        <div class="mb-4 form-check form-switch mt-4">
-                            <input class="form-check-input" type="checkbox" role="switch" id="SmtpEnableSsl" name="SmtpEnableSsl" @(ViewBag.SmtpEnableSsl == true ? "checked" : "") style="width: 40px; height: 20px;">
-                            <label class="form-check-label text-white ms-2" for="SmtpEnableSsl" style="margin-top: 2px;">Enable SSL Encryption</label>
-                        </div>
-
-                        <div class="text-end pt-3 border-top border-secondary border-opacity-25 mt-5">
-                            <button type="submit" class="btn btn-gradient-primary rounded-pill px-5 py-2">
-                                <i class="bi bi-save2 me-2"></i> Save Settings
-                            </button>
+                        <div class="settings-panel-actions">
+                            <button type="submit" class="btn btn-crm-primary"><i class="bi bi-save2 me-1"></i> Save SMTP</button>
                         </div>
                     </form>
                 </div>
             </div>
 
+            <div class="tab-pane fade @(activeTab == "security" ? "show active" : "")" id="tab-security">
+                <div class="glass-card settings-panel">
+                    <div class="settings-panel-head">
+                        <div class="settings-panel-ico security"><i class="bi bi-shield-lock"></i></div>
+                        <div>
+                            <h4>Change password</h4>
+                            <p>Keep your administrator account secure with a strong password.</p>
+                        </div>
+                    </div>
+                    <form asp-action="UpdateSecurity" method="post" class="settings-panel-body">
+                        @Html.AntiForgeryToken()
+                        <div class="settings-user-chip mb-4">
+                            <span class="settings-user-avatar">@((ViewBag.AdminUsername as string ?? "A").Substring(0, 1).ToUpper())</span>
+                            <div>
+                                <strong>@ViewBag.AdminUsername</strong>
+                                <small>Administrator account</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label settings-label">Current password</label>
+                            <div class="settings-input-wrap password">
+                                <i class="bi bi-lock settings-input-ico"></i>
+                                <input type="password" name="currentPassword" class="form-control settings-input has-ico has-toggle" required autocomplete="current-password">
+                                <button type="button" class="settings-pass-toggle" data-pass-toggle aria-label="Show password">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">New password</label>
+                                <div class="settings-input-wrap password">
+                                    <i class="bi bi-shield-check settings-input-ico"></i>
+                                    <input type="password" name="newPassword" class="form-control settings-input has-ico has-toggle" required minlength="6" autocomplete="new-password">
+                                    <button type="button" class="settings-pass-toggle" data-pass-toggle aria-label="Show password">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text settings-hint">Minimum 6 characters</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">Confirm new password</label>
+                                <div class="settings-input-wrap password">
+                                    <i class="bi bi-shield-check settings-input-ico"></i>
+                                    <input type="password" name="confirmPassword" class="form-control settings-input has-ico has-toggle" required minlength="6" autocomplete="new-password">
+                                    <button type="button" class="settings-pass-toggle" data-pass-toggle aria-label="Show password">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-panel-actions">
+                            <button type="submit" class="btn btn-crm-primary"><i class="bi bi-shield-check me-1"></i> Update password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>

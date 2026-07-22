@@ -1,0 +1,475 @@
+@model SoftflipSolutions.ViewModels.LeadDealPanelViewModel
+@using SoftflipSolutions.Models
+@using System.Text.Json
+@{
+    var status = Model.Status;
+    var stepIndex = LeadPipeline.StepIndex(status);
+    decimal? prefillAmount = null;
+    if (!string.IsNullOrWhiteSpace(Model.SuggestedAmount))
+    {
+        var digits = new string(Model.SuggestedAmount.Where(c => char.IsDigit(c) || c == '.').ToArray());
+        if (decimal.TryParse(digits, out var parsed)) prefillAmount = parsed;
+    }
+    var waPhone = (Model.ClientPhone ?? "").Replace("+", "").Replace(" ", "").Replace("-", "");
+    var templatesJson = JsonSerializer.Serialize(ProposalTemplates.All.Select(t => new
+    {
+        t.Key,
+        title = ProposalTemplates.Fill(t.TitlePattern, Model.ClientName, Model.Requirement),
+        scope = ProposalTemplates.Fill(t.ScopePattern, Model.ClientName, Model.Requirement)
+    }));
+    var servicesJson = JsonSerializer.Serialize(Model.Services.Select(s => new
+    {
+        id = s.Id,
+        name = s.Name,
+        panels = (s.Panels ?? new List<ServicePanel>()).Select(p => new
+        {
+            id = p.Id,
+            name = p.Name,
+            modules = (p.Modules ?? new List<ServiceModule>()).Select(m => new
+            {
+                id = m.Id,
+                name = m.Name,
+                subModules = (m.SubModules ?? new List<ServiceSubModule>()).Select(sm => new { id = sm.Id, name = sm.Name })
+            })
+        })
+    }));
+    List<ProposalModuleSelection>? latestModules = null;
+    if (Model.LatestProposal != null && !string.IsNullOrWhiteSpace(Model.LatestProposal.SelectedModulesJson))
+    {
+        try { latestModules = JsonSerializer.Deserialize<List<ProposalModuleSelection>>(Model.LatestProposal.SelectedModulesJson); }
+        catch { /* ignore bad snapshot */ }
+    }
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success deal-alert">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger deal-alert">@TempData["ErrorMessage"]</div>
+}
+
+@if (LeadPipeline.IsActiveDeal(status) || status == LeadPipeline.Confirmed)
+{
+    <div class="lead-deal-card mb-4">
+        <div class="lead-deal-header">
+            <div>
+                <h5><i class="bi bi-kanban me-2"></i>Deal pipeline</h5>
+                <p>Confirm → Proposal → Invoice → Paid</p>
+            </div>
+            <span class="badge bg-@LeadPipeline.BadgeClass(status)">
+                <i class="bi @LeadPipeline.BadgeIcon(status) me-1"></i>@LeadPipeline.DisplayName(status)
+            </span>
+        </div>
+
+        <div class="lead-pipeline-steps">
+            @for (var i = 0; i < LeadPipeline.PipelineSteps.Length; i++)
+            {
+                var step = LeadPipeline.PipelineSteps[i];
+                var state = stepIndex > i ? "done" : stepIndex == i ? "current" : "todo";
+                <div class="lead-pipeline-step @state">
+                    <span class="lead-pipeline-dot">@(stepIndex > i ? "✓" : (i + 1).ToString())</span>
+                    <span class="lead-pipeline-label">@LeadPipeline.DisplayName(step)</span>
+                </div>
+                if (i < LeadPipeline.PipelineSteps.Length - 1)
+                {
+                    <div class="lead-pipeline-line @(stepIndex > i ? "done" : "")"></div>
+                }
+            }
+        </div>
+
+        <div class="lead-deal-body">
+            @if (LeadPipeline.CanGenerateProposal(status) || status == LeadPipeline.Invoiced || status == LeadPipeline.Paid)
+            {
+                <details class="lead-proposal-form" @(Model.LatestProposal == null && status == LeadPipeline.Confirmed ? "open" : null)>
+                    <summary><i class="bi bi-file-earmark-plus me-1"></i> Generate proposal</summary>
+
+                    <div class="proposal-templates mt-3" id="proposalTemplates">
+                        <div class="lead-info-label mb-2">Choose a template</div>
+                        <div class="row g-2">
+                            @foreach (var tmpl in ProposalTemplates.All)
+                            {
+                                <div class="col-md-4">
+                                    <label class="proposal-template-card">
+                                        <input type="radio" name="templatePicker" value="@tmpl.Key" @(tmpl.Key == ProposalTemplates.Classic ? "checked" : null) form="generateProposalForm" />
+                                        <span class="proposal-template-inner" style="--tmpl-accent:@tmpl.Accent">
+                                            <i class="bi @tmpl.Icon"></i>
+                                            <strong>@tmpl.Name</strong>
+                                            <small>@tmpl.Description</small>
+                                        </span>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <form asp-action="GenerateProposal" method="post" class="mt-3" id="generateProposalForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="leadType" value="@Model.LeadType" />
+                        <input type="hidden" name="leadId" value="@Model.LeadId" />
+                        <input type="hidden" name="templateKey" id="templateKeyInput" value="@ProposalTemplates.Classic" />
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label class="lead-info-label">Service (optional)</label>
+                                <select name="serviceId" id="proposalServiceSelect" class="form-select settings-input">
+                                    <option value="">— No service / free-form —</option>
+                                    @foreach (var svc in Model.Services)
+                                    {
+                                        <option value="@svc.Id">@svc.Name (@(svc.Panels?.Count ?? 0) panels)</option>
+                                    }
+                                </select>
+                                @if (!Model.Services.Any())
+                                {
+                                    <div class="form-text text-muted">Add services under <a asp-action="Services" class="text-info">CRM → Services</a> to pick panels here.</div>
+                                }
+                            </div>
+                            <div class="col-12" id="proposalModulesWrap" style="display:none;">
+                                <label class="lead-info-label">Select features by panel</label>
+                                <div id="proposalModulesTree" class="proposal-modules-tree"></div>
+                                <div class="d-flex gap-2 mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-info" id="proposalSelectAllModules">Select all</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="proposalClearModules">Clear</button>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="lead-info-label">Title</label>
+                                <input type="text" name="title" id="proposalTitle" class="form-control settings-input" value="@ProposalTemplates.Fill(ProposalTemplates.Get(ProposalTemplates.Classic).TitlePattern, Model.ClientName, Model.Requirement)" required maxlength="200" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="lead-info-label">Amount (₹)</label>
+                                <input type="number" name="amount" class="form-control settings-input" step="0.01" min="1" value="@(prefillAmount?.ToString("0.##"))" required />
+                            </div>
+                            <div class="col-12">
+                                <label class="lead-info-label">Scope / details</label>
+                                <textarea name="scope" id="proposalScope" class="form-control custom-textarea" rows="5" required maxlength="2000">@ProposalTemplates.Fill(ProposalTemplates.Get(ProposalTemplates.Classic).ScopePattern, Model.ClientName, Model.Requirement)</textarea>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="lead-info-label">Valid days</label>
+                                <input type="number" name="validDays" class="form-control settings-input" value="14" min="1" max="90" />
+                            </div>
+                            <div class="col-md-8 d-flex align-items-end">
+                                <button type="submit" class="btn btn-crm-primary"><i class="bi bi-magic me-1"></i> Create proposal PDF</button>
+                            </div>
+                        </div>
+                    </form>
+                </details>
+            }
+
+            @if (Model.LatestProposal != null)
+            {
+                var tmpl = ProposalTemplates.Get(Model.LatestProposal.TemplateKey);
+                var waText = Uri.EscapeDataString(
+                    $"Hi {Model.ClientName},\n\nPlease find our proposal: {Model.LatestProposal.Title}\nAmount: ₹ {Model.LatestProposal.Amount:N2}\nValid until: {Model.LatestProposal.ValidUntil:dd MMM yyyy}\n\nDownload: {Model.ProposalPublicUrl}\n\n— Softflip Solutions");
+                var daysLeft = (Model.LatestProposal.ValidUntil.Date - DateTime.Now.Date).Days;
+                var validityClass = daysLeft < 0 ? "expired" : daysLeft <= 3 ? "soon" : "ok";
+
+                <div class="lead-deal-doc proposal">
+                    <div class="lead-deal-doc-top">
+                        <div class="lead-deal-doc-icon proposal"><i class="bi bi-file-earmark-text"></i></div>
+                        <div class="lead-deal-doc-main">
+                            <div class="lead-deal-doc-kicker">
+                                <span class="lead-deal-pill">Proposal</span>
+                                <span class="lead-deal-pill soft">@tmpl.Name</span>
+                            </div>
+                            <h6 class="lead-deal-doc-title">@Model.LatestProposal.Title</h6>
+                            <div class="lead-deal-doc-meta">
+                                <span><i class="bi bi-currency-rupee"></i> @Model.LatestProposal.Amount.ToString("N2")</span>
+                                <span class="lead-deal-validity @validityClass">
+                                    <i class="bi bi-calendar3"></i>
+                                    @if (daysLeft < 0)
+                                    {
+                                        <text>Expired @Model.LatestProposal.ValidUntil.ToString("dd MMM")</text>
+                                    }
+                                    else if (daysLeft == 0)
+                                    {
+                                        <text>Expires today</text>
+                                    }
+                                    else
+                                    {
+                                        <text>Valid @daysLeft d · @Model.LatestProposal.ValidUntil.ToString("dd MMM yyyy")</text>
+                                    }
+                                </span>
+                            </div>
+                        </div>
+                        <div class="lead-deal-doc-amount">
+                            <small>Investment</small>
+                            <strong>₹ @Model.LatestProposal.Amount.ToString("N0")</strong>
+                        </div>
+                    </div>
+
+                    <div class="lead-deal-doc-actions">
+                        <a class="btn lead-deal-btn" asp-action="DownloadProposal" asp-route-id="@Model.LatestProposal.Id" target="_blank">
+                            <i class="bi bi-file-earmark-pdf"></i> PDF
+                        </a>
+                        @if (!string.IsNullOrWhiteSpace(Model.ClientEmail))
+                        {
+                            <form asp-action="SendProposalEmail" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="proposalId" value="@Model.LatestProposal.Id" />
+                                <button type="submit" class="btn lead-deal-btn">
+                                    <i class="bi bi-envelope"></i> Email
+                                </button>
+                            </form>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(waPhone))
+                        {
+                            <a class="btn lead-deal-btn wa" href="https://wa.me/@waPhone?text=@waText" target="_blank" rel="noopener">
+                                <i class="bi bi-whatsapp"></i> WhatsApp
+                            </a>
+                        }
+                        @if (Model.LatestInvoice == null && (status == LeadPipeline.ProposalSent || status == LeadPipeline.Confirmed))
+                        {
+                            <form asp-action="ConvertToInvoice" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="leadType" value="@Model.LeadType" />
+                                <input type="hidden" name="leadId" value="@Model.LeadId" />
+                                <button type="submit" class="btn lead-deal-btn primary">
+                                    <i class="bi bi-receipt"></i> Convert to invoice
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+
+                <div class="proposal-preview-card">
+                    <div class="proposal-preview-top" style="border-color:@tmpl.Accent">
+                        <span class="proposal-preview-label">On-page preview</span>
+                        <h6>@Model.LatestProposal.Title</h6>
+                        <p class="mb-0 text-muted small">Prepared for @Model.ClientName · @Model.Requirement</p>
+                    </div>
+                    <div class="proposal-preview-body">
+                        @if (latestModules != null && latestModules.Count > 0)
+                        {
+                            <div class="proposal-preview-modules mb-3">
+                                <div class="lead-info-label mb-1">Included modules</div>
+                                <ul class="mb-0 ps-3">
+                                    @foreach (var m in latestModules)
+                                    {
+                                        <li>
+                                            <strong>@m.Name</strong>
+                                            @if (m.SubModules != null && m.SubModules.Count > 0)
+                                            {
+                                                <span class="text-muted"> — @string.Join(", ", m.SubModules)</span>
+                                            }
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                        <pre class="proposal-preview-scope">@Model.LatestProposal.Scope</pre>
+                        <div class="proposal-preview-amount">Investment: <strong>₹ @Model.LatestProposal.Amount.ToString("N2")</strong></div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.LatestInvoice != null)
+            {
+                var inv = Model.LatestInvoice;
+                var invPaid = inv.Status == "Paid";
+                var invPartial = inv.Status == "Partial";
+                var balance = inv.Balance;
+                <div class="lead-deal-doc invoice @(invPaid ? "paid" : invPartial ? "partial" : "unpaid")">
+                    <div class="lead-deal-doc-top">
+                        <div class="lead-deal-doc-icon invoice"><i class="bi bi-receipt"></i></div>
+                        <div class="lead-deal-doc-main">
+                            <div class="lead-deal-doc-kicker">
+                                <span class="lead-deal-pill">Invoice</span>
+                                <span class="lead-deal-pill @(invPaid ? "paid" : invPartial ? "partial" : "unpaid")">@inv.Status</span>
+                            </div>
+                            <h6 class="lead-deal-doc-title">@inv.InvoiceNumber</h6>
+                            <div class="lead-deal-doc-meta">
+                                <span><i class="bi bi-currency-rupee"></i> Total @inv.Amount.ToString("N2")</span>
+                                <span><i class="bi bi-check2-circle"></i> Paid @inv.AmountPaid.ToString("N2")</span>
+                                <span><i class="bi bi-wallet2"></i> Due @balance.ToString("N2")</span>
+                                <span><i class="bi bi-calendar3"></i> @inv.CreatedAt.ToString("dd MMM yyyy")</span>
+                            </div>
+                            <div class="lead-pay-progress">
+                                <div class="lead-pay-progress-bar" style="width:@(inv.PaidPercent.ToString(System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                            </div>
+                            <div class="lead-pay-progress-label">@inv.PaidPercent% collected</div>
+                        </div>
+                        <div class="lead-deal-doc-amount">
+                            <small>@(invPaid ? "Received" : "Balance")</small>
+                            <strong>₹ @((invPaid ? inv.AmountPaid : balance).ToString("N0"))</strong>
+                        </div>
+                    </div>
+
+                    @if (!invPaid)
+                    {
+                        <div class="lead-pay-form">
+                            <div class="lead-pay-form-label">Record payment</div>
+                            <div class="lead-pay-quick">
+                                @foreach (var pct in new[] { 25, 50, 75, 100 })
+                                {
+                                    var partAmt = Math.Round(inv.Amount * pct / 100m, 2);
+                                    if (partAmt <= balance + 0.009m || pct == 100)
+                                    {
+                                        var submitAmt = Math.Min(partAmt, balance);
+                                        if (submitAmt > 0)
+                                        {
+                                            <form asp-action="RecordInvoicePayment" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="invoiceId" value="@inv.Id" />
+                                                <input type="hidden" name="percent" value="@pct" />
+                                                <button type="submit" class="btn lead-pay-chip">@pct% · ₹ @submitAmt.ToString("N0")</button>
+                                            </form>
+                                        }
+                                    }
+                                }
+                            </div>
+                            <form asp-action="RecordInvoicePayment" method="post" class="lead-pay-custom">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="invoiceId" value="@inv.Id" />
+                                <input type="number" name="amount" class="form-control settings-input" step="0.01" min="0.01" max="@balance.ToString(System.Globalization.CultureInfo.InvariantCulture)" placeholder="Custom amount" required />
+                                <input type="text" name="note" class="form-control settings-input" maxlength="200" placeholder="Note (optional)" />
+                                <button type="submit" class="btn lead-deal-btn primary"><i class="bi bi-plus-lg"></i> Add</button>
+                            </form>
+                        </div>
+                    }
+
+                    @if (inv.Payments != null && inv.Payments.Any())
+                    {
+                        <div class="lead-pay-history">
+                            <div class="lead-pay-form-label">Payment history</div>
+                            @foreach (var pay in inv.Payments)
+                            {
+                                <div class="lead-pay-history-row">
+                                    <span><strong>₹ @pay.Amount.ToString("N2")</strong>@(string.IsNullOrWhiteSpace(pay.Note) ? "" : " · " + pay.Note)</span>
+                                    <span>@pay.PaidAt.ToString("dd MMM yyyy, hh:mm tt")</span>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <div class="lead-deal-doc-actions">
+                        <a class="btn lead-deal-btn" asp-action="DownloadInvoice" asp-route-id="@inv.Id">
+                            <i class="bi bi-file-earmark-pdf"></i> PDF
+                        </a>
+                        @if (!invPaid)
+                        {
+                            <form asp-action="MarkInvoicePaid" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="invoiceId" value="@inv.Id" />
+                                <button type="submit" class="btn lead-deal-btn success" onclick="return confirm('Mark remaining balance as fully paid?');">
+                                    <i class="bi bi-cash-coin"></i> Mark fully paid
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <script type="application/json" id="proposalTemplateData">@Html.Raw(templatesJson)</script>
+    <script type="application/json" id="proposalServicesData">@Html.Raw(servicesJson)</script>
+    <script>
+        (function () {
+            const dataEl = document.getElementById('proposalTemplateData');
+            if (!dataEl) return;
+            const templates = JSON.parse(dataEl.textContent || '[]');
+            const titleEl = document.getElementById('proposalTitle');
+            const scopeEl = document.getElementById('proposalScope');
+            const keyInput = document.getElementById('templateKeyInput');
+            document.querySelectorAll('input[name="templatePicker"]').forEach(function (radio) {
+                radio.addEventListener('change', function () {
+                    const t = templates.find(x => x.Key === radio.value || x.key === radio.value);
+                    if (!t) return;
+                    if (keyInput) keyInput.value = radio.value;
+                    if (titleEl) titleEl.value = t.title;
+                    if (scopeEl) scopeEl.value = t.scope;
+                });
+            });
+
+            const servicesEl = document.getElementById('proposalServicesData');
+            const serviceSelect = document.getElementById('proposalServiceSelect');
+            const wrap = document.getElementById('proposalModulesWrap');
+            const tree = document.getElementById('proposalModulesTree');
+            if (!servicesEl || !serviceSelect || !wrap || !tree) return;
+
+            const services = JSON.parse(servicesEl.textContent || '[]');
+
+            function renderModules(serviceId) {
+                tree.innerHTML = '';
+                const svc = services.find(s => String(s.id) === String(serviceId));
+                if (!svc || !svc.panels || !svc.panels.length) {
+                    wrap.style.display = 'none';
+                    return;
+                }
+                const hasAny = svc.panels.some(function (p) { return p.modules && p.modules.length; });
+                if (!hasAny) {
+                    wrap.style.display = 'none';
+                    return;
+                }
+                wrap.style.display = '';
+                svc.panels.forEach(function (panel) {
+                    if (!panel.modules || !panel.modules.length) return;
+                    const panelBlock = document.createElement('div');
+                    panelBlock.className = 'proposal-module-block';
+                    let html = '<div class="proposal-module-name mb-2"><strong><i class="bi bi-window me-1"></i>' + escapeHtml(panel.name) + '</strong></div>';
+                    panel.modules.forEach(function (mod) {
+                        html += '<div class="mb-2">';
+                        html += '<label class="proposal-module-check"><input type="checkbox" name="moduleIds" value="' + mod.id + '" /> <strong>' + escapeHtml(mod.name) + '</strong></label>';
+                        if (mod.subModules && mod.subModules.length) {
+                            html += '<div class="proposal-submodule-list">';
+                            mod.subModules.forEach(function (sub) {
+                                html += '<label class="proposal-submodule-check"><input type="checkbox" name="subModuleIds" value="' + sub.id + '" /> ' + escapeHtml(sub.name) + '</label>';
+                            });
+                            html += '</div>';
+                        }
+                        html += '</div>';
+                    });
+                    panelBlock.innerHTML = html;
+                    tree.appendChild(panelBlock);
+
+                    panelBlock.querySelectorAll('.mb-2').forEach(function (modWrap) {
+                        const modCb = modWrap.querySelector('input[name="moduleIds"]');
+                        const subCbs = modWrap.querySelectorAll('input[name="subModuleIds"]');
+                        if (!modCb) return;
+                        modCb.addEventListener('change', function () {
+                            subCbs.forEach(function (cb) { cb.checked = modCb.checked; });
+                        });
+                        subCbs.forEach(function (cb) {
+                            cb.addEventListener('change', function () {
+                                const any = Array.from(subCbs).some(x => x.checked);
+                                const all = Array.from(subCbs).every(x => x.checked);
+                                modCb.checked = any;
+                                modCb.indeterminate = any && !all;
+                            });
+                        });
+                    });
+                });
+            }
+
+            function escapeHtml(str) {
+                return String(str || '').replace(/[&<>"']/g, function (c) {
+                    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+                });
+            }
+
+            serviceSelect.addEventListener('change', function () {
+                renderModules(serviceSelect.value);
+            });
+
+            const selectAllBtn = document.getElementById('proposalSelectAllModules');
+            const clearBtn = document.getElementById('proposalClearModules');
+            if (selectAllBtn) {
+                selectAllBtn.addEventListener('click', function () {
+                    tree.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+                        cb.checked = true;
+                        cb.indeterminate = false;
+                    });
+                });
+            }
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function () {
+                    tree.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+                        cb.checked = false;
+                        cb.indeterminate = false;
+                    });
+                });
+            }
+        })();
+    </script>
+}

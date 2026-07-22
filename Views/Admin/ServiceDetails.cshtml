@@ -1,0 +1,184 @@
+@model SoftflipSolutions.Models.ServiceCatalog
+@{
+    ViewData["Title"] = Model.Name;
+    Layout = "_AdminLayout";
+    var panels = Model.Panels?.OrderBy(p => p.SortOrder).ToList() ?? new();
+    var featureCount = panels.Sum(p => p.Modules?.Count ?? 0);
+    var activePanelId = ViewBag.ActivePanelId as int?;
+    if (activePanelId == null && panels.Count > 0)
+        activePanelId = panels[0].Id;
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success deal-alert alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger deal-alert alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="mb-3">
+    <a asp-action="Services" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> Back to services</a>
+</div>
+
+<div class="glass-card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-info bg-opacity-25 text-info"><i class="bi bi-box-seam me-1"></i> Service</span>
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success bg-opacity-25 text-success">Active</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">Inactive</span>
+                }
+            </div>
+            <h4 class="mb-1" style="color:#152238">@Model.Name</h4>
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+                <p class="text-muted mb-0">@Model.Description</p>
+            }
+            <p class="small mt-2 mb-0" style="color:#374151">
+                <strong>Budget:</strong> ₹ @Model.Budget.ToString("N0")
+                <span class="mx-2 text-muted">·</span>
+                <strong>Commission:</strong> @Model.Commission.ToString("0.##")%
+            </p>
+            <p class="small text-muted mt-2 mb-0">
+                Created @Model.CreatedAt.ToString("dd MMM yyyy") · @panels.Count panels · @featureCount features
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="EditService" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-info"><i class="bi bi-pencil-square me-1"></i> Edit</a>
+            <form asp-action="ToggleService" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn btn-sm @(Model.IsActive ? "btn-outline-warning" : "btn-outline-success")">
+                    <i class="bi @(Model.IsActive ? "bi-pause-circle" : "bi-play-circle") me-1"></i>
+                    @(Model.IsActive ? "Deactivate" : "Activate")
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+        <div>
+            <h6 class="mb-1" style="color:#152238">Panels</h6>
+            <p class="small text-muted mb-0">Har panel ke liye alag Excel upload — proposal mein alag-alag dikhega.</p>
+        </div>
+        <a asp-action="DownloadServiceModulesTemplate" class="btn btn-sm btn-lead-back">
+            <i class="bi bi-download me-1"></i> Feature Excel template
+        </a>
+    </div>
+
+    <form asp-action="AddServicePanel" method="post" class="row g-2 align-items-end mb-4">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="serviceId" value="@Model.Id" />
+        <div class="col-md-6">
+            <label class="form-label settings-label">Add panel</label>
+            <input type="text" name="panelName" class="form-control settings-input" placeholder="e.g. Distributor Panel" maxlength="120" required />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-crm-primary w-100"><i class="bi bi-plus-lg me-1"></i> Add panel</button>
+        </div>
+    </form>
+
+    @if (panels.Count == 0)
+    {
+        <div class="text-center py-4 text-muted">
+            <i class="bi bi-layout-text-window-reverse fs-1 d-block mb-2"></i>
+            No panels yet. Add Admin / User / Franchise panels to start.
+        </div>
+    }
+    else
+    {
+        <ul class="nav nav-pills gap-2 flex-wrap mb-3" id="servicePanelTabs" role="tablist">
+            @foreach (var panel in panels)
+            {
+                var isActive = panel.Id == activePanelId;
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(isActive ? "active" : "")"
+                            id="panel-tab-@panel.Id"
+                            data-bs-toggle="pill"
+                            data-bs-target="#panel-pane-@panel.Id"
+                            type="button"
+                            role="tab">
+                        @panel.Name
+                        <span class="badge bg-light text-dark ms-1">@(panel.Modules?.Count ?? 0)</span>
+                    </button>
+                </li>
+            }
+        </ul>
+
+        <div class="tab-content">
+            @foreach (var panel in panels)
+            {
+                var isActive = panel.Id == activePanelId;
+                var mods = panel.Modules?.OrderBy(m => m.SortOrder).ToList() ?? new();
+                <div class="tab-pane fade @(isActive ? "show active" : "")" id="panel-pane-@panel.Id" role="tabpanel">
+                    <div class="row g-4">
+                        <div class="col-lg-4">
+                            <div class="p-3 rounded border" style="background:#f8fafc;border-color:#eef0f4 !important;">
+                                <h6 class="mb-2" style="color:#152238">Upload for @panel.Name</h6>
+                                <p class="small text-muted mb-3">Columns: <strong>Feature</strong> | <strong>Sub Feature</strong>. Replaces this panel’s features only.</p>
+                                <form asp-action="UploadPanelModules" method="post" enctype="multipart/form-data">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="panelId" value="@panel.Id" />
+                                    <input type="file" name="modulesFile" class="form-control settings-input mb-3" accept=".xlsx,.xls" required />
+                                    <button type="submit" class="btn btn-crm-primary w-100"><i class="bi bi-upload me-1"></i> Upload Excel</button>
+                                </form>
+                                <form asp-action="DeleteServicePanel" method="post" class="mt-2"
+                                      onsubmit="return confirm('Delete panel @panel.Name and all its features?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="panelId" value="@panel.Id" />
+                                    <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
+                                        <i class="bi bi-trash3 me-1"></i> Delete panel
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-lg-8">
+                            @if (mods.Count == 0)
+                            {
+                                <div class="p-4 text-center text-muted border rounded">
+                                    <i class="bi bi-file-earmark-excel fs-2 d-block mb-2"></i>
+                                    No features yet for <strong>@panel.Name</strong>. Upload Excel.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="service-module-list">
+                                    @foreach (var mod in mods)
+                                    {
+                                        <div class="service-module-item">
+                                            <div class="service-module-name"><i class="bi bi-check2-square me-2"></i>@mod.Name</div>
+                                            @if (mod.SubModules != null && mod.SubModules.Any())
+                                            {
+                                                <ul class="service-submodule-list">
+                                                    @foreach (var sub in mod.SubModules.OrderBy(s => s.SortOrder))
+                                                    {
+                                                        <li>@sub.Name</li>
+                                                    }
+                                                </ul>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

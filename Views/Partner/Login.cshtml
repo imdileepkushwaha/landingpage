@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Partner Login";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Partner Login - Softflip Solutions</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/partner-panel.css" asp-append-version="true" />
+</head>
+<body class="auth-body">
+    <div class="auth-shell">
+        <aside class="auth-brand partner">
+            <div class="auth-brand-top">
+                <img src="~/admin/img/softflip-logo.png" alt="Softflip" class="auth-logo" />
+                <span>Channel Partners</span>
+            </div>
+            <div class="auth-brand-body">
+                <p class="auth-eyebrow">Partner portal</p>
+                <h1>Grow deals with your own branding</h1>
+                <p class="auth-lead">Add clients, create quotations, and manage opportunities as a Softflip channel partner.</p>
+                <ul class="auth-points">
+                    <li><i class="bi bi-check2-circle"></i> Capture interested clients</li>
+                    <li><i class="bi bi-check2-circle"></i> Generate branded proposals</li>
+                    <li><i class="bi bi-check2-circle"></i> Get listed on Softflip website</li>
+                </ul>
+            </div>
+            <div class="auth-brand-foot">© @DateTime.Now.Year Softflip Solutions</div>
+        </aside>
+
+        <main class="auth-panel">
+            <div class="auth-card">
+                <div class="auth-card-ico partner"><i class="bi bi-shop"></i></div>
+                <h2>Partner sign in</h2>
+                <p class="auth-sub">Use the email and password shared by Softflip</p>
+
+                @if (ViewBag.Error != null)
+                {
+                    <div class="auth-alert">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span>@ViewBag.Error</span>
+                    </div>
+                }
+
+                <form asp-action="Login" method="post" class="auth-form">
+                    @Html.AntiForgeryToken()
+                    <div class="auth-field">
+                        <label>Email</label>
+                        <div class="auth-input">
+                            <i class="bi bi-envelope"></i>
+                            <input type="email" name="email" placeholder="partner@company.com" required autocomplete="username" />
+                        </div>
+                    </div>
+                    <div class="auth-field">
+                        <label>Password</label>
+                        <div class="auth-input">
+                            <i class="bi bi-lock"></i>
+                            <input type="password" name="password" id="partnerPassword" placeholder="Enter password" required autocomplete="current-password" />
+                            <button type="button" class="auth-eye" data-pass-toggle data-target="partnerPassword" aria-label="Show password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="auth-submit partner">
+                        Sign in <i class="bi bi-arrow-right"></i>
+                    </button>
+                </form>
+
+                <a href="/" class="auth-back"><i class="bi bi-arrow-left"></i> Back to website</a>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.querySelectorAll('[data-pass-toggle]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const input = document.getElementById(btn.getAttribute('data-target'));
+                const icon = btn.querySelector('i');
+                if (!input || !icon) return;
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+                btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            });
+        });
+    </script>
+</body>
+</html>

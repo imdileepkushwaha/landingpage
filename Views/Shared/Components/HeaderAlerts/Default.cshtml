@@ -1,0 +1,97 @@
+@model SoftflipSolutions.ViewModels.HeaderAlertsViewModel
+@{
+    var notifCount = Model.NotificationCount;
+    var msgCount = Model.MessageCount;
+}
+
+<div class="header-dropdown" data-panel="notifications">
+                <button type="button" class="header-icon-btn header-menu-trigger" id="btnNotifications" title="Notifications" aria-expanded="false" aria-controls="panelNotifications">
+        <i class="bi bi-bell"></i>
+        @if (notifCount > 0)
+        {
+            <span class="header-badge" data-count="@notifCount">@(notifCount > 9 ? "9+" : notifCount.ToString())</span>
+        }
+    </button>
+    <div class="header-panel" id="panelNotifications" hidden>
+        <div class="header-panel-head">
+            <div>
+                <strong>Notifications</strong>
+                <span class="header-panel-sub">@notifCount open</span>
+            </div>
+            <button type="button" class="header-panel-clear" data-clear="notifications">Mark read</button>
+        </div>
+        <div class="header-panel-list">
+            @if (Model.Notifications.Any())
+            {
+                @foreach (var item in Model.Notifications)
+                {
+                    <a class="header-panel-item" href="@item.Url" data-alert-id="@item.Id" data-kind="notifications">
+                        <span class="header-panel-icon @item.Accent"><i class="bi @item.Icon"></i></span>
+                        <span class="header-panel-copy">
+                            <strong>@item.Title</strong>
+                            <small>@item.Subtitle</small>
+                        </span>
+                        <span class="header-panel-time">@item.TimeLabel</span>
+                    </a>
+                }
+            }
+            else
+            {
+                <div class="header-panel-empty">
+                    <i class="bi bi-bell-slash"></i>
+                    <p>No notifications right now</p>
+                </div>
+            }
+        </div>
+        <div class="header-panel-foot">
+            <a href="/Admin/Enquiries">Pending enquiries</a>
+            <a href="/Admin/ConfirmedClients">Active deals</a>
+        </div>
+    </div>
+</div>
+
+<div class="header-dropdown" data-panel="messages">
+                <button type="button" class="header-icon-btn header-menu-trigger" id="btnMessages" title="Messages" aria-expanded="false" aria-controls="panelMessages">
+        <i class="bi bi-chat-dots"></i>
+        @if (msgCount > 0)
+        {
+            <span class="header-badge" data-count="@msgCount">@(msgCount > 9 ? "9+" : msgCount.ToString())</span>
+        }
+    </button>
+    <div class="header-panel" id="panelMessages" hidden>
+        <div class="header-panel-head">
+            <div>
+                <strong>Messages</strong>
+                <span class="header-panel-sub">@msgCount from clients</span>
+            </div>
+            <button type="button" class="header-panel-clear" data-clear="messages">Mark read</button>
+        </div>
+        <div class="header-panel-list">
+            @if (Model.Messages.Any())
+            {
+                @foreach (var item in Model.Messages)
+                {
+                    <a class="header-panel-item" href="@item.Url" data-alert-id="@item.Id" data-kind="messages">
+                        <span class="header-panel-icon @item.Accent"><i class="bi @item.Icon"></i></span>
+                        <span class="header-panel-copy">
+                            <strong>@item.Title</strong>
+                            <small>@item.Subtitle</small>
+                        </span>
+                        <span class="header-panel-time">@item.TimeLabel</span>
+                    </a>
+                }
+            }
+            else
+            {
+                <div class="header-panel-empty">
+                    <i class="bi bi-chat-square-dots"></i>
+                    <p>No client messages yet</p>
+                </div>
+            }
+        </div>
+        <div class="header-panel-foot">
+            <a href="/Admin/Enquiries">Enquiries</a>
+            <a href="/Admin/DemoRequests">Demo requests</a>
+        </div>
+    </div>
+</div>

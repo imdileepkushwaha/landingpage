@@ -1,0 +1,356 @@
+@model SoftflipSolutions.Models.PartnerClient
+@using SoftflipSolutions.Models
+@using System.Text.Json
+@{
+    ViewData["Title"] = Model.Name;
+    Layout = "_PartnerLayout";
+    var initial = string.IsNullOrEmpty(Model.Name) ? "?" : Model.Name.Substring(0, 1).ToUpper();
+    var proposals = Model.Proposals?.OrderByDescending(p => p.CreatedAt).ToList() ?? new();
+    var whatsapp = Model.WhatsApp ?? Model.Mobile;
+    var services = ViewBag.Services as List<ServiceCatalog> ?? new();
+    var servicesJson = JsonSerializer.Serialize(services.Select(s => new
+    {
+        id = s.Id,
+        name = s.Name,
+        budget = s.Budget,
+        commission = s.Commission,
+        panels = (s.Panels ?? new List<ServicePanel>()).Select(p => new
+        {
+            id = p.Id,
+            name = p.Name,
+            modules = (p.Modules ?? new List<ServiceModule>()).Select(m => new
+            {
+                id = m.Id,
+                name = m.Name,
+                subModules = (m.SubModules ?? new List<ServiceSubModule>()).Select(sm => new { id = sm.Id, name = sm.Name })
+            })
+        })
+    }));
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success deal-alert">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger deal-alert">@TempData["ErrorMessage"]</div>
+}
+
+<div class="lead-detail-toolbar">
+    <a asp-action="Clients" class="btn btn-lead-back">
+        <i class="bi bi-arrow-left"></i> Back to clients
+    </a>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="tel:@Model.Mobile" class="btn cp-link-btn"><i class="bi bi-telephone"></i> Call</a>
+        <a href="https://wa.me/@(new string(whatsapp.Where(char.IsDigit).ToArray()))" target="_blank" rel="noopener" class="btn cp-link-btn">
+            <i class="bi bi-whatsapp"></i> WhatsApp
+        </a>
+    </div>
+</div>
+
+<div class="cp-hero is-active mb-4">
+    <div class="cp-hero-main">
+        <div class="cp-hero-logo">
+            <span>@initial</span>
+        </div>
+        <div class="cp-hero-copy">
+            <div class="cp-hero-badges">
+                <span class="cp-badge partner"><i class="bi bi-person-badge me-1"></i> Partner client</span>
+                <span class="cp-badge success"><i class="bi bi-file-earmark-pdf me-1"></i> @proposals.Count proposals</span>
+            </div>
+            <h1>@Model.Name</h1>
+            <p>
+                <i class="bi bi-briefcase"></i> @Model.Requirement
+                <span class="cp-dot">·</span>
+                Added @Model.CreatedAt.ToString("dd MMM yyyy")
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="lead-profile-card">
+            <div class="lead-profile-top">
+                <h3>Contact</h3>
+            </div>
+            <div class="lead-profile-body">
+                <div class="lead-info-row">
+                    <div class="lead-info-icon"><i class="bi bi-telephone"></i></div>
+                    <div>
+                        <div class="lead-info-label">Mobile</div>
+                        <a href="tel:@Model.Mobile">@Model.Mobile</a>
+                    </div>
+                </div>
+                <div class="lead-info-row">
+                    <div class="lead-info-icon"><i class="bi bi-whatsapp"></i></div>
+                    <div>
+                        <div class="lead-info-label">WhatsApp</div>
+                        <strong>@whatsapp</strong>
+                    </div>
+                </div>
+                <div class="lead-info-row">
+                    <div class="lead-info-icon"><i class="bi bi-envelope"></i></div>
+                    <div>
+                        <div class="lead-info-label">Email</div>
+                        <strong>@(Model.Email ?? "—")</strong>
+                    </div>
+                </div>
+                <div class="lead-info-row">
+                    <div class="lead-info-icon"><i class="bi bi-currency-rupee"></i></div>
+                    <div>
+                        <div class="lead-info-label">Budget</div>
+                        <strong>@(Model.Budget ?? "—")</strong>
+                    </div>
+                </div>
+                <div class="lead-info-row mb-0">
+                    <div class="lead-info-icon"><i class="bi bi-calendar3"></i></div>
+                    <div>
+                        <div class="lead-info-label">Added</div>
+                        <strong>@Model.CreatedAt.ToString("dd MMM yyyy HH:mm")</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="cp-card mb-4">
+            <div class="cp-card-head">
+                <div>
+                    <h5><i class="bi bi-file-earmark-plus me-2"></i>Create quotation</h5>
+                    <p>Select a service &amp; modules — PDF uses your company branding.</p>
+                </div>
+            </div>
+            <div class="cp-card-body p-4">
+                <form asp-action="CreateProposal" method="post" id="partnerProposalForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="clientId" value="@Model.Id" />
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label settings-label">Service</label>
+                            <select name="serviceId" id="proposalServiceSelect" class="form-select settings-input" required>
+                                <option value="">— Choose service —</option>
+                                @foreach (var svc in services)
+                                {
+                                    <option value="@svc.Id">@svc.Name — ₹ @svc.Budget.ToString("N0")</option>
+                                }
+                            </select>
+                            @if (!services.Any())
+                            {
+                                <div class="form-text text-muted">No services yet. <a asp-action="Services">View catalog</a> or contact admin.</div>
+                            }
+                        </div>
+                        <div class="col-12" id="proposalModulesWrap" style="display:none;">
+                            <label class="form-label settings-label">Included panels &amp; features</label>
+                            <div id="proposalModulesTree" class="proposal-modules-tree proposal-modules-readonly"></div>
+                            <div class="form-text text-muted mt-1">Admin-defined panels — view only</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label settings-label">Title</label>
+                            <input type="text" name="title" class="form-control settings-input" required value="Proposal for @Model.Name — @Model.Requirement" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label settings-label">Scope / details</label>
+                            <textarea name="scope" class="form-control settings-input" rows="4" required>Project scope based on: @Model.Requirement
+
+• Discovery &amp; requirement finalization
+• Design / UI
+• Development &amp; testing
+• Deployment &amp; handover</textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label settings-label">Price (₹)</label>
+                            <input type="number" name="amount" id="proposalAmount" class="form-control settings-input" step="0.01" min="1" required readonly />
+                            <!-- <div class="form-text text-muted" id="proposalAmountHint">Service select karne par auto fill hoga</div> -->
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label settings-label">Your commission (%)</label>
+                            <input type="text" id="proposalCommission" class="form-control settings-input" readonly value="—" />
+                            <!-- <div class="form-text text-muted">Sirf aapke liye — proposal mein nahi dikhega</div> -->
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label settings-label">Valid days</label>
+                            <input type="number" name="validDays" class="form-control settings-input" value="15" min="1" max="90" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label settings-label">Template</label>
+                            <select name="templateKey" class="form-select settings-input">
+                                @foreach (var t in ProposalTemplates.All)
+                                {
+                                    <option value="@t.Key">@t.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="settings-panel-actions mt-3 mb-0">
+                        <button type="submit" class="btn btn-crm-primary">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> Generate proposal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="cp-card">
+            <div class="cp-card-head">
+                <div>
+                    <h5><i class="bi bi-files me-2"></i>Proposals</h5>
+                    <p>Download, email, or share on WhatsApp.</p>
+                </div>
+            </div>
+            <div class="cp-card-body p-0">
+                @if (proposals.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-borderless align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in proposals)
+                                {
+                                    var pdfUrl = !string.IsNullOrWhiteSpace(p.FilePath)
+                                        ? $"{Context.Request.Scheme}://{Context.Request.Host}{p.FilePath}"
+                                        : Url.Action("DownloadProposal", "Partner", new { id = p.Id }, Context.Request.Scheme) ?? "";
+                                    var waPhone = new string((whatsapp ?? "").Where(char.IsDigit).ToArray());
+                                    var waText = Uri.EscapeDataString(
+                                        $"Hi {Model.Name},\n\nPlease find our proposal: {p.Title}\nAmount: ₹ {p.Amount:N2}\nValid until: {p.ValidUntil:dd MMM yyyy}\n\nDownload: {pdfUrl}\n\n— {ViewBag.Partner?.CompanyName ?? "Partner"}");
+                                    <tr>
+                                        <td><strong>@p.Title</strong></td>
+                                        <td>₹ @p.Amount.ToString("N0")</td>
+                                        <td class="small text-muted">@p.CreatedAt.ToString("dd MMM yyyy")</td>
+                                        <td class="text-end">
+                                            <div class="admin-row-actions justify-content-end">
+                                                <a class="btn btn-icon-action" asp-action="DownloadProposal" asp-route-id="@p.Id" title="Download PDF" target="_blank">
+                                                    <i class="bi bi-file-earmark-pdf"></i>
+                                                </a>
+                                                @if (!string.IsNullOrWhiteSpace(Model.Email))
+                                                {
+                                                    <form asp-action="SendProposalEmail" method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="proposalId" value="@p.Id" />
+                                                        <button type="submit" class="btn btn-icon-action edit" title="Email to client">
+                                                            <i class="bi bi-envelope"></i>
+                                                        </button>
+                                                    </form>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(waPhone))
+                                                {
+                                                    <a class="btn btn-icon-action" href="https://wa.me/@waPhone?text=@waText" target="_blank" rel="noopener" title="WhatsApp">
+                                                        <i class="bi bi-whatsapp"></i>
+                                                    </a>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted px-3">
+                        <i class="bi bi-file-earmark-pdf display-6 d-block mb-2 opacity-50"></i>
+                        No proposals yet for this client.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="application/json" id="proposalServicesData">@Html.Raw(servicesJson)</script>
+@section Scripts {
+    <script>
+        (function () {
+            const servicesEl = document.getElementById('proposalServicesData');
+            const serviceSelect = document.getElementById('proposalServiceSelect');
+            const wrap = document.getElementById('proposalModulesWrap');
+            const tree = document.getElementById('proposalModulesTree');
+            if (!servicesEl || !serviceSelect || !wrap || !tree) return;
+
+            const services = JSON.parse(servicesEl.textContent || '[]');
+
+            function escapeHtml(str) {
+                return String(str || '').replace(/[&<>"']/g, function (c) {
+                    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+                });
+            }
+
+            function renderModules(serviceId) {
+                tree.innerHTML = '';
+                const svc = services.find(s => String(s.id) === String(serviceId));
+                if (!svc || !svc.panels || !svc.panels.length) {
+                    wrap.style.display = 'none';
+                    return;
+                }
+                const hasAny = svc.panels.some(function (p) { return p.modules && p.modules.length; });
+                if (!hasAny) {
+                    wrap.style.display = 'none';
+                    return;
+                }
+                wrap.style.display = '';
+                svc.panels.forEach(function (panel) {
+                    if (!panel.modules || !panel.modules.length) return;
+                    const block = document.createElement('div');
+                    block.className = 'proposal-module-block';
+                    let html = '<div class="proposal-module-name"><i class="bi bi-window me-2"></i><strong>' + escapeHtml(panel.name) + '</strong></div>';
+                    html += '<ul class="proposal-submodule-readonly">';
+                    panel.modules.forEach(function (mod) {
+                        if (mod.subModules && mod.subModules.length) {
+                            mod.subModules.forEach(function (sub) {
+                                html += '<li>' + escapeHtml(mod.name) + ' — ' + escapeHtml(sub.name) + '</li>';
+                            });
+                        } else {
+                            html += '<li>' + escapeHtml(mod.name) + '</li>';
+                        }
+                    });
+                    html += '</ul>';
+                    block.innerHTML = html;
+                    tree.appendChild(block);
+                });
+            }
+
+            const amountInput = document.getElementById('proposalAmount');
+            const commissionInput = document.getElementById('proposalCommission');
+            const amountHint = document.getElementById('proposalAmountHint');
+
+            function applyServicePricing(serviceId) {
+                const svc = services.find(s => String(s.id) === String(serviceId));
+                if (!svc) {
+                    if (amountInput) {
+                        amountInput.value = '';
+                        amountInput.readOnly = true;
+                    }
+                    if (commissionInput) commissionInput.value = '—';
+                    if (amountHint) amountHint.textContent = 'Service select karne par auto fill hoga';
+                    return;
+                }
+                if (amountInput) {
+                    amountInput.value = Number(svc.budget || 0).toFixed(2);
+                    amountInput.readOnly = true;
+                }
+                if (commissionInput) {
+                    commissionInput.value = Number(svc.commission || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }) + '%';
+                }
+                if (amountHint) amountHint.textContent = 'Admin-set price — edit nahi ho sakta';
+            }
+
+            serviceSelect.addEventListener('change', function () {
+                renderModules(serviceSelect.value);
+                applyServicePricing(serviceSelect.value);
+            });
+
+            applyServicePricing(serviceSelect.value);
+            renderModules(serviceSelect.value);
+        })();
+    </script>
+}

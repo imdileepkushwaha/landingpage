@@ -1,0 +1,160 @@
+@model SoftflipSolutions.Models.ChannelPartner
+@{
+    ViewData["Title"] = "Edit Channel Partner";
+    Layout = "_AdminLayout";
+    var initial = string.IsNullOrEmpty(Model.CompanyName) ? "?" : Model.CompanyName.Substring(0, 1).ToUpper();
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger deal-alert alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="cp-detail-toolbar">
+    <a asp-action="ChannelPartnerDetails" asp-route-id="@Model.Id" class="btn btn-lead-back">
+        <i class="bi bi-arrow-left"></i> Back to details
+    </a>
+    <div class="cp-detail-toolbar-actions">
+        <a asp-action="ChannelPartners" class="btn cp-link-btn">
+            <i class="bi bi-list-ul"></i> All partners
+        </a>
+    </div>
+</div>
+
+<div class="cp-hero @(Model.IsActive ? "is-active" : "is-inactive") mb-4">
+    <div class="cp-hero-main">
+        <div class="cp-hero-logo">
+            @if (!string.IsNullOrWhiteSpace(Model.LogoPath))
+            {
+                <img src="@Model.LogoPath" alt="@Model.CompanyName" />
+            }
+            else
+            {
+                <span>@initial</span>
+            }
+        </div>
+        <div class="cp-hero-copy">
+            <div class="cp-hero-badges">
+                <span class="cp-badge partner"><i class="bi bi-pencil-square me-1"></i> Editing partner</span>
+                @if (Model.IsActive)
+                {
+                    <span class="cp-badge success"><i class="bi bi-check-circle me-1"></i> Active</span>
+                }
+                else
+                {
+                    <span class="cp-badge muted"><i class="bi bi-pause-circle me-1"></i> Inactive</span>
+                }
+            </div>
+            <h1>@Model.CompanyName</h1>
+            <p><i class="bi bi-person"></i> @Model.OwnerName <span class="cp-dot">·</span> @Model.LocationLabel</p>
+        </div>
+    </div>
+</div>
+
+<div class="cp-card">
+    <div class="cp-card-head">
+        <div>
+            <h5><i class="bi bi-building me-2"></i>Update partner details</h5>
+            <p>Changes reflect on website listing and partner panel login.</p>
+        </div>
+    </div>
+    <div class="cp-card-body p-4">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <form asp-action="EditChannelPartner" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            <div class="settings-section-label"><i class="bi bi-briefcase me-1"></i> Company</div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label settings-label" asp-for="CompanyName"></label>
+                    <input asp-for="CompanyName" class="form-control settings-input" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label settings-label" asp-for="OwnerName"></label>
+                    <input asp-for="OwnerName" class="form-control settings-input" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label settings-label" asp-for="Gstin"></label>
+                    <input asp-for="Gstin" class="form-control settings-input" placeholder="Optional" />
+                </div>
+                <div class="col-12">
+                    @{
+                        ViewData["UploadInputName"] = "logoFile";
+                        ViewData["UploadLabel"] = "Company logo";
+                        ViewData["UploadHint"] = "PNG, JPG or WEBP · max 2 MB · leave empty to keep current";
+                        ViewData["UploadCurrentUrl"] = Model.LogoPath;
+                        ViewData["UploadRemoveName"] = string.IsNullOrWhiteSpace(Model.LogoPath) ? null : "removeLogo";
+                        ViewData["UploadRemoveId"] = "removeLogo";
+                        ViewData["UploadVariant"] = "logo";
+                    }
+                    <partial name="_ImageUpload" />
+                </div>
+            </div>
+
+            <div class="settings-section-label"><i class="bi bi-telephone me-1"></i> Contact</div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label settings-label" asp-for="Mobile"></label>
+                    <input asp-for="Mobile" class="form-control settings-input" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label settings-label" asp-for="Email"></label>
+                    <input asp-for="Email" type="email" class="form-control settings-input" required />
+                    <div class="form-text settings-hint">Used as partner panel login email</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label settings-label" asp-for="Website"></label>
+                    <input asp-for="Website" type="text" class="form-control settings-input" placeholder="www.yourcompany.com" />
+                    <div class="form-text settings-hint">Shown on visiting card</div>
+                </div>
+            </div>
+
+            <div class="settings-section-label"><i class="bi bi-geo-alt me-1"></i> Address</div>
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <label class="form-label settings-label" asp-for="Address"></label>
+                    <textarea asp-for="Address" class="form-control settings-input" rows="2" required></textarea>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label settings-label" asp-for="City"></label>
+                    <input asp-for="City" class="form-control settings-input" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label settings-label" asp-for="State"></label>
+                    <input asp-for="State" class="form-control settings-input" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label settings-label" asp-for="Pincode"></label>
+                    <input asp-for="Pincode" class="form-control settings-input" required />
+                </div>
+            </div>
+
+            <div class="settings-section-label"><i class="bi bi-shield-lock me-1"></i> Login password</div>
+            <div class="row g-3 mb-2">
+                <div class="col-md-6">
+                    <label class="form-label settings-label">New password (optional)</label>
+                    <div class="settings-input-wrap password">
+                        <i class="bi bi-key settings-input-ico"></i>
+                        <input type="password" name="password" id="editPartnerPassword" class="form-control settings-input has-ico has-toggle" minlength="4" placeholder="Leave blank to keep current" autocomplete="new-password" />
+                        <button type="button" class="settings-pass-toggle" data-pass-toggle aria-label="Show password">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <div class="form-text settings-hint">Only fill if you want to reset the partner password.</div>
+                </div>
+            </div>
+
+            <div class="settings-panel-actions">
+                <a asp-action="ChannelPartnerDetails" asp-route-id="@Model.Id" class="btn btn-lead-back">Cancel</a>
+                <button type="submit" class="btn btn-crm-primary">
+                    <i class="bi bi-check2-circle me-1"></i> Save changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

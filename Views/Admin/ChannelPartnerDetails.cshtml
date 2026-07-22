@@ -1,0 +1,253 @@
+@model SoftflipSolutions.Models.ChannelPartner
+@{
+    ViewData["Title"] = Model.CompanyName;
+    Layout = "_AdminLayout";
+    var clientCount = Model.Clients?.Count ?? 0;
+    var proposalCount = Model.Proposals?.Count ?? 0;
+    var initial = string.IsNullOrEmpty(Model.CompanyName) ? "?" : Model.CompanyName.Substring(0, 1).ToUpper();
+    var loginUrl = Url.Action("Login", "Partner", null, Context.Request.Scheme) ?? "/Partner/Login";
+    var publicUrl = Url.Action("Partners", "Home", null, Context.Request.Scheme) ?? "/Home/Partners";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success deal-alert alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="cp-detail-toolbar">
+    <a asp-action="ChannelPartners" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> Back to partners</a>
+    <div class="cp-detail-toolbar-actions">
+        <a class="btn cp-link-btn" href="@publicUrl" target="_blank" rel="noopener">
+            <i class="bi bi-globe2"></i> Website listing
+        </a>
+        <a class="btn cp-link-btn" href="@loginUrl" target="_blank" rel="noopener">
+            <i class="bi bi-box-arrow-up-right"></i> Partner login
+        </a>
+    </div>
+</div>
+
+<div class="cp-hero @(Model.IsActive ? "is-active" : "is-inactive")">
+    <div class="cp-hero-main">
+        <div class="cp-hero-logo">
+            @if (!string.IsNullOrWhiteSpace(Model.LogoPath))
+            {
+                <img src="@Model.LogoPath" alt="@Model.CompanyName" />
+            }
+            else
+            {
+                <span>@initial</span>
+            }
+        </div>
+        <div class="cp-hero-copy">
+            <div class="cp-hero-badges">
+                <span class="cp-badge partner"><i class="bi bi-shop me-1"></i> Channel Partner</span>
+                @if (Model.IsActive)
+                {
+                    <span class="cp-badge success"><i class="bi bi-check-circle me-1"></i> Active · Listed</span>
+                }
+                else
+                {
+                    <span class="cp-badge muted"><i class="bi bi-pause-circle me-1"></i> Inactive</span>
+                }
+            </div>
+            <h1>@Model.CompanyName</h1>
+            <p>
+                <i class="bi bi-person"></i> @Model.OwnerName
+                <span class="cp-dot">·</span>
+                <i class="bi bi-geo-alt"></i> @Model.LocationLabel
+                <span class="cp-dot">·</span>
+                Joined @Model.CreatedAt.ToString("dd MMM yyyy")
+            </p>
+        </div>
+    </div>
+    <form asp-action="ToggleChannelPartner" method="post" class="cp-hero-action">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn @(Model.IsActive ? "cp-btn-danger" : "cp-btn-success")">
+            <i class="bi @(Model.IsActive ? "bi-slash-circle" : "bi-check2-circle")"></i>
+            @(Model.IsActive ? "Deactivate" : "Activate")
+        </button>
+    </form>
+</div>
+
+<div class="cp-stats">
+    <div class="cp-stat">
+        <div class="cp-stat-ico clients"><i class="bi bi-people"></i></div>
+        <div>
+            <strong>@clientCount</strong>
+            <span>Clients</span>
+        </div>
+    </div>
+    <div class="cp-stat">
+        <div class="cp-stat-ico proposals"><i class="bi bi-file-earmark-text"></i></div>
+        <div>
+            <strong>@proposalCount</strong>
+            <span>Proposals</span>
+        </div>
+    </div>
+    <div class="cp-stat">
+        <div class="cp-stat-ico location"><i class="bi bi-geo-alt"></i></div>
+        <div>
+            <strong>@Model.City</strong>
+            <span>@Model.State</span>
+        </div>
+    </div>
+    <div class="cp-stat">
+        <div class="cp-stat-ico login"><i class="bi bi-envelope"></i></div>
+        <div>
+            <strong class="cp-stat-email">@Model.Email</strong>
+            <span>Login email</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="cp-card">
+            <div class="cp-card-head">
+                <h5><i class="bi bi-building me-2"></i>Company details</h5>
+            </div>
+            <div class="cp-card-body">
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-telephone"></i></div>
+                    <div>
+                        <span class="cp-info-label">Mobile</span>
+                        <a href="tel:@Model.Mobile">@Model.Mobile</a>
+                    </div>
+                </div>
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-envelope"></i></div>
+                    <div>
+                        <span class="cp-info-label">Email</span>
+                        <a href="mailto:@Model.Email">@Model.Email</a>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Website))
+                {
+                    <div class="cp-info">
+                        <div class="cp-info-ico"><i class="bi bi-globe2"></i></div>
+                        <div>
+                            <span class="cp-info-label">Website</span>
+                            <a href="@(Model.Website.StartsWith("http") ? Model.Website : "https://" + Model.Website)" target="_blank" rel="noopener">@Model.DisplayWebsite</a>
+                        </div>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Gstin))
+                {
+                    <div class="cp-info">
+                        <div class="cp-info-ico"><i class="bi bi-receipt"></i></div>
+                        <div>
+                            <span class="cp-info-label">GSTIN</span>
+                            <strong>@Model.Gstin</strong>
+                        </div>
+                    </div>
+                }
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-geo-alt"></i></div>
+                    <div>
+                        <span class="cp-info-label">Address</span>
+                        <strong>@Model.FullAddress</strong>
+                    </div>
+                </div>
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-mailbox"></i></div>
+                    <div>
+                        <span class="cp-info-label">Pincode</span>
+                        <strong>@Model.Pincode</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="cp-card">
+            <div class="cp-card-head">
+                <div>
+                    <h5><i class="bi bi-people me-2"></i>Partner clients</h5>
+                    <p>Clients added by this partner · tagged in Partner Clients</p>
+                </div>
+                <span class="cp-count-pill">@clientCount</span>
+            </div>
+            <div class="cp-card-body p-0">
+                @if (Model.Clients != null && Model.Clients.Any())
+                {
+                    <div class="cp-client-list">
+                        @foreach (var c in Model.Clients)
+                        {
+                            var wa = (c.WhatsApp ?? c.Mobile).Replace("+", "").Replace(" ", "").Replace("-", "");
+                            <div class="cp-client-row">
+                                <div class="cp-client-avatar">@c.Name.Substring(0, 1).ToUpper()</div>
+                                <div class="cp-client-main">
+                                    <div class="cp-client-top">
+                                        <strong>@c.Name</strong>
+                                        <span class="cp-via">via @Model.CompanyName</span>
+                                    </div>
+                                    <div class="cp-client-meta">
+                                        <span><i class="bi bi-telephone"></i> @c.Mobile</span>
+                                        @if (!string.IsNullOrWhiteSpace(c.WhatsApp))
+                                        {
+                                            <a href="https://wa.me/@wa" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(c.Email))
+                                        {
+                                            <span><i class="bi bi-envelope"></i> @c.Email</span>
+                                        }
+                                    </div>
+                                    <div class="cp-client-req">@c.Requirement</div>
+                                    @if (!string.IsNullOrWhiteSpace(c.Budget))
+                                    {
+                                        <div class="cp-client-budget"><i class="bi bi-cash-stack"></i> Budget: @c.Budget</div>
+                                    }
+                                </div>
+                                <div class="cp-client-side">
+                                    <small>@c.CreatedAt.ToString("dd MMM yyyy")</small>
+                                    <a asp-action="PartnerClientDetails" asp-route-id="@c.Id" class="btn btn-icon-action" title="View"><i class="bi bi-eye"></i></a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="cp-empty">
+                        <i class="bi bi-people"></i>
+                        <h6>No clients yet</h6>
+                        <p>When this partner adds clients from their panel, they will show up here.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (Model.Proposals != null && Model.Proposals.Any())
+        {
+            <div class="cp-card mt-4">
+                <div class="cp-card-head">
+                    <div>
+                        <h5><i class="bi bi-file-earmark-pdf me-2"></i>Recent proposals</h5>
+                        <p>Quotations generated with partner branding.</p>
+                    </div>
+                    <span class="cp-count-pill">@proposalCount</span>
+                </div>
+                <div class="cp-card-body p-0">
+                    <div class="cp-proposal-list">
+                        @foreach (var p in Model.Proposals.Take(8))
+                        {
+                            <div class="cp-proposal-row">
+                                <div class="cp-proposal-ico"><i class="bi bi-file-earmark-text"></i></div>
+                                <div class="cp-proposal-main">
+                                    <strong>@p.Title</strong>
+                                    <span>@p.CreatedAt.ToString("dd MMM yyyy") · Valid till @p.ValidUntil.ToString("dd MMM yyyy")</span>
+                                </div>
+                                <div class="cp-proposal-amt">₹ @p.Amount.ToString("N0")</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
