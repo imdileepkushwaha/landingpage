@@ -20,14 +20,22 @@
 }
 
 <div class="glass-card p-0 overflow-hidden">
-    <div class="p-4 border-bottom d-flex justify-content-between align-items-center admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+    <div class="p-4 border-bottom d-flex flex-wrap gap-2 justify-content-between align-items-center admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
         <h5 class="mb-0 text-white">Recent Submissions</h5>
-        <span class="badge bg-primary bg-opacity-25 text-info border border-primary border-opacity-50 px-3 py-2 rounded-pill">Total: @Model.Count()</span>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-danger d-none" id="bulkDeleteEnquiriesBtn" data-bs-toggle="modal" data-bs-target="#bulkDeleteEnquiryModal">
+                <i class="bi bi-trash3 me-1"></i> Delete selected (<span id="bulkEnquiryCount">0</span>)
+            </button>
+            <span class="badge bg-primary bg-opacity-25 text-info border border-primary border-opacity-50 px-3 py-2 rounded-pill">Total: @Model.Count()</span>
+        </div>
     </div>
     <div class="table-responsive">
-        <table class="table table-borderless mb-0 align-middle">
+        <table class="table table-borderless mb-0 align-middle" id="enquiriesTable">
             <thead>
                 <tr>
+                    <th style="width:42px;">
+                        <input type="checkbox" class="form-check-input" id="selectAllEnquiries" title="Select all" @(Model.Any() ? "" : "disabled") />
+                    </th>
                     <th>Date Received</th>
                     <th>Customer Name</th>
                     <th>Contact Info</th>
@@ -39,6 +47,9 @@
                 @foreach (var item in Model)
                 {
                     <tr>
+                        <td>
+                            <input type="checkbox" class="form-check-input enquiry-row-check" value="@item.Id" />
+                        </td>
                         <td class="text-muted small">
                             <i class="bi bi-clock me-1"></i> @item.CreatedAt.ToString("MMM dd, yyyy HH:mm")
                         </td>
@@ -68,8 +79,7 @@
                                         data-bs-toggle="modal"
                                         data-bs-target="#deleteEnquiryModal"
                                         data-enquiry-id="@item.Id"
-                                        data-enquiry-name="@item.Name"
-                                        onclick="document.getElementById('deleteEnquiryId').value='@item.Id'; document.getElementById('deleteEnquiryName').textContent=@Json.Serialize(item.Name);">
+                                        data-enquiry-name="@item.Name">
                                     <i class="bi bi-trash3"></i>
                                 </button>
                             </div>
@@ -79,7 +89,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="5" class="text-center py-5">
+                        <td colspan="6" class="text-center py-5">
                             <div class="text-muted mb-2"><i class="bi bi-inbox fs-1"></i></div>
                             <h6>No enquiries found</h6>
                             <p class="small">When users submit the form, they will appear here.</p>
@@ -116,17 +126,73 @@
     </div>
 </div>
 
+<div class="modal fade" id="bulkDeleteEnquiryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content admin-confirm-modal">
+            <div class="modal-header border-0 pb-0">
+                <div class="admin-confirm-ico"><i class="bi bi-trash3"></i></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <h5 class="modal-title mb-2">Delete selected enquiries?</h5>
+                <p class="mb-0 text-muted">
+                    Permanently delete <strong id="bulkEnquiryConfirmCount">0</strong> enquiry(ies) and related notes, documents, proposals, and invoices.
+                </p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-lead-back" data-bs-dismiss="modal">Cancel</button>
+                <form asp-action="BulkDeleteEnquiries" method="post" id="bulkDeleteEnquiryForm">
+                    @Html.AntiForgeryToken()
+                    <div id="bulkEnquiryIds"></div>
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash3 me-1"></i> Delete selected</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         (function () {
             const modal = document.getElementById('deleteEnquiryModal');
-            if (!modal) return;
-            modal.addEventListener('show.bs.modal', function (event) {
-                const btn = event.relatedTarget;
-                if (!btn) return;
-                document.getElementById('deleteEnquiryId').value = btn.getAttribute('data-enquiry-id') || '';
-                document.getElementById('deleteEnquiryName').textContent = btn.getAttribute('data-enquiry-name') || 'this enquiry';
-            });
+            if (modal) {
+                modal.addEventListener('show.bs.modal', function (event) {
+                    const btn = event.relatedTarget;
+                    if (!btn) return;
+                    document.getElementById('deleteEnquiryId').value = btn.getAttribute('data-enquiry-id') || '';
+                    document.getElementById('deleteEnquiryName').textContent = btn.getAttribute('data-enquiry-name') || 'this enquiry';
+                });
+            }
+
+            const selectAll = document.getElementById('selectAllEnquiries');
+            const checks = () => Array.from(document.querySelectorAll('.enquiry-row-check'));
+            const bulkBtn = document.getElementById('bulkDeleteEnquiriesBtn');
+            const countEl = document.getElementById('bulkEnquiryCount');
+            const confirmCount = document.getElementById('bulkEnquiryConfirmCount');
+            const idsBox = document.getElementById('bulkEnquiryIds');
+
+            function syncBulk() {
+                const selected = checks().filter(c => c.checked);
+                const n = selected.length;
+                countEl.textContent = n;
+                confirmCount.textContent = n;
+                bulkBtn.classList.toggle('d-none', n === 0);
+                if (selectAll) {
+                    const all = checks();
+                    selectAll.checked = all.length > 0 && selected.length === all.length;
+                    selectAll.indeterminate = selected.length > 0 && selected.length < all.length;
+                }
+                idsBox.innerHTML = selected.map(c => '<input type="hidden" name="ids" value="' + c.value + '" />').join('');
+            }
+
+            if (selectAll) {
+                selectAll.addEventListener('change', function () {
+                    checks().forEach(c => { c.checked = selectAll.checked; });
+                    syncBulk();
+                });
+            }
+            checks().forEach(c => c.addEventListener('change', syncBulk));
+            syncBulk();
         })();
     </script>
 }

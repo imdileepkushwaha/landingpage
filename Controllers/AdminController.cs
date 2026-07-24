@@ -1323,64 +1323,34 @@ public class AdminController : Controller
         }
 
         var name = enquiry.Name;
-        var leadType = LeadPipeline.LeadEnquiry;
-
-        var followUps = await _context.FollowUpReminders
-            .Where(f => f.LeadType == leadType && f.LeadId == id)
-            .ToListAsync();
-        if (followUps.Count > 0)
-            _context.FollowUpReminders.RemoveRange(followUps);
-
-        var docs = await _context.LeadDocuments
-            .Where(d => d.LeadType == leadType && d.LeadId == id)
-            .ToListAsync();
-        foreach (var doc in docs)
-        {
-            var physical = MapUploadPath(doc.FilePath);
-            if (physical != null && System.IO.File.Exists(physical))
-                System.IO.File.Delete(physical);
-            _context.LeadDocuments.Remove(doc);
-        }
-
-        var proposals = await _context.Proposals
-            .Include(p => p.Invoice!)
-                .ThenInclude(i => i.Payments)
-            .Where(p => p.LeadType == leadType && p.LeadId == id)
-            .ToListAsync();
-
-        foreach (var proposal in proposals)
-        {
-            if (proposal.Invoice != null)
-            {
-                if (proposal.Invoice.Payments?.Count > 0)
-                    _context.InvoicePayments.RemoveRange(proposal.Invoice.Payments);
-                _context.Invoices.Remove(proposal.Invoice);
-            }
-            var pdfPath = MapUploadPath(proposal.FilePath);
-            if (pdfPath != null && System.IO.File.Exists(pdfPath))
-                System.IO.File.Delete(pdfPath);
-            _context.Proposals.Remove(proposal);
-        }
-
-        // Orphan invoices without proposal link
-        var orphanInvoices = await _context.Invoices
-            .Include(i => i.Payments)
-            .Where(i => i.LeadType == leadType && i.LeadId == id)
-            .ToListAsync();
-        foreach (var inv in orphanInvoices)
-        {
-            if (inv.Payments?.Count > 0)
-                _context.InvoicePayments.RemoveRange(inv.Payments);
-            _context.Invoices.Remove(inv);
-        }
-
-        if (enquiry.Notes.Count > 0)
-            _context.EnquiryNotes.RemoveRange(enquiry.Notes);
-
-        _context.Enquiries.Remove(enquiry);
+        await DeleteEnquiryCascadeAsync(enquiry);
         await _context.SaveChangesAsync();
 
         TempData["SuccessMessage"] = $"Enquiry from \"{name}\" deleted.";
+        return RedirectToAction(nameof(Enquiries));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BulkDeleteEnquiries(List<int>? ids)
+    {
+        ids = (ids ?? new List<int>()).Where(i => i > 0).Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            TempData["ErrorMessage"] = "Select at least one enquiry to delete.";
+            return RedirectToAction(nameof(Enquiries));
+        }
+
+        var enquiries = await _context.Enquiries
+            .Include(e => e.Notes)
+            .Where(e => ids.Contains(e.Id))
+            .ToListAsync();
+
+        foreach (var enquiry in enquiries)
+            await DeleteEnquiryCascadeAsync(enquiry);
+
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = $"{enquiries.Count} enquiry(ies) deleted.";
         return RedirectToAction(nameof(Enquiries));
     }
 
@@ -1388,6 +1358,51 @@ public class AdminController : Controller
     {
         var requests = await _context.DemoRequests.Where(e => e.Status == "Pending" || e.Status == "").OrderByDescending(e => e.CreatedAt).ToListAsync();
         return View(requests);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteDemoRequest(int id)
+    {
+        var request = await _context.DemoRequests
+            .Include(e => e.Notes)
+            .FirstOrDefaultAsync(e => e.Id == id);
+        if (request == null)
+        {
+            TempData["ErrorMessage"] = "Demo request not found or already deleted.";
+            return RedirectToAction(nameof(DemoRequests));
+        }
+
+        var name = request.Name;
+        await DeleteDemoCascadeAsync(request);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Demo request from \"{name}\" deleted.";
+        return RedirectToAction(nameof(DemoRequests));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BulkDeleteDemoRequests(List<int>? ids)
+    {
+        ids = (ids ?? new List<int>()).Where(i => i > 0).Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            TempData["ErrorMessage"] = "Select at least one demo request to delete.";
+            return RedirectToAction(nameof(DemoRequests));
+        }
+
+        var requests = await _context.DemoRequests
+            .Include(e => e.Notes)
+            .Where(e => ids.Contains(e.Id))
+            .ToListAsync();
+
+        foreach (var request in requests)
+            await DeleteDemoCascadeAsync(request);
+
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = $"{requests.Count} demo request(s) deleted.";
+        return RedirectToAction(nameof(DemoRequests));
     }
 
     public async Task<IActionResult> EnquiryDetails(int id)
@@ -2501,6 +2516,124 @@ public class AdminController : Controller
             };
         }
         return null;
+    }
+
+    private async Task DeleteEnquiryCascadeAsync(Enquiry enquiry)
+    {
+        var leadType = LeadPipeline.LeadEnquiry;
+        var id = enquiry.Id;
+
+        var followUps = await _context.FollowUpReminders
+            .Where(f => f.LeadType == leadType && f.LeadId == id)
+            .ToListAsync();
+        if (followUps.Count > 0)
+            _context.FollowUpReminders.RemoveRange(followUps);
+
+        var docs = await _context.LeadDocuments
+            .Where(d => d.LeadType == leadType && d.LeadId == id)
+            .ToListAsync();
+        foreach (var doc in docs)
+        {
+            var physical = MapUploadPath(doc.FilePath);
+            if (physical != null && System.IO.File.Exists(physical))
+                System.IO.File.Delete(physical);
+            _context.LeadDocuments.Remove(doc);
+        }
+
+        var proposals = await _context.Proposals
+            .Include(p => p.Invoice!)
+                .ThenInclude(i => i.Payments)
+            .Where(p => p.LeadType == leadType && p.LeadId == id)
+            .ToListAsync();
+
+        foreach (var proposal in proposals)
+        {
+            if (proposal.Invoice != null)
+            {
+                if (proposal.Invoice.Payments?.Count > 0)
+                    _context.InvoicePayments.RemoveRange(proposal.Invoice.Payments);
+                _context.Invoices.Remove(proposal.Invoice);
+            }
+            var pdfPath = MapUploadPath(proposal.FilePath);
+            if (pdfPath != null && System.IO.File.Exists(pdfPath))
+                System.IO.File.Delete(pdfPath);
+            _context.Proposals.Remove(proposal);
+        }
+
+        var orphanInvoices = await _context.Invoices
+            .Include(i => i.Payments)
+            .Where(i => i.LeadType == leadType && i.LeadId == id)
+            .ToListAsync();
+        foreach (var inv in orphanInvoices)
+        {
+            if (inv.Payments?.Count > 0)
+                _context.InvoicePayments.RemoveRange(inv.Payments);
+            _context.Invoices.Remove(inv);
+        }
+
+        if (enquiry.Notes.Count > 0)
+            _context.EnquiryNotes.RemoveRange(enquiry.Notes);
+
+        _context.Enquiries.Remove(enquiry);
+    }
+
+    private async Task DeleteDemoCascadeAsync(DemoRequest request)
+    {
+        var leadType = LeadPipeline.LeadDemo;
+        var id = request.Id;
+
+        var followUps = await _context.FollowUpReminders
+            .Where(f => f.LeadType == leadType && f.LeadId == id)
+            .ToListAsync();
+        if (followUps.Count > 0)
+            _context.FollowUpReminders.RemoveRange(followUps);
+
+        var docs = await _context.LeadDocuments
+            .Where(d => d.LeadType == leadType && d.LeadId == id)
+            .ToListAsync();
+        foreach (var doc in docs)
+        {
+            var physical = MapUploadPath(doc.FilePath);
+            if (physical != null && System.IO.File.Exists(physical))
+                System.IO.File.Delete(physical);
+            _context.LeadDocuments.Remove(doc);
+        }
+
+        var proposals = await _context.Proposals
+            .Include(p => p.Invoice!)
+                .ThenInclude(i => i.Payments)
+            .Where(p => p.LeadType == leadType && p.LeadId == id)
+            .ToListAsync();
+
+        foreach (var proposal in proposals)
+        {
+            if (proposal.Invoice != null)
+            {
+                if (proposal.Invoice.Payments?.Count > 0)
+                    _context.InvoicePayments.RemoveRange(proposal.Invoice.Payments);
+                _context.Invoices.Remove(proposal.Invoice);
+            }
+            var pdfPath = MapUploadPath(proposal.FilePath);
+            if (pdfPath != null && System.IO.File.Exists(pdfPath))
+                System.IO.File.Delete(pdfPath);
+            _context.Proposals.Remove(proposal);
+        }
+
+        var orphanInvoices = await _context.Invoices
+            .Include(i => i.Payments)
+            .Where(i => i.LeadType == leadType && i.LeadId == id)
+            .ToListAsync();
+        foreach (var inv in orphanInvoices)
+        {
+            if (inv.Payments?.Count > 0)
+                _context.InvoicePayments.RemoveRange(inv.Payments);
+            _context.Invoices.Remove(inv);
+        }
+
+        if (request.Notes.Count > 0)
+            _context.DemoRequestNotes.RemoveRange(request.Notes);
+
+        _context.DemoRequests.Remove(request);
     }
 
     private async Task SetLeadStatusAsync(string leadType, int leadId, string status)
