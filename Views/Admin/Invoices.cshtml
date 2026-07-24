@@ -1,0 +1,110 @@
+@model IEnumerable<SoftflipSolutions.ViewModels.AdminInvoiceListItem>
+@{
+    ViewData["Title"] = "All Invoices";
+    Layout = "_AdminLayout";
+    var unpaid = Model.Count(x => x.Status is "Unpaid" or "Partial");
+    var paid = Model.Count(x => x.Status == "Paid");
+    var outstanding = Model.Sum(x => x.Balance);
+}
+
+<div class="page-toolbar">
+    <h2>All Invoices</h2>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="stat-card accent-yellow">
+            <div class="stat-card-top">
+                <div class="stat-label">Open invoices</div>
+                <div class="stat-icon warning"><i class="bi bi-receipt"></i></div>
+            </div>
+            <div class="stat-value">@unpaid</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card accent-green">
+            <div class="stat-card-top">
+                <div class="stat-label">Paid</div>
+                <div class="stat-icon success"><i class="bi bi-check-circle"></i></div>
+            </div>
+            <div class="stat-value">@paid</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card accent-red">
+            <div class="stat-card-top">
+                <div class="stat-label">Outstanding</div>
+                <div class="stat-icon primary"><i class="bi bi-currency-rupee"></i></div>
+            </div>
+            <div class="stat-value" style="font-size:1.35rem;">₹@outstanding.ToString("N0")</div>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <h5 class="mb-1">Invoices</h5>
+        <p class="mb-0 small text-muted">All Softflip deal invoices</p>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Invoice #</th>
+                    <th>Lead</th>
+                    <th>Title</th>
+                    <th>Amount</th>
+                    <th>Paid</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model)
+                {
+                    <tr>
+                        <td class="small text-muted">@row.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td class="fw-semibold">@row.InvoiceNumber</td>
+                        <td>
+                            <div>@row.LeadName</div>
+                            <div class="small text-muted">@row.LeadType</div>
+                        </td>
+                        <td>@row.Title</td>
+                        <td>₹@row.Amount.ToString("N2")</td>
+                        <td>₹@row.AmountPaid.ToString("N2")</td>
+                        <td class="@(row.Balance > 0 ? "text-warning fw-semibold" : "")">₹@row.Balance.ToString("N2")</td>
+                        <td>
+                            <span class="badge @(row.Status == "Paid" ? "bg-success bg-opacity-25 text-success" : row.Status == "Partial" ? "bg-warning text-dark" : "bg-danger bg-opacity-25 text-danger")">
+                                @row.Status
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a href="@LeadDetailUrl(row.LeadType, row.LeadId)" class="btn btn-icon-action" title="Open lead"><i class="bi bi-eye"></i></a>
+                            <a asp-action="DownloadInvoice" asp-route-id="@row.Id" class="btn btn-icon-action" title="Download"><i class="bi bi-download"></i></a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="bi bi-receipt fs-1 d-block mb-2"></i>
+                            No invoices yet.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@functions {
+    string LeadDetailUrl(string leadType, int leadId) => leadType switch
+    {
+        SoftflipSolutions.Models.LeadPipeline.LeadClient => Url.Action("ClientLeadDetails", "Admin", new { id = leadId })!,
+        SoftflipSolutions.Models.LeadPipeline.LeadDemo => Url.Action("DemoRequestDetails", "Admin", new { id = leadId })!,
+        _ => Url.Action("EnquiryDetails", "Admin", new { id = leadId })!
+    };
+}

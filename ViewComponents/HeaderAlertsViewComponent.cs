@@ -44,6 +44,12 @@ public class HeaderAlertsViewComponent : ViewComponent
             .Take(5)
             .ToListAsync();
 
+        var overdueFollowUps = await _context.FollowUpReminders
+            .Where(f => !f.IsDone && f.DueAt < DateTime.Today)
+            .OrderBy(f => f.DueAt)
+            .Take(5)
+            .ToListAsync();
+
         var expiringProposals = await _context.Proposals
             .Where(p => p.ValidUntil >= DateTime.Now && p.ValidUntil <= DateTime.Now.AddDays(3))
             .OrderBy(p => p.ValidUntil)
@@ -107,6 +113,21 @@ public class HeaderAlertsViewComponent : ViewComponent
                 Icon = "bi-receipt",
                 Accent = "warn",
                 CreatedAt = inv.CreatedAt
+            });
+        }
+
+        foreach (var f in overdueFollowUps)
+        {
+            model.Notifications.Add(new HeaderAlertItem
+            {
+                Id = $"fu-overdue-{f.Id}",
+                Title = "Follow-up overdue",
+                Subtitle = Truncate(f.Note, 80),
+                TimeLabel = f.DueAt.ToString("dd MMM"),
+                Url = LeadUrl(f.LeadType, f.LeadId),
+                Icon = "bi-alarm",
+                Accent = "warn",
+                CreatedAt = f.DueAt
             });
         }
 

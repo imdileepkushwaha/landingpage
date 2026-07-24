@@ -1,0 +1,55 @@
+@model SoftflipSolutions.ViewModels.GlobalSearchViewModel
+@{
+    ViewData["Title"] = "Search";
+    Layout = "_AdminLayout";
+}
+
+<div class="page-toolbar">
+    <h2>Search</h2>
+</div>
+
+<form asp-action="Search" method="get" class="glass-card p-4 mb-4">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-9">
+            <label class="form-label small text-muted">Search leads, partners, invoices, proposals…</label>
+            <input type="search" name="q" value="@Model.Query" class="form-control settings-input" placeholder="Name, phone, email, invoice #…" autofocus />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-info w-100"><i class="bi bi-search me-1"></i> Search</button>
+        </div>
+    </div>
+</form>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <h5 class="mb-0">
+            @if (string.IsNullOrWhiteSpace(Model.Query))
+            {
+                <text>Enter a keyword</text>
+            }
+            else
+            {
+                <text>Results for “@Model.Query” (@Model.Results.Count)</text>
+            }
+        </h5>
+    </div>
+    @if (Model.Results.Any())
+    {
+        <div class="list-group list-group-flush">
+            @foreach (var r in Model.Results)
+            {
+                <a href="@r.Url" class="list-group-item list-group-item-action bg-transparent text-white border-secondary d-flex gap-3 align-items-center py-3">
+                    <i class="bi @r.Icon text-info"></i>
+                    <div>
+                        <div class="fw-semibold">@r.Title</div>
+                        <div class="small text-muted">@r.Category · @r.Subtitle</div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(Model.Query))
+    {
+        <div class="p-5 text-center text-muted">No matches found.</div>
+    }
+</div>

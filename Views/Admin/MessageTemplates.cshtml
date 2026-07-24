@@ -1,0 +1,78 @@
+@model IEnumerable<SoftflipSolutions.Models.MessageTemplate>
+@{
+    ViewData["Title"] = "Message Templates";
+    Layout = "_AdminLayout";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-3 admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <div>
+            <h5 class="mb-1">Message templates</h5>
+            <p class="mb-0 small text-muted">WhatsApp &amp; email drafts · use {{Name}}, {{Requirement}}, {{Phone}}, {{Email}}</p>
+        </div>
+        <a asp-action="AddMessageTemplate" class="btn btn-sm btn-info rounded-pill px-3">
+            <i class="bi bi-plus-lg me-1"></i> Add template
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Channel</th>
+                    <th>Preview</th>
+                    <th>Status</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@t.Name</td>
+                        <td>
+                            <span class="badge @(t.Channel == "Email" ? "bg-info bg-opacity-25 text-info" : "bg-success bg-opacity-25 text-success")">@t.Channel</span>
+                        </td>
+                        <td class="small text-muted" style="max-width:360px;">
+                            @if (!string.IsNullOrWhiteSpace(t.Subject))
+                            {
+                                <div class="fw-semibold text-white-50">@t.Subject</div>
+                            }
+                            @(t.Body.Length > 120 ? t.Body[..120] + "…" : t.Body)
+                        </td>
+                        <td>
+                            @if (t.IsActive)
+                            {
+                                <span class="badge bg-success bg-opacity-25 text-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Inactive</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="EditMessageTemplate" asp-route-id="@t.Id" class="btn btn-icon-action edit" title="Edit"><i class="bi bi-pencil-square"></i></a>
+                            <form asp-action="DeleteMessageTemplate" method="post" class="d-inline" onsubmit="return confirm('Delete this template?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@t.Id" />
+                                <button type="submit" class="btn btn-icon-action danger" title="Delete"><i class="bi bi-trash3"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="5" class="text-center py-5 text-muted">No templates yet.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

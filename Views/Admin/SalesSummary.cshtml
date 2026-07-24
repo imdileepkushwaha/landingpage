@@ -1,0 +1,187 @@
+@model SoftflipSolutions.ViewModels.SalesSummaryReportViewModel
+@{
+    ViewData["Title"] = "Sales Summary";
+    Layout = "_AdminLayout";
+    var totalProposalCount = Model.ProposalsCreated + Model.PartnerProposalsCreated;
+    var totalProposalValue = Model.ProposalValue + Model.PartnerProposalValue;
+    var softflipShare = totalProposalValue > 0 ? (double)(Model.ProposalValue / totalProposalValue * 100) : 0;
+    var partnerShare = totalProposalValue > 0 ? (double)(Model.PartnerProposalValue / totalProposalValue * 100) : 0;
+    var commissionTotal = Model.EstimatedCommission;
+    var paidPct = commissionTotal > 0 ? (double)(Model.CommissionPaid / commissionTotal * 100) : 0;
+    var pendingPct = commissionTotal > 0 ? (double)(Model.CommissionPending / commissionTotal * 100) : 0;
+}
+
+<div class="page-toolbar">
+    <h2>Sales Summary</h2>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card accent-blue">
+            <div class="stat-card-top">
+                <div class="stat-label">New enquiries</div>
+                <div class="stat-icon info"><i class="bi bi-envelope"></i></div>
+            </div>
+            <div class="stat-value">@Model.NewEnquiries</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card accent-green">
+            <div class="stat-card-top">
+                <div class="stat-label">Demo requests</div>
+                <div class="stat-icon success"><i class="bi bi-laptop"></i></div>
+            </div>
+            <div class="stat-value">@Model.NewDemos</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card accent-yellow">
+            <div class="stat-card-top">
+                <div class="stat-label">External leads</div>
+                <div class="stat-icon warning"><i class="bi bi-people"></i></div>
+            </div>
+            <div class="stat-value">@Model.NewExternalLeads</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card accent-red">
+            <div class="stat-card-top">
+                <div class="stat-label">Collected</div>
+                <div class="stat-icon primary"><i class="bi bi-cash-coin"></i></div>
+            </div>
+            <div class="stat-value" style="font-size:1.3rem;">₹@Model.AmountCollected.ToString("N0")</div>
+        </div>
+    </div>
+</div>
+
+<form method="get" class="glass-card p-3 mb-4">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small text-muted">From</label>
+            <input type="date" name="from" class="form-control" value="@Model.From.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small text-muted">To</label>
+            <input type="date" name="to" class="form-control" value="@Model.To.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-info w-100">Apply</button>
+        </div>
+    </div>
+</form>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="sales-panel glass-card p-0 overflow-hidden h-100">
+            <div class="sales-panel-head">
+                <div class="sales-panel-title">
+                    <span class="sales-panel-ico softflip"><i class="bi bi-file-earmark-text"></i></span>
+                    <div>
+                        <h5>Proposals</h5>
+                        <p>Softflip vs partner pipeline value</p>
+                    </div>
+                </div>
+                <a asp-action="Proposals" class="btn btn-sm btn-crm-outline rounded-pill px-3">View all</a>
+            </div>
+            <div class="sales-panel-body">
+                <div class="sales-hero-metric">
+                    <div>
+                        <div class="sales-hero-label">Total proposal value</div>
+                        <div class="sales-hero-value">₹@totalProposalValue.ToString("N0")</div>
+                    </div>
+                    <div class="sales-hero-count">
+                        <strong>@totalProposalCount</strong>
+                        <span>proposals</span>
+                    </div>
+                </div>
+
+                <div class="sales-split-bar" aria-hidden="true">
+                    <span class="softflip" style="width:@(softflipShare.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></span>
+                    <span class="partner" style="width:@(partnerShare.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></span>
+                </div>
+                <div class="sales-split-legend">
+                    <span><i class="dot softflip"></i> Softflip @softflipShare.ToString("0")%</span>
+                    <span><i class="dot partner"></i> Partner @partnerShare.ToString("0")%</span>
+                </div>
+
+                <div class="sales-metric-grid">
+                    <div class="sales-metric-card">
+                        <div class="sales-metric-top">
+                            <span class="sales-metric-badge info">Softflip</span>
+                            <a asp-action="Proposals" asp-route-source="admin" class="sales-metric-link" title="Open"><i class="bi bi-arrow-up-right"></i></a>
+                        </div>
+                        <div class="sales-metric-count">@Model.ProposalsCreated <small>created</small></div>
+                        <div class="sales-metric-amount">₹@Model.ProposalValue.ToString("N0")</div>
+                    </div>
+                    <div class="sales-metric-card">
+                        <div class="sales-metric-top">
+                            <span class="sales-metric-badge success">Partner</span>
+                            <a asp-action="Proposals" asp-route-source="partner" class="sales-metric-link" title="Open"><i class="bi bi-arrow-up-right"></i></a>
+                        </div>
+                        <div class="sales-metric-count">@Model.PartnerProposalsCreated <small>created</small></div>
+                        <div class="sales-metric-amount">₹@Model.PartnerProposalValue.ToString("N0")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="sales-panel glass-card p-0 overflow-hidden h-100">
+            <div class="sales-panel-head">
+                <div class="sales-panel-title">
+                    <span class="sales-panel-ico invoice"><i class="bi bi-receipt"></i></span>
+                    <div>
+                        <h5>Invoices &amp; commission</h5>
+                        <p>Collections, dues, and partner payouts</p>
+                    </div>
+                </div>
+                <a asp-action="Invoices" class="btn btn-sm btn-crm-outline rounded-pill px-3">Invoices</a>
+            </div>
+            <div class="sales-panel-body">
+                <div class="sales-invoice-row">
+                    <div class="sales-invoice-tile">
+                        <div class="sales-invoice-ico"><i class="bi bi-receipt-cutoff"></i></div>
+                        <div>
+                            <div class="sales-hero-label">Invoices created</div>
+                            <div class="sales-invoice-value">@Model.InvoicesCreated</div>
+                            <div class="sales-invoice-sub">₹@Model.InvoiceAmount.ToString("N0") billed</div>
+                        </div>
+                    </div>
+                    <div class="sales-invoice-tile warn">
+                        <div class="sales-invoice-ico"><i class="bi bi-hourglass-split"></i></div>
+                        <div>
+                            <div class="sales-hero-label">Outstanding</div>
+                            <div class="sales-invoice-value">₹@Model.Outstanding.ToString("N0")</div>
+                            <div class="sales-invoice-sub">All open invoices</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sales-commission-block">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                        <div>
+                            <div class="sales-hero-label mb-0">Partner commission</div>
+                            <div class="sales-commission-total">₹@Model.EstimatedCommission.ToString("N0") <small>estimated</small></div>
+                        </div>
+                        <a asp-action="CommissionTracker" class="btn btn-sm btn-outline-success rounded-pill px-3">Tracker</a>
+                    </div>
+                    <div class="sales-commission-bar" aria-hidden="true">
+                        <span class="paid" style="width:@(paidPct.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></span>
+                        <span class="pending" style="width:@(pendingPct.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></span>
+                    </div>
+                    <div class="sales-commission-stats">
+                        <div class="sales-commission-stat paid">
+                            <span class="label"><i class="bi bi-check-circle-fill"></i> Paid</span>
+                            <strong>₹@Model.CommissionPaid.ToString("N0")</strong>
+                        </div>
+                        <div class="sales-commission-stat pending">
+                            <span class="label"><i class="bi bi-exclamation-circle-fill"></i> Pending</span>
+                            <strong>₹@Model.CommissionPending.ToString("N0")</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

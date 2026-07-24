@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**;publish/**;publish_*/**;out/**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**;publish/**;publish_*/**;out/**;out_*/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
