@@ -61,6 +61,22 @@
     <partial name="_LeadDocumentsPanel" model="documentsPanel" />
 }
 
+@{
+    var followUpsPanel = ViewBag.FollowUpsPanel as SoftflipSolutions.ViewModels.LeadFollowUpsPanelViewModel;
+}
+@if (followUpsPanel != null)
+{
+    <partial name="_LeadFollowUpsPanel" model="followUpsPanel" />
+}
+
+@{
+    var duplicates = ViewBag.DuplicateLeads as IEnumerable<SoftflipSolutions.ViewModels.DuplicateLeadMatch>;
+}
+@if (duplicates != null)
+{
+    <partial name="_DuplicateLeadsAlert" model="duplicates" />
+}
+
 <div class="row g-4">
     <div class="col-xl-4 col-lg-5">
         <div class="lead-profile-card">
@@ -118,6 +134,31 @@
                     <button type="button" class="btn btn-lead-email" data-bs-toggle="modal" data-bs-target="#emailModal">
                         <i class="bi bi-envelope-paper"></i> Compose Email
                     </button>
+                }
+                @{
+                    var waDigits = new string((Model.Mobile ?? "").Where(char.IsDigit).ToArray());
+                    var templates = ViewBag.MessageTemplates as IEnumerable<SoftflipSolutions.Models.MessageTemplate> ?? Enumerable.Empty<SoftflipSolutions.Models.MessageTemplate>();
+                    var waTemplates = templates.Where(t => t.Channel == "WhatsApp").ToList();
+                }
+                @if (status != LeadPipeline.Rejected && waDigits.Length >= 8 && waTemplates.Any())
+                {
+                    <div class="dropdown mt-2">
+                        <button class="btn btn-success w-100 rounded-pill dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-whatsapp me-1"></i> WhatsApp template
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark w-100">
+                            @foreach (var t in waTemplates)
+                            {
+                                var body = t.Body
+                                    .Replace("{{Name}}", Model.Name, StringComparison.OrdinalIgnoreCase)
+                                    .Replace("{{Requirement}}", Model.Requirement, StringComparison.OrdinalIgnoreCase)
+                                    .Replace("{{Phone}}", Model.Mobile, StringComparison.OrdinalIgnoreCase)
+                                    .Replace("{{Email}}", Model.Email ?? "", StringComparison.OrdinalIgnoreCase);
+                                var waUrl = $"https://wa.me/{waDigits}?text={Uri.EscapeDataString(body)}";
+                                <li><a class="dropdown-item" href="@waUrl" target="_blank" rel="noopener">@t.Name</a></li>
+                            }
+                        </ul>
+                    </div>
                 }
             </div>
         </div>
@@ -211,13 +252,38 @@
                     <div class="modal-body">
                         <input type="hidden" name="returnUrl" value="/Admin/ClientLeadDetails/@Model.Id" />
                         <input type="hidden" name="toEmail" value="@Model.Email" />
+                        @{
+                            var emailTemplates = (ViewBag.MessageTemplates as IEnumerable<SoftflipSolutions.Models.MessageTemplate> ?? Enumerable.Empty<SoftflipSolutions.Models.MessageTemplate>())
+                                .Where(t => t.Channel == "Email").ToList();
+                        }
+                        @if (emailTemplates.Any())
+                        {
+                            <div class="mb-3">
+                                <label class="lead-info-label">Template</label>
+                                <select class="form-select settings-input" id="emailTemplateSelect">
+                                    <option value="">— Choose template —</option>
+                                    @foreach (var t in emailTemplates)
+                                    {
+                                        var subj = (t.Subject ?? "")
+                                            .Replace("{{Name}}", Model.Name, StringComparison.OrdinalIgnoreCase)
+                                            .Replace("{{Requirement}}", Model.Requirement, StringComparison.OrdinalIgnoreCase);
+                                        var body = t.Body
+                                            .Replace("{{Name}}", Model.Name, StringComparison.OrdinalIgnoreCase)
+                                            .Replace("{{Requirement}}", Model.Requirement, StringComparison.OrdinalIgnoreCase)
+                                            .Replace("{{Phone}}", Model.Mobile, StringComparison.OrdinalIgnoreCase)
+                                            .Replace("{{Email}}", Model.Email ?? "", StringComparison.OrdinalIgnoreCase);
+                                        <option value="@t.Id" data-subject="@subj" data-body="@body">@t.Name</option>
+                                    }
+                                </select>
+                            </div>
+                        }
                         <div class="mb-3">
                             <label class="lead-info-label">Subject</label>
-                            <input type="text" name="subject" class="form-control settings-input" value="Regarding your enquiry with Softflip Solutions" required />
+                            <input type="text" name="subject" id="emailSubject" class="form-control settings-input" value="Regarding your enquiry with Softflip Solutions" required />
                         </div>
                         <div class="mb-0">
                             <label class="lead-info-label">Message</label>
-                            <textarea name="message" class="form-control custom-textarea" rows="8" required>Hi @Model.Name,
+                            <textarea name="message" id="emailMessage" class="form-control custom-textarea" rows="8" required>Hi @Model.Name,
 
 Thank you for your interest via @Model.Source regarding: @Model.Requirement.
 
@@ -236,3 +302,17 @@ Softflip Solutions Team</textarea>
         </div>
     </div>
 }
+<script>
+    (function () {
+        const sel = document.getElementById('emailTemplateSelect');
+        if (!sel) return;
+        sel.addEventListener('change', () => {
+            const opt = sel.options[sel.selectedIndex];
+            if (!opt || !opt.value) return;
+            const subj = document.getElementById('emailSubject');
+            const msg = document.getElementById('emailMessage');
+            if (subj) subj.value = opt.getAttribute('data-subject') || '';
+            if (msg) msg.value = opt.getAttribute('data-body') || '';
+        });
+    })();
+</script>

@@ -40,4 +40,9 @@ public class PartnerProposal
     public string? SelectedModulesJson { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+    /// <summary>Admin-tracked partner commission payout status.</summary>
+    public bool IsCommissionPaid { get; set; }
+
+    public DateTime? CommissionPaidAt { get; set; }
 }

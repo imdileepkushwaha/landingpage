@@ -21,6 +21,7 @@ builder.Services.AddScoped<IDealPdfService, DealPdfService>();
 builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
 builder.Services.AddScoped<IPartnerVisitingCardService, PartnerVisitingCardService>();
 builder.Services.AddSingleton<ICaptchaService, CaptchaService>();
+builder.Services.AddSingleton<IFormSpamGuard, FormSpamGuardService>();
 builder.Services.AddSingleton<IPhoneValidationService, PhoneValidationService>();
 
 builder.Services.AddAuthentication("AdminCookie")

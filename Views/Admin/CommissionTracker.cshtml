@@ -1,0 +1,135 @@
+@model SoftflipSolutions.ViewModels.CommissionTrackerViewModel
+@{
+    ViewData["Title"] = "Commission Tracker";
+    Layout = "_AdminLayout";
+}
+
+<div class="page-toolbar">
+    <h2>Commission Tracker</h2>
+    <div class="toolbar-actions">
+        <a asp-action="PartnerPerformance" class="btn btn-sm btn-crm-outline rounded-pill px-3">
+            <i class="bi bi-graph-up-arrow me-1"></i> Performance
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card accent-blue">
+            <div class="stat-card-top">
+                <div class="stat-label">Estimated total</div>
+                <div class="stat-icon info"><i class="bi bi-percent"></i></div>
+            </div>
+            <div class="stat-value" style="font-size:1.35rem;">₹@Model.TotalEstimated.ToString("N0")</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card accent-yellow">
+            <div class="stat-card-top">
+                <div class="stat-label">Pending (@Model.PendingCount)</div>
+                <div class="stat-icon warning"><i class="bi bi-hourglass-split"></i></div>
+            </div>
+            <div class="stat-value" style="font-size:1.35rem;">₹@Model.TotalPending.ToString("N0")</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card accent-green">
+            <div class="stat-card-top">
+                <div class="stat-label">Paid (@Model.PaidCount)</div>
+                <div class="stat-icon success"><i class="bi bi-check2-circle"></i></div>
+            </div>
+            <div class="stat-value" style="font-size:1.35rem;">₹@Model.TotalPaid.ToString("N0")</div>
+        </div>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <h5 class="mb-1">Partner proposal commissions</h5>
+        <p class="mb-0 small text-muted">Estimated from service commission % · mark paid when settled</p>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Partner</th>
+                    <th>Client</th>
+                    <th>Proposal</th>
+                    <th>Amount</th>
+                    <th>%</th>
+                    <th>Commission</th>
+                    <th>Status</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td class="small text-muted">@row.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td>
+                            <a asp-action="ChannelPartnerDetails" asp-route-id="@row.PartnerId" class="text-decoration-none">@row.PartnerName</a>
+                        </td>
+                        <td>
+                            <a asp-action="PartnerClientDetails" asp-route-id="@row.ClientId" class="text-decoration-none">@row.ClientName</a>
+                        </td>
+                        <td>@row.Title</td>
+                        <td>₹@row.Amount.ToString("N2")</td>
+                        <td>@row.CommissionPercent.ToString("0.##")%</td>
+                        <td class="fw-semibold">₹@row.EstimatedCommission.ToString("N2")</td>
+                        <td>
+                            @if (row.IsPaid)
+                            {
+                                <span class="badge bg-success bg-opacity-25 text-success">Paid</span>
+                                @if (row.PaidAt.HasValue)
+                                {
+                                    <div class="small text-muted">@row.PaidAt.Value.ToString("dd MMM yyyy")</div>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            @if (!row.IsPaid)
+                            {
+                                <form asp-action="MarkCommissionPaid" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@row.ProposalId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-success" onclick="return confirm('Mark this commission as paid?');">Mark paid</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="MarkCommissionUnpaid" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@row.ProposalId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">Undo</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Rows.Any())
+                {
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="bi bi-percent fs-1 d-block mb-2"></i>
+                            No partner proposals yet.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

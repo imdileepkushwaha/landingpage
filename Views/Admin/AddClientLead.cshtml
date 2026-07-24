@@ -30,6 +30,15 @@
     </aside>
 
     <div class="add-lead-main">
+        @{
+            var duplicates = ViewBag.DuplicateLeads as IEnumerable<SoftflipSolutions.ViewModels.DuplicateLeadMatch>;
+        }
+        @if (duplicates != null)
+        {
+            <partial name="_DuplicateLeadsAlert" model="duplicates" />
+        }
+        <div id="liveDuplicateBox"></div>
+
         <form asp-action="AddClientLead" method="post" class="add-lead-form" id="addLeadForm">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="alert alert-danger deal-alert mb-3"></div>
@@ -180,6 +189,30 @@
                 custom.focus();
                 alert('Please enter a custom source name.');
             }
+        });
+
+        const mobile = document.querySelector('input[name="Mobile"]');
+        const email = document.querySelector('input[name="Email"]');
+        const liveBox = document.getElementById('liveDuplicateBox');
+        let dupTimer = null;
+        async function checkDup() {
+            if (!liveBox) return;
+            const phone = mobile?.value?.trim() || '';
+            const em = email?.value?.trim() || '';
+            if (phone.length < 8 && em.length < 5) { liveBox.innerHTML = ''; return; }
+            try {
+                const url = `/Admin/CheckDuplicateLead?phone=${encodeURIComponent(phone)}&email=${encodeURIComponent(em)}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (!data.length) { liveBox.innerHTML = ''; return; }
+                liveBox.innerHTML = `<div class="alert alert-warning"><strong>Possible duplicates:</strong><ul class="mb-0 mt-2">${
+                    data.map(m => `<li><a href="${m.url}">${m.name}</a> · ${m.sourceType} · ${m.matchOn}</li>`).join('')
+                }</ul></div>`;
+            } catch { liveBox.innerHTML = ''; }
+        }
+        ['blur', 'change'].forEach(evt => {
+            mobile?.addEventListener(evt, () => { clearTimeout(dupTimer); dupTimer = setTimeout(checkDup, 200); });
+            email?.addEventListener(evt, () => { clearTimeout(dupTimer); dupTimer = setTimeout(checkDup, 200); });
         });
     })();
 </script>

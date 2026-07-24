@@ -1,0 +1,43 @@
+@model IEnumerable<SoftflipSolutions.ViewModels.ActivityFeedItem>
+@{
+    ViewData["Title"] = "Activity Timeline";
+    Layout = "_AdminLayout";
+}
+
+<div class="page-toolbar">
+    <h2>Activity Timeline</h2>
+</div>
+
+<div class="glass-card p-4">
+    <h5 class="mb-1">Recent CRM activity</h5>
+    <p class="small text-muted mb-4">Notes, proposals, invoices, payments, documents, partner proposals &amp; follow-ups</p>
+
+    @if (!Model.Any())
+    {
+        <p class="text-muted mb-0">No recent activity.</p>
+    }
+    else
+    {
+        <div class="timeline">
+            @foreach (var item in Model)
+            {
+                <div class="timeline-item mb-3">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="rounded-circle bg-@item.Accent bg-opacity-25 text-@item.Accent d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;">
+                            <i class="bi @item.Icon"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between gap-2 flex-wrap">
+                                <div>
+                                    <a href="@item.Url" class="fw-semibold text-decoration-none">@item.Title</a>
+                                    <div class="small text-muted">@item.Subtitle</div>
+                                </div>
+                                <div class="small text-muted">@item.At.ToString("dd MMM yyyy HH:mm")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

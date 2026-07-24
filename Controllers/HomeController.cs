@@ -12,15 +12,18 @@ public class HomeController : Controller
     private readonly ApplicationDbContext _context;
     private readonly ICaptchaService _captchaService;
     private readonly IPhoneValidationService _phoneValidationService;
+    private readonly IFormSpamGuard _formSpamGuard;
 
     public HomeController(
         ApplicationDbContext context,
         ICaptchaService captchaService,
-        IPhoneValidationService phoneValidationService)
+        IPhoneValidationService phoneValidationService,
+        IFormSpamGuard formSpamGuard)
     {
         _context = context;
         _captchaService = captchaService;
         _phoneValidationService = phoneValidationService;
+        _formSpamGuard = formSpamGuard;
     }
 
     public IActionResult Index()
@@ -37,8 +40,27 @@ public class HomeController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SubmitEnquiry(Enquiry enquiry, string captchaToken, string captchaAnswer)
+    public async Task<IActionResult> SubmitEnquiry(
+        Enquiry enquiry,
+        string captchaToken,
+        string captchaAnswer,
+        string? formToken,
+        string? websiteUrl)
     {
+        if (!PassSpamChecks(formToken, websiteUrl, out var silentReject, out var spamError))
+        {
+            if (silentReject)
+            {
+                TempData["SuccessMessage"] = "Thank you for your enquiry. We will contact you soon.";
+                TempData["SubmittedForm"] = "enquiry";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = spamError;
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
         if (!_captchaService.Validate(captchaToken, captchaAnswer))
         {
             TempData["ErrorMessage"] = "Captcha is incorrect or expired. Please try again.";
@@ -63,6 +85,12 @@ public class HomeController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        if (await IsDuplicateEnquiryAsync(enquiry.Email, enquiry.Phone))
+        {
+            TempData["ErrorMessage"] = "We already received a similar enquiry recently. Please wait before submitting again.";
+            return RedirectToAction(nameof(Index));
+        }
+
         _context.Enquiries.Add(enquiry);
         await _context.SaveChangesAsync();
         TempData["SuccessMessage"] = "Thank you for your enquiry. We will contact you soon.";
@@ -72,8 +100,28 @@ public class HomeController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SubmitDemoRequest(DemoRequest request, string captchaToken, string captchaAnswer, string formSource)
+    public async Task<IActionResult> SubmitDemoRequest(
+        DemoRequest request,
+        string captchaToken,
+        string captchaAnswer,
+        string formSource,
+        string? formToken,
+        string? websiteUrl)
     {
+        if (!PassSpamChecks(formToken, websiteUrl, out var silentReject, out var spamError))
+        {
+            if (silentReject)
+            {
+                TempData["SuccessMessage"] = "Demo request submitted successfully.";
+                TempData["SubmittedForm"] = string.IsNullOrWhiteSpace(formSource) ? "demo-section" : formSource;
+            }
+            else
+            {
+                TempData["ErrorMessage"] = spamError;
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
         if (!_captchaService.Validate(captchaToken, captchaAnswer))
         {
             TempData["ErrorMessage"] = "Captcha is incorrect or expired. Please try again.";
@@ -95,6 +143,12 @@ public class HomeController : Controller
         if (!TryValidateModel(request))
         {
             TempData["ErrorMessage"] = "Please fill all required fields correctly.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (await IsDuplicateDemoAsync(request.Email, request.Phone))
+        {
+            TempData["ErrorMessage"] = "We already received a similar demo request recently. Please wait before submitting again.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -125,5 +179,27 @@ public class HomeController : Controller
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+
+    private bool PassSpamChecks(string? formToken, string? honeypot, out bool silentReject, out string? error)
+    {
+        var clientKey = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return _formSpamGuard.TryValidate(formToken, honeypot, clientKey, out silentReject, out error);
+    }
+
+    private async Task<bool> IsDuplicateEnquiryAsync(string email, string phone)
+    {
+        var since = DateTime.Now.AddHours(-6);
+        return await _context.Enquiries.AsNoTracking().AnyAsync(e =>
+            e.CreatedAt >= since &&
+            (e.Email == email || e.Phone == phone));
+    }
+
+    private async Task<bool> IsDuplicateDemoAsync(string email, string phone)
+    {
+        var since = DateTime.Now.AddHours(-6);
+        return await _context.DemoRequests.AsNoTracking().AnyAsync(e =>
+            e.CreatedAt >= since &&
+            (e.Email == email || e.Phone == phone));
     }
 }

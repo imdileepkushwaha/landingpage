@@ -220,7 +220,8 @@
                         }
                         @if (Model.LatestInvoice == null && (status == LeadPipeline.ProposalSent || status == LeadPipeline.Confirmed))
                         {
-                            <form asp-action="ConvertToInvoice" method="post">
+                            <form asp-action="ConvertToInvoice" method="post"
+                                  onsubmit="return confirm('Create invoice for ₹ @Model.LatestProposal.Amount.ToString("N2")?\n\nInvoice amount will be locked from this proposal.');">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="leadType" value="@Model.LeadType" />
                                 <input type="hidden" name="leadId" value="@Model.LeadId" />
@@ -308,7 +309,11 @@
                                         var submitAmt = Math.Min(partAmt, balance);
                                         if (submitAmt > 0)
                                         {
-                                            <form asp-action="RecordInvoicePayment" method="post">
+                                            var confirmMsg = pct == 100 || submitAmt >= balance
+                                                ? $"Confirm ₹ {submitAmt:N2} received?\n\nInvoice will be marked fully paid (total ₹ {inv.Amount:N2})."
+                                                : $"Confirm payment of ₹ {submitAmt:N2} received?\n\n({pct}% of invoice · remaining after this: ₹ {(balance - submitAmt):N2})";
+                                            <form asp-action="RecordInvoicePayment" method="post"
+                                                  onsubmit="return confirm('@Html.Raw(confirmMsg.Replace("'", "\\'").Replace("\n", "\\n"))');">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="invoiceId" value="@inv.Id" />
                                                 <input type="hidden" name="percent" value="@pct" />
@@ -318,7 +323,8 @@
                                     }
                                 }
                             </div>
-                            <form asp-action="RecordInvoicePayment" method="post" class="lead-pay-custom">
+                            <form asp-action="RecordInvoicePayment" method="post" class="lead-pay-custom"
+                                  onsubmit="var a=this.querySelector('[name=amount]'); if(!a||!a.value) return false; var n=Number(a.value); if(!(n>0)){alert('Enter a valid amount'); return false;} return confirm('Confirm ₹ '+n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})+' has been received?');">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="invoiceId" value="@inv.Id" />
                                 <input type="number" name="amount" class="form-control settings-input" step="0.01" min="0.01" max="@balance.ToString(System.Globalization.CultureInfo.InvariantCulture)" placeholder="Custom amount" required />
@@ -330,15 +336,43 @@
 
                     @if (inv.Payments != null && inv.Payments.Any())
                     {
+                        var payments = inv.Payments.OrderByDescending(p => p.PaidAt).ToList();
                         <div class="lead-pay-history">
-                            <div class="lead-pay-form-label">Payment history</div>
-                            @foreach (var pay in inv.Payments)
-                            {
-                                <div class="lead-pay-history-row">
-                                    <span><strong>₹ @pay.Amount.ToString("N2")</strong>@(string.IsNullOrWhiteSpace(pay.Note) ? "" : " · " + pay.Note)</span>
-                                    <span>@pay.PaidAt.ToString("dd MMM yyyy, hh:mm tt")</span>
+                            <div class="lead-pay-history-head">
+                                <div>
+                                    <div class="lead-pay-form-label mb-0">Payment history</div>
+                                    <p class="lead-pay-history-sub">@payments.Count payment(s) · ₹ @inv.AmountPaid.ToString("N2") of ₹ @inv.Amount.ToString("N2") confirmed</p>
                                 </div>
-                            }
+                                @if (invPaid)
+                                {
+                                    <span class="lead-pay-history-badge paid"><i class="bi bi-check-circle-fill"></i> Fully paid</span>
+                                }
+                                else
+                                {
+                                    <span class="lead-pay-history-badge due">Due ₹ @balance.ToString("N0")</span>
+                                }
+                            </div>
+                            <div class="lead-pay-timeline">
+                                @foreach (var pay in payments)
+                                {
+                                    <div class="lead-pay-timeline-item">
+                                        <div class="lead-pay-timeline-dot"></div>
+                                        <div class="lead-pay-timeline-card">
+                                            <div class="lead-pay-timeline-top">
+                                                <div class="lead-pay-timeline-amount">₹ @pay.Amount.ToString("N2")</div>
+                                                <div class="lead-pay-timeline-date">@pay.PaidAt.ToString("dd MMM yyyy · hh:mm tt")</div>
+                                            </div>
+                                            <div class="lead-pay-timeline-meta">
+                                                <span class="lead-pay-timeline-note">
+                                                    <i class="bi bi-chat-left-text"></i>
+                                                    @(string.IsNullOrWhiteSpace(pay.Note) ? "Payment received" : pay.Note)
+                                                </span>
+                                                <span class="lead-pay-timeline-confirmed"><i class="bi bi-shield-check"></i> Amount confirmed</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
                         </div>
                     }
 
@@ -348,11 +382,15 @@
                         </a>
                         @if (!invPaid)
                         {
-                            <form asp-action="MarkInvoicePaid" method="post">
+                            var markMsg = balance > 0
+                                ? $"Confirm ₹ {balance:N2} has been received?\n\nInvoice total: ₹ {inv.Amount:N2}\nAlready paid: ₹ {inv.AmountPaid:N2}\nThis will mark the invoice fully paid."
+                                : $"Confirm invoice ₹ {inv.Amount:N2} is fully paid?";
+                            <form asp-action="MarkInvoicePaid" method="post"
+                                  onsubmit="return confirm('@Html.Raw(markMsg.Replace("'", "\\'").Replace("\n", "\\n"))');">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="invoiceId" value="@inv.Id" />
-                                <button type="submit" class="btn lead-deal-btn success" onclick="return confirm('Mark remaining balance as fully paid?');">
-                                    <i class="bi bi-cash-coin"></i> Mark fully paid
+                                <button type="submit" class="btn lead-deal-btn success">
+                                    <i class="bi bi-cash-coin"></i> Mark fully paid · ₹ @balance.ToString("N0")
                                 </button>
                             </form>
                         }

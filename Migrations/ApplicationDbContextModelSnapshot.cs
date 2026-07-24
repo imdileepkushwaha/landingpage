@@ -436,6 +436,87 @@ namespace SoftflipSolutions.Migrations
                     b.ToTable("LeadDocuments");
                 });
 
+            modelBuilder.Entity("SoftflipSolutions.Models.FollowUpReminder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DueAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDone")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LeadId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LeadType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeadType", "LeadId", "IsDone", "DueAt");
+
+                    b.ToTable("FollowUpReminders");
+                });
+
+            modelBuilder.Entity("SoftflipSolutions.Models.MessageTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MessageTemplates");
+                });
+
             modelBuilder.Entity("SoftflipSolutions.Models.ChannelPartner", b =>
                 {
                     b.Property<int>("Id")
@@ -577,12 +658,18 @@ namespace SoftflipSolutions.Migrations
                     b.Property<int>("ChannelPartnerId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("CommissionPaidAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("FilePath")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("IsCommissionPaid")
+                        .HasColumnType("bit");
 
                     b.Property<int>("PartnerClientId")
                         .HasColumnType("int");

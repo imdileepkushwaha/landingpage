@@ -1337,6 +1337,7 @@ body.sidebar-collapsed .sidebar-logout-ico {
     vertical-align: middle;
     background: transparent;
     color: var(--text-main) !important;
+    font-size: 14px!important;
 }
 
 .table tbody tr:hover td {

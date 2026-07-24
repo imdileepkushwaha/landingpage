@@ -5,6 +5,11 @@
     var totalDemos = (int)(ViewBag.TotalDemoRequests ?? 0);
     var totalLeads = (int)(ViewBag.TotalClientLeads ?? 0);
     var totalPipeline = totalEnquiries + totalDemos + totalLeads;
+    var openInvoices = (int)(ViewBag.OpenInvoices ?? 0);
+    var outstanding = (decimal)(ViewBag.OutstandingBalance ?? 0m);
+    var overdueFollowUps = (int)(ViewBag.OverdueFollowUps ?? 0);
+    var expiringProposals = (int)(ViewBag.ExpiringProposals ?? 0);
+    var pendingCommission = (decimal)(ViewBag.PendingCommission ?? 0m);
 }
 
 <div class="page-toolbar">
@@ -75,6 +80,57 @@
 </div>
 
 <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <a asp-action="Invoices" class="text-decoration-none">
+            <div class="stat-card accent-yellow">
+                <div class="stat-card-top">
+                    <div class="stat-label">Open invoices</div>
+                    <div class="stat-icon warning"><i class="bi bi-receipt"></i></div>
+                </div>
+                <div class="stat-value">@openInvoices</div>
+                <div class="stat-trend"><i class="bi bi-currency-rupee"></i> ₹@outstanding.ToString("N0") due</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a asp-action="FollowUps" class="text-decoration-none">
+            <div class="stat-card accent-red">
+                <div class="stat-card-top">
+                    <div class="stat-label">Overdue follow-ups</div>
+                    <div class="stat-icon primary"><i class="bi bi-alarm"></i></div>
+                </div>
+                <div class="stat-value">@overdueFollowUps</div>
+                <div class="stat-trend"><i class="bi bi-arrow-right"></i> Open reminders</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a asp-action="Proposals" class="text-decoration-none">
+            <div class="stat-card accent-blue">
+                <div class="stat-card-top">
+                    <div class="stat-label">Expiring proposals</div>
+                    <div class="stat-icon info"><i class="bi bi-hourglass-split"></i></div>
+                </div>
+                <div class="stat-value">@expiringProposals</div>
+                <div class="stat-trend"><i class="bi bi-calendar3"></i> Next 3 days</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a asp-action="CommissionTracker" class="text-decoration-none">
+            <div class="stat-card accent-green">
+                <div class="stat-card-top">
+                    <div class="stat-label">Pending commission</div>
+                    <div class="stat-icon success"><i class="bi bi-percent"></i></div>
+                </div>
+                <div class="stat-value" style="font-size:1.35rem;">₹@pendingCommission.ToString("N0")</div>
+                <div class="stat-trend"><i class="bi bi-arrow-right"></i> Tracker</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
     <div class="col-lg-4">
         <div class="dash-list-card">
             <div class="dash-list-header">
@@ -89,18 +145,25 @@
                             <div class="small text-muted">Website form submissions</div>
                         </div>
                     </a>
+                    <a asp-action="FollowUps" class="quick-action-btn">
+                        <i class="bi bi-alarm"></i>
+                        <div>
+                            <div class="fw-semibold">Follow-ups</div>
+                            <div class="small text-muted">Overdue &amp; upcoming calls</div>
+                        </div>
+                    </a>
+                    <a asp-action="Activity" class="quick-action-btn">
+                        <i class="bi bi-activity"></i>
+                        <div>
+                            <div class="fw-semibold">Activity timeline</div>
+                            <div class="small text-muted">Notes, deals &amp; payments</div>
+                        </div>
+                    </a>
                     <a asp-action="AddClientLead" class="quick-action-btn">
                         <i class="bi bi-person-plus"></i>
                         <div>
                             <div class="fw-semibold">Add External Client</div>
                             <div class="small text-muted">WhatsApp, Just Dial, IndiaMART</div>
-                        </div>
-                    </a>
-                    <a asp-action="PartnerPerformance" class="quick-action-btn">
-                        <i class="bi bi-graph-up-arrow"></i>
-                        <div>
-                            <div class="fw-semibold">Partner Performance</div>
-                            <div class="small text-muted">Clients, proposals &amp; commission</div>
                         </div>
                     </a>
                     <a asp-action="Settings" class="quick-action-btn">

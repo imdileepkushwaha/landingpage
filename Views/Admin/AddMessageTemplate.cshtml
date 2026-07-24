@@ -1,0 +1,37 @@
+@model SoftflipSolutions.Models.MessageTemplate
+@{
+    ViewData["Title"] = "Add Template";
+    Layout = "_AdminLayout";
+}
+
+<div class="lead-detail-toolbar">
+    <a asp-action="MessageTemplates" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<div class="glass-card p-4" style="max-width:720px;">
+    <h5 class="mb-3">New message template</h5>
+    <form asp-action="AddMessageTemplate" method="post">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label class="form-label" asp-for="Name"></label>
+            <input asp-for="Name" class="form-control settings-input" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" asp-for="Channel"></label>
+            <select asp-for="Channel" class="form-select settings-input">
+                <option>WhatsApp</option>
+                <option>Email</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label" asp-for="Subject"></label>
+            <input asp-for="Subject" class="form-control settings-input" placeholder="Email subject (optional for WhatsApp)" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" asp-for="Body"></label>
+            <textarea asp-for="Body" class="form-control settings-input" rows="8" required placeholder="Hi {{Name}}, ..."></textarea>
+            <div class="form-text text-muted">Placeholders: {{Name}} {{Requirement}} {{Phone}} {{Email}}</div>
+        </div>
+        <button type="submit" class="btn btn-crm-primary">Save template</button>
+    </form>
+</div>

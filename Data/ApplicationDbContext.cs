@@ -20,6 +20,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Invoice> Invoices { get; set; }
     public DbSet<InvoicePayment> InvoicePayments { get; set; }
     public DbSet<LeadDocument> LeadDocuments { get; set; }
+    public DbSet<FollowUpReminder> FollowUpReminders { get; set; }
+    public DbSet<MessageTemplate> MessageTemplates { get; set; }
     public DbSet<ChannelPartner> ChannelPartners { get; set; }
     public DbSet<PartnerClient> PartnerClients { get; set; }
     public DbSet<PartnerProposal> PartnerProposals { get; set; }
@@ -52,6 +54,9 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<LeadDocument>()
             .HasIndex(d => new { d.LeadType, d.LeadId });
+
+        modelBuilder.Entity<FollowUpReminder>()
+            .HasIndex(f => new { f.LeadType, f.LeadId, f.IsDone, f.DueAt });
 
         modelBuilder.Entity<ChannelPartner>()
             .HasIndex(p => p.Email)

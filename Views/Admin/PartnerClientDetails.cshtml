@@ -69,11 +69,18 @@
                     @foreach (var p in Model.Proposals)
                     {
                         <div class="note-box mb-3">
-                            <div class="d-flex justify-content-between flex-wrap gap-2">
-                                <strong>@p.Title</strong>
-                                <span>₹ @p.Amount.ToString("N0")</span>
+                            <div class="d-flex justify-content-between flex-wrap gap-2 align-items-start">
+                                <div>
+                                    <strong>@p.Title</strong>
+                                    <div class="small text-muted mt-1">@p.CreatedAt.ToString("dd MMM yyyy") · Valid till @p.ValidUntil.ToString("dd MMM yyyy")</div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-semibold">₹ @p.Amount.ToString("N0")</span>
+                                    <a asp-action="DownloadPartnerProposal" asp-route-id="@p.Id" class="btn btn-sm btn-outline-info rounded-pill">
+                                        <i class="bi bi-download me-1"></i> PDF
+                                    </a>
+                                </div>
                             </div>
-                            <div class="small text-muted mt-1">@p.CreatedAt.ToString("dd MMM yyyy") · Valid till @p.ValidUntil.ToString("dd MMM yyyy")</div>
                         </div>
                     }
                 }

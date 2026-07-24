@@ -82,6 +82,21 @@ public class AdminController : Controller
         ViewBag.TotalClientLeads = await _context.ClientLeads.CountAsync();
         ViewBag.TotalPartners = await _context.ChannelPartners.CountAsync();
         ViewBag.TotalPartnerClients = await _context.PartnerClients.CountAsync();
+        ViewBag.OpenInvoices = await _context.Invoices.CountAsync(i => i.Status == "Unpaid" || i.Status == "Partial");
+        ViewBag.OutstandingBalance = await _context.Invoices
+            .Where(i => i.Status == "Unpaid" || i.Status == "Partial")
+            .SumAsync(i => (decimal?)(i.Amount - i.AmountPaid)) ?? 0m;
+        ViewBag.OverdueFollowUps = await _context.FollowUpReminders
+            .CountAsync(f => !f.IsDone && f.DueAt < DateTime.Today);
+        ViewBag.ExpiringProposals = await _context.Proposals
+            .CountAsync(p => p.ValidUntil >= DateTime.Today && p.ValidUntil <= DateTime.Today.AddDays(3));
+        ViewBag.PendingCommission = await (
+            from p in _context.PartnerProposals.AsNoTracking()
+            join s in _context.ServiceCatalogs.AsNoTracking() on p.ServiceCatalogId equals s.Id into sj
+            from s in sj.DefaultIfEmpty()
+            where !p.IsCommissionPaid
+            select p.Amount * (s != null ? s.Commission : 0m) / 100m
+        ).SumAsync();
         return View();
     }
 
@@ -128,6 +143,583 @@ public class AdminController : Controller
             Rows = rows
         };
 
+        return View(vm);
+    }
+
+    public async Task<IActionResult> Proposals(string? source)
+    {
+        var filter = (source ?? "all").Trim().ToLowerInvariant();
+        ViewBag.ProposalSource = filter is "admin" or "partner" ? filter : "all";
+
+        var rows = new List<AdminProposalListItem>();
+
+        if (filter is "all" or "admin")
+        {
+            var adminProposals = await _context.Proposals
+                .AsNoTracking()
+                .Include(p => p.Invoice)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            var names = await ResolveLeadNamesAsync(
+                adminProposals.Select(p => (p.LeadType, p.LeadId)).Distinct().ToList());
+
+            rows.AddRange(adminProposals.Select(p => new AdminProposalListItem
+            {
+                Id = p.Id,
+                Source = "Admin",
+                LeadName = names.GetValueOrDefault((p.LeadType, p.LeadId), $"#{p.LeadId}"),
+                LeadType = p.LeadType,
+                LeadId = p.LeadId,
+                Title = p.Title,
+                Amount = p.Amount,
+                ValidUntil = p.ValidUntil,
+                CreatedAt = p.CreatedAt,
+                FilePath = p.FilePath,
+                HasInvoice = p.Invoice != null
+            }));
+        }
+
+        if (filter is "all" or "partner")
+        {
+            var partnerProposals = await _context.PartnerProposals
+                .AsNoTracking()
+                .Include(p => p.ChannelPartner)
+                .Include(p => p.PartnerClient)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            rows.AddRange(partnerProposals.Select(p => new AdminProposalListItem
+            {
+                Id = p.Id,
+                Source = "Partner",
+                LeadName = p.PartnerClient?.Name ?? $"Client #{p.PartnerClientId}",
+                LeadType = "PartnerClient",
+                LeadId = p.PartnerClientId,
+                PartnerName = p.ChannelPartner?.CompanyName,
+                Title = p.Title,
+                Amount = p.Amount,
+                ValidUntil = p.ValidUntil,
+                CreatedAt = p.CreatedAt,
+                FilePath = p.FilePath,
+                HasInvoice = false
+            }));
+        }
+
+        ViewBag.AdminProposalCount = await _context.Proposals.CountAsync();
+        ViewBag.PartnerProposalCount = await _context.PartnerProposals.CountAsync();
+
+        return View(rows.OrderByDescending(r => r.CreatedAt).ToList());
+    }
+
+    public async Task<IActionResult> DownloadPartnerProposal(int id)
+    {
+        var proposal = await _context.PartnerProposals
+            .Include(p => p.PartnerClient)
+            .Include(p => p.ChannelPartner)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        if (proposal?.PartnerClient == null || proposal.ChannelPartner == null)
+            return NotFound();
+
+        if (!string.IsNullOrWhiteSpace(proposal.FilePath))
+        {
+            var physical = MapUploadPath(proposal.FilePath);
+            if (physical != null && System.IO.File.Exists(physical))
+                return PhysicalFile(physical, "application/pdf", $"Partner-Proposal-{proposal.Id}.pdf");
+        }
+
+        var company = proposal.ChannelPartner.ToCompanyProfile();
+        var pdf = _dealPdfService.CreateProposalPdf(
+            new Proposal
+            {
+                Id = proposal.Id,
+                Title = proposal.Title,
+                Scope = proposal.Scope,
+                Amount = proposal.Amount,
+                ValidUntil = proposal.ValidUntil,
+                TemplateKey = proposal.TemplateKey,
+                SelectedModulesJson = proposal.SelectedModulesJson,
+                CreatedAt = proposal.CreatedAt
+            },
+            proposal.PartnerClient.Name,
+            proposal.PartnerClient.Email,
+            proposal.PartnerClient.WhatsApp ?? proposal.PartnerClient.Mobile,
+            proposal.PartnerClient.Requirement,
+            company);
+        return File(pdf, "application/pdf", $"Partner-Proposal-{proposal.Id}.pdf");
+    }
+
+    public async Task<IActionResult> Invoices()
+    {
+        var invoices = await _context.Invoices
+            .AsNoTracking()
+            .OrderByDescending(i => i.CreatedAt)
+            .ToListAsync();
+
+        var names = await ResolveLeadNamesAsync(
+            invoices.Select(i => (i.LeadType, i.LeadId)).Distinct().ToList());
+
+        var rows = invoices.Select(i => new AdminInvoiceListItem
+        {
+            Id = i.Id,
+            InvoiceNumber = i.InvoiceNumber,
+            LeadName = names.GetValueOrDefault((i.LeadType, i.LeadId), $"#{i.LeadId}"),
+            LeadType = i.LeadType,
+            LeadId = i.LeadId,
+            Title = i.Title,
+            Amount = i.Amount,
+            AmountPaid = i.AmountPaid,
+            Balance = i.Balance,
+            Status = i.Status,
+            CreatedAt = i.CreatedAt
+        }).ToList();
+
+        return View(rows);
+    }
+
+    public async Task<IActionResult> CommissionTracker()
+    {
+        var proposals = await _context.PartnerProposals
+            .AsNoTracking()
+            .Include(p => p.ChannelPartner)
+            .Include(p => p.PartnerClient)
+            .Include(p => p.Service)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
+        var rows = proposals.Select(p =>
+        {
+            var pct = p.Service?.Commission ?? 0m;
+            var commission = Math.Round(p.Amount * pct / 100m, 2);
+            return new CommissionTrackerRow
+            {
+                ProposalId = p.Id,
+                PartnerId = p.ChannelPartnerId,
+                PartnerName = p.ChannelPartner?.CompanyName ?? $"#{p.ChannelPartnerId}",
+                ClientId = p.PartnerClientId,
+                ClientName = p.PartnerClient?.Name ?? $"#{p.PartnerClientId}",
+                Title = p.Title,
+                Amount = p.Amount,
+                CommissionPercent = pct,
+                EstimatedCommission = commission,
+                IsPaid = p.IsCommissionPaid,
+                PaidAt = p.CommissionPaidAt,
+                CreatedAt = p.CreatedAt
+            };
+        }).ToList();
+
+        var vm = new CommissionTrackerViewModel
+        {
+            TotalEstimated = rows.Sum(r => r.EstimatedCommission),
+            TotalPending = rows.Where(r => !r.IsPaid).Sum(r => r.EstimatedCommission),
+            TotalPaid = rows.Where(r => r.IsPaid).Sum(r => r.EstimatedCommission),
+            PendingCount = rows.Count(r => !r.IsPaid),
+            PaidCount = rows.Count(r => r.IsPaid),
+            Rows = rows
+        };
+        return View(vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkCommissionPaid(int id)
+    {
+        var proposal = await _context.PartnerProposals.FindAsync(id);
+        if (proposal == null) return NotFound();
+        proposal.IsCommissionPaid = true;
+        proposal.CommissionPaidAt = DateTime.Now;
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Commission marked as paid.";
+        return RedirectToAction(nameof(CommissionTracker));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkCommissionUnpaid(int id)
+    {
+        var proposal = await _context.PartnerProposals.FindAsync(id);
+        if (proposal == null) return NotFound();
+        proposal.IsCommissionPaid = false;
+        proposal.CommissionPaidAt = null;
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Commission marked as pending.";
+        return RedirectToAction(nameof(CommissionTracker));
+    }
+
+    public async Task<IActionResult> FollowUps(string? show)
+    {
+        var includeDone = string.Equals(show, "done", StringComparison.OrdinalIgnoreCase);
+        var query = _context.FollowUpReminders.AsNoTracking().AsQueryable();
+        if (!includeDone)
+            query = query.Where(f => !f.IsDone);
+
+        var items = await query
+            .OrderBy(f => f.IsDone)
+            .ThenBy(f => f.DueAt)
+            .Take(200)
+            .ToListAsync();
+
+        var names = await ResolveLeadNamesAsync(
+            items.Select(f => (f.LeadType, f.LeadId)).Distinct().ToList());
+
+        var rows = items.Select(f => new FollowUpReminderItem
+        {
+            Id = f.Id,
+            LeadType = f.LeadType,
+            LeadId = f.LeadId,
+            LeadName = names.GetValueOrDefault((f.LeadType, f.LeadId), $"#{f.LeadId}"),
+            DueAt = f.DueAt,
+            Note = f.Note,
+            IsDone = f.IsDone,
+            CreatedAt = f.CreatedAt
+        }).ToList();
+
+        return View(rows);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddFollowUp(string leadType, int leadId, DateTime dueAt, string note)
+    {
+        if (!IsKnownLeadType(leadType) || string.IsNullOrWhiteSpace(note))
+            return RedirectToLeadDetails(leadType, leadId);
+
+        _context.FollowUpReminders.Add(new FollowUpReminder
+        {
+            LeadType = leadType,
+            LeadId = leadId,
+            DueAt = dueAt.Date,
+            Note = note.Trim(),
+            IsDone = false,
+            CreatedAt = DateTime.Now
+        });
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Follow-up scheduled.";
+        return RedirectToLeadDetails(leadType, leadId);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CompleteFollowUp(int id)
+    {
+        var item = await _context.FollowUpReminders.FindAsync(id);
+        if (item == null) return NotFound();
+        item.IsDone = true;
+        item.CompletedAt = DateTime.Now;
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Follow-up marked done.";
+
+        var referer = Request.Headers.Referer.ToString();
+        if (!string.IsNullOrWhiteSpace(referer) && referer.Contains("/Admin/FollowUps", StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction(nameof(FollowUps));
+
+        return RedirectToLeadDetails(item.LeadType, item.LeadId);
+    }
+
+    public async Task<IActionResult> Activity()
+    {
+        var items = new List<ActivityFeedItem>();
+        var since = DateTime.Now.AddDays(-45);
+
+        foreach (var n in await _context.EnquiryNotes.AsNoTracking().Where(x => x.CreatedAt >= since).OrderByDescending(x => x.CreatedAt).Take(40).ToListAsync())
+        {
+            items.Add(new ActivityFeedItem
+            {
+                At = n.CreatedAt,
+                Type = "Note",
+                Title = "Enquiry note",
+                Subtitle = Truncate(n.NoteText, 100),
+                Icon = "bi-chat-left-text",
+                Accent = "info",
+                Url = Url.Action(nameof(EnquiryDetails), new { id = n.EnquiryId })!
+            });
+        }
+
+        foreach (var n in await _context.ClientLeadNotes.AsNoTracking().Where(x => x.CreatedAt >= since).OrderByDescending(x => x.CreatedAt).Take(40).ToListAsync())
+        {
+            items.Add(new ActivityFeedItem
+            {
+                At = n.CreatedAt,
+                Type = "Note",
+                Title = "Client lead note",
+                Subtitle = Truncate(n.NoteText, 100),
+                Icon = "bi-chat-left-text",
+                Accent = "info",
+                Url = Url.Action(nameof(ClientLeadDetails), new { id = n.ClientLeadId })!
+            });
+        }
+
+        foreach (var n in await _context.DemoRequestNotes.AsNoTracking().Where(x => x.CreatedAt >= since).OrderByDescending(x => x.CreatedAt).Take(40).ToListAsync())
+        {
+            items.Add(new ActivityFeedItem
+            {
+                At = n.CreatedAt,
+                Type = "Note",
+                Title = "Demo note",
+                Subtitle = Truncate(n.NoteText, 100),
+                Icon = "bi-chat-left-text",
+                Accent = "success",
+                Url = Url.Action(nameof(DemoRequestDetails), new { id = n.DemoRequestId })!
+            });
+        }
+
+        foreach (var p in await _context.Proposals.AsNoTracking().Where(x => x.CreatedAt >= since).OrderByDescending(x => x.CreatedAt).Take(40).ToListAsync())
+        {
+            items.Add(new ActivityFeedItem
+            {
+                At = p.CreatedAt,
+                Type = "Proposal",
+                Title = $"Proposal · {p.Title}",
+                Subtitle = $"₹{p.Amount:N0} · {p.LeadType}",
+                Icon = "bi-file-earmark-text",
+                Accent = "primary",
+                Url = LeadDetailsPath(p.LeadType, p.LeadId)
+            });
+        }
+
+        foreach (var i in await _context.Invoices.AsNoTracking().Where(x => x.CreatedAt >= since).OrderByDescending(x => x.CreatedAt).Take(40).ToListAsync())
+        {
+            items.Add(new ActivityFeedItem
+            {
+                At = i.CreatedAt,
+                Type = "Invoice",
+                Title = $"Invoice · {i.InvoiceNumber}",
+                Subtitle = $"₹{i.Amount:N0} · {i.Status}",
+                Icon = "bi-receipt",
+                Accent = "warning",
+                Url = LeadDetailsPath(i.LeadType, i.LeadId)
+            });
+        }
+
+        foreach (var pay in await _context.InvoicePayments.AsNoTracking().Where(x => x.PaidAt >= since).OrderByDescending(x => x.PaidAt).Take(40).ToListAsync())
+        {
+            var inv = await _context.Invoices.AsNoTracking().FirstOrDefaultAsync(x => x.Id == pay.InvoiceId);
+            items.Add(new ActivityFeedItem
+            {
+                At = pay.PaidAt,
+                Type = "Payment",
+                Title = "Payment recorded",
+                Subtitle = $"₹{pay.Amount:N0}" + (inv != null ? $" · {inv.InvoiceNumber}" : ""),
+                Icon = "bi-cash-coin",
+                Accent = "success",
+                Url = inv == null ? "#" : LeadDetailsPath(inv.LeadType, inv.LeadId)
+            });
+        }
+
+        foreach (var d in await _context.LeadDocuments.AsNoTracking().Where(x => x.UploadedAt >= since).OrderByDescending(x => x.UploadedAt).Take(30).ToListAsync())
+        {
+            items.Add(new ActivityFeedItem
+            {
+                At = d.UploadedAt,
+                Type = "Document",
+                Title = $"Document · {d.Title}",
+                Subtitle = d.Category,
+                Icon = "bi-folder",
+                Accent = "info",
+                Url = LeadDetailsPath(d.LeadType, d.LeadId)
+            });
+        }
+
+        foreach (var p in await _context.PartnerProposals.AsNoTracking().Include(x => x.ChannelPartner).Include(x => x.PartnerClient)
+                     .Where(x => x.CreatedAt >= since).OrderByDescending(x => x.CreatedAt).Take(40).ToListAsync())
+        {
+            items.Add(new ActivityFeedItem
+            {
+                At = p.CreatedAt,
+                Type = "PartnerProposal",
+                Title = $"Partner proposal · {p.Title}",
+                Subtitle = $"{p.ChannelPartner?.CompanyName} → {p.PartnerClient?.Name} · ₹{p.Amount:N0}",
+                Icon = "bi-shop",
+                Accent = "success",
+                Url = Url.Action(nameof(PartnerClientDetails), new { id = p.PartnerClientId })!
+            });
+        }
+
+        foreach (var f in await _context.FollowUpReminders.AsNoTracking().Where(x => x.CreatedAt >= since).OrderByDescending(x => x.CreatedAt).Take(40).ToListAsync())
+        {
+            items.Add(new ActivityFeedItem
+            {
+                At = f.CreatedAt,
+                Type = "FollowUp",
+                Title = f.IsDone ? "Follow-up completed" : "Follow-up scheduled",
+                Subtitle = $"{f.DueAt:dd MMM} · {Truncate(f.Note, 80)}",
+                Icon = "bi-alarm",
+                Accent = f.IsDone ? "success" : "warning",
+                Url = LeadDetailsPath(f.LeadType, f.LeadId)
+            });
+        }
+
+        return View(items.OrderByDescending(i => i.At).Take(120).ToList());
+    }
+
+    public async Task<IActionResult> Search(string? q)
+    {
+        var query = (q ?? "").Trim();
+        var vm = new GlobalSearchViewModel { Query = query };
+        if (query.Length < 2)
+            return View(vm);
+
+        vm.Results = await RunGlobalSearchAsync(query, 40);
+        return View(vm);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> SearchSuggest(string? q)
+    {
+        var query = (q ?? "").Trim();
+        if (query.Length < 2)
+            return Json(Array.Empty<object>());
+
+        var results = await RunGlobalSearchAsync(query, 12);
+        return Json(results.Select(r => new { r.Category, r.Title, r.Subtitle, r.Url, r.Icon }));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CheckDuplicateLead(string? phone, string? email, string? excludeType, int? excludeId)
+    {
+        var matches = await FindDuplicateLeadsAsync(phone, email, excludeType, excludeId);
+        return Json(matches.Select(m => new
+        {
+            m.SourceType,
+            m.Id,
+            m.Name,
+            m.Phone,
+            m.Email,
+            m.Status,
+            m.MatchOn,
+            m.Url,
+            CreatedAt = m.CreatedAt.ToString("dd MMM yyyy")
+        }));
+    }
+
+    public async Task<IActionResult> MessageTemplates()
+    {
+        var list = await _context.MessageTemplates
+            .OrderByDescending(t => t.IsActive)
+            .ThenBy(t => t.Channel)
+            .ThenBy(t => t.Name)
+            .ToListAsync();
+        return View(list);
+    }
+
+    public IActionResult AddMessageTemplate() => View(new MessageTemplate());
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddMessageTemplate(MessageTemplate model)
+    {
+        if (!ModelState.IsValid) return View(model);
+        model.Channel = NormalizeTemplateChannel(model.Channel);
+        model.CreatedAt = DateTime.Now;
+        model.IsActive = true;
+        _context.MessageTemplates.Add(model);
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Template saved.";
+        return RedirectToAction(nameof(MessageTemplates));
+    }
+
+    public async Task<IActionResult> EditMessageTemplate(int id)
+    {
+        var t = await _context.MessageTemplates.FindAsync(id);
+        return t == null ? NotFound() : View(t);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditMessageTemplate(int id, MessageTemplate model)
+    {
+        var t = await _context.MessageTemplates.FindAsync(id);
+        if (t == null) return NotFound();
+        if (!ModelState.IsValid) return View(model);
+
+        t.Name = model.Name.Trim();
+        t.Channel = NormalizeTemplateChannel(model.Channel);
+        t.Subject = string.IsNullOrWhiteSpace(model.Subject) ? null : model.Subject.Trim();
+        t.Body = model.Body.Trim();
+        t.IsActive = model.IsActive;
+        t.UpdatedAt = DateTime.Now;
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Template updated.";
+        return RedirectToAction(nameof(MessageTemplates));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteMessageTemplate(int id)
+    {
+        var t = await _context.MessageTemplates.FindAsync(id);
+        if (t != null)
+        {
+            _context.MessageTemplates.Remove(t);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Template deleted.";
+        }
+        return RedirectToAction(nameof(MessageTemplates));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetMessageTemplates(string? channel)
+    {
+        var q = _context.MessageTemplates.AsNoTracking().Where(t => t.IsActive);
+        if (!string.IsNullOrWhiteSpace(channel))
+        {
+            var c = NormalizeTemplateChannel(channel);
+            q = q.Where(t => t.Channel == c);
+        }
+        var list = await q.OrderBy(t => t.Name).Select(t => new
+        {
+            t.Id,
+            t.Name,
+            t.Channel,
+            t.Subject,
+            t.Body
+        }).ToListAsync();
+        return Json(list);
+    }
+
+    public async Task<IActionResult> SalesSummary(DateTime? from, DateTime? to)
+    {
+        var end = (to ?? DateTime.Today).Date.AddDays(1).AddTicks(-1);
+        var start = (from ?? DateTime.Today.AddDays(-30)).Date;
+        if (start > end) (start, end) = (end.Date.AddDays(-30), end);
+
+        var partnerProps = await _context.PartnerProposals
+            .AsNoTracking()
+            .Include(p => p.Service)
+            .Where(p => p.CreatedAt >= start && p.CreatedAt <= end)
+            .ToListAsync();
+
+        var invoices = await _context.Invoices
+            .AsNoTracking()
+            .Where(i => i.CreatedAt >= start && i.CreatedAt <= end)
+            .ToListAsync();
+
+        var openInvoices = await _context.Invoices
+            .AsNoTracking()
+            .Where(i => i.Status == "Unpaid" || i.Status == "Partial")
+            .ToListAsync();
+
+        var vm = new SalesSummaryReportViewModel
+        {
+            From = start,
+            To = end.Date,
+            NewEnquiries = await _context.Enquiries.CountAsync(e => e.CreatedAt >= start && e.CreatedAt <= end),
+            NewDemos = await _context.DemoRequests.CountAsync(e => e.CreatedAt >= start && e.CreatedAt <= end),
+            NewExternalLeads = await _context.ClientLeads.CountAsync(e => e.CreatedAt >= start && e.CreatedAt <= end),
+            ProposalsCreated = await _context.Proposals.CountAsync(p => p.CreatedAt >= start && p.CreatedAt <= end),
+            PartnerProposalsCreated = partnerProps.Count,
+            ProposalValue = await _context.Proposals.Where(p => p.CreatedAt >= start && p.CreatedAt <= end).SumAsync(p => (decimal?)p.Amount) ?? 0m,
+            PartnerProposalValue = partnerProps.Sum(p => p.Amount),
+            InvoicesCreated = invoices.Count,
+            InvoiceAmount = invoices.Sum(i => i.Amount),
+            AmountCollected = await _context.InvoicePayments
+                .Where(p => p.PaidAt >= start && p.PaidAt <= end)
+                .SumAsync(p => (decimal?)p.Amount) ?? 0m,
+            Outstanding = openInvoices.Sum(i => i.Balance),
+            EstimatedCommission = partnerProps.Sum(p => Math.Round(p.Amount * (p.Service?.Commission ?? 0m) / 100m, 2)),
+            CommissionPaid = partnerProps.Where(p => p.IsCommissionPaid).Sum(p => Math.Round(p.Amount * (p.Service?.Commission ?? 0m) / 100m, 2)),
+            CommissionPending = partnerProps.Where(p => !p.IsCommissionPaid).Sum(p => Math.Round(p.Amount * (p.Service?.Commission ?? 0m) / 100m, 2))
+        };
         return View(vm);
     }
 
@@ -717,10 +1309,100 @@ public class AdminController : Controller
         return View(enquiries);
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteEnquiry(int id)
+    {
+        var enquiry = await _context.Enquiries
+            .Include(e => e.Notes)
+            .FirstOrDefaultAsync(e => e.Id == id);
+        if (enquiry == null)
+        {
+            TempData["ErrorMessage"] = "Enquiry not found or already deleted.";
+            return RedirectToAction(nameof(Enquiries));
+        }
+
+        var name = enquiry.Name;
+        await DeleteEnquiryCascadeAsync(enquiry);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Enquiry from \"{name}\" deleted.";
+        return RedirectToAction(nameof(Enquiries));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BulkDeleteEnquiries(List<int>? ids)
+    {
+        ids = (ids ?? new List<int>()).Where(i => i > 0).Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            TempData["ErrorMessage"] = "Select at least one enquiry to delete.";
+            return RedirectToAction(nameof(Enquiries));
+        }
+
+        var enquiries = await _context.Enquiries
+            .Include(e => e.Notes)
+            .Where(e => ids.Contains(e.Id))
+            .ToListAsync();
+
+        foreach (var enquiry in enquiries)
+            await DeleteEnquiryCascadeAsync(enquiry);
+
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = $"{enquiries.Count} enquiry(ies) deleted.";
+        return RedirectToAction(nameof(Enquiries));
+    }
+
     public async Task<IActionResult> DemoRequests()
     {
         var requests = await _context.DemoRequests.Where(e => e.Status == "Pending" || e.Status == "").OrderByDescending(e => e.CreatedAt).ToListAsync();
         return View(requests);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteDemoRequest(int id)
+    {
+        var request = await _context.DemoRequests
+            .Include(e => e.Notes)
+            .FirstOrDefaultAsync(e => e.Id == id);
+        if (request == null)
+        {
+            TempData["ErrorMessage"] = "Demo request not found or already deleted.";
+            return RedirectToAction(nameof(DemoRequests));
+        }
+
+        var name = request.Name;
+        await DeleteDemoCascadeAsync(request);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Demo request from \"{name}\" deleted.";
+        return RedirectToAction(nameof(DemoRequests));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BulkDeleteDemoRequests(List<int>? ids)
+    {
+        ids = (ids ?? new List<int>()).Where(i => i > 0).Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            TempData["ErrorMessage"] = "Select at least one demo request to delete.";
+            return RedirectToAction(nameof(DemoRequests));
+        }
+
+        var requests = await _context.DemoRequests
+            .Include(e => e.Notes)
+            .Where(e => ids.Contains(e.Id))
+            .ToListAsync();
+
+        foreach (var request in requests)
+            await DeleteDemoCascadeAsync(request);
+
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = $"{requests.Count} demo request(s) deleted.";
+        return RedirectToAction(nameof(DemoRequests));
     }
 
     public async Task<IActionResult> EnquiryDetails(int id)
@@ -729,6 +1411,10 @@ public class AdminController : Controller
         if (enquiry == null) return NotFound();
         await PopulateDealPanelAsync(LeadPipeline.LeadEnquiry, id, enquiry.Name, enquiry.Requirement, null);
         await PopulateDocumentsPanelAsync(LeadPipeline.LeadEnquiry, id, enquiry.Status);
+        await PopulateFollowUpsPanelAsync(LeadPipeline.LeadEnquiry, id);
+        ViewBag.DuplicateLeads = await FindDuplicateLeadsAsync(enquiry.Phone, enquiry.Email, LeadPipeline.LeadEnquiry, id);
+        ViewBag.MessageTemplates = await _context.MessageTemplates.AsNoTracking()
+            .Where(t => t.IsActive).OrderBy(t => t.Name).ToListAsync();
         return View(enquiry);
     }
 
@@ -763,6 +1449,12 @@ public class AdminController : Controller
     {
         var request = await _context.DemoRequests.Include(e => e.Notes.OrderByDescending(n => n.CreatedAt)).FirstOrDefaultAsync(e => e.Id == id);
         if (request == null) return NotFound();
+        await PopulateDealPanelAsync(LeadPipeline.LeadDemo, id, request.Name, request.Requirement, null);
+        await PopulateDocumentsPanelAsync(LeadPipeline.LeadDemo, id, request.Status);
+        await PopulateFollowUpsPanelAsync(LeadPipeline.LeadDemo, id);
+        ViewBag.DuplicateLeads = await FindDuplicateLeadsAsync(request.Phone, request.Email, LeadPipeline.LeadDemo, id);
+        ViewBag.MessageTemplates = await _context.MessageTemplates.AsNoTracking()
+            .Where(t => t.IsActive).OrderBy(t => t.Name).ToListAsync();
         return View(request);
     }
 
@@ -783,12 +1475,14 @@ public class AdminController : Controller
     public async Task<IActionResult> UpdateDemoRequestStatus(int id, string status)
     {
         var request = await _context.DemoRequests.FindAsync(id);
-        if (request != null && (status == "Confirmed" || status == "Rejected"))
+        if (request != null && (status == LeadPipeline.Confirmed || status == LeadPipeline.Rejected))
         {
             request.Status = status;
             await _context.SaveChangesAsync();
         }
-        return status == "Confirmed" ? RedirectToAction(nameof(ConfirmedClients)) : RedirectToAction(nameof(RejectedClients));
+        return status == LeadPipeline.Confirmed
+            ? RedirectToAction(nameof(DemoRequestDetails), new { id })
+            : RedirectToAction(nameof(RejectedClients));
     }
 
     public async Task<IActionResult> ConfirmedClients()
@@ -843,17 +1537,24 @@ public class AdminController : Controller
             ModelState.Remove(nameof(model.Email));
         }
 
+        var duplicates = await FindDuplicateLeadsAsync(model.Mobile, model.Email, null, null);
+        if (duplicates.Count > 0)
+            ViewBag.DuplicateLeads = duplicates;
+
         if (!ModelState.IsValid)
         {
             await PopulateLeadSourcesAsync(sourceChoice);
             return View(model);
         }
 
+        // Soft warning only — still allow save when duplicates exist
         model.Status = "Pending";
         model.CreatedAt = DateTime.Now;
         _context.ClientLeads.Add(model);
         await _context.SaveChangesAsync();
-        TempData["SuccessMessage"] = "Client lead added successfully.";
+        TempData["SuccessMessage"] = duplicates.Count > 0
+            ? "Client lead added. Note: possible duplicate contacts were found."
+            : "Client lead added successfully.";
         return RedirectToAction(nameof(ClientLeadDetails), new { id = model.Id });
     }
 
@@ -865,6 +1566,10 @@ public class AdminController : Controller
         if (lead == null) return NotFound();
         await PopulateDealPanelAsync(LeadPipeline.LeadClient, id, lead.Name, lead.Requirement, lead.Budget);
         await PopulateDocumentsPanelAsync(LeadPipeline.LeadClient, id, lead.Status);
+        await PopulateFollowUpsPanelAsync(LeadPipeline.LeadClient, id);
+        ViewBag.DuplicateLeads = await FindDuplicateLeadsAsync(lead.Mobile, lead.Email, LeadPipeline.LeadClient, id);
+        ViewBag.MessageTemplates = await _context.MessageTemplates.AsNoTracking()
+            .Where(t => t.IsActive).OrderBy(t => t.Name).ToListAsync();
         return View(lead);
     }
 
@@ -1048,7 +1753,7 @@ public class AdminController : Controller
         await SetLeadStatusAsync(leadType, leadId, LeadPipeline.Invoiced);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = $"Invoice {invoice.InvoiceNumber} created.";
+        TempData["SuccessMessage"] = $"Invoice {invoice.InvoiceNumber} created for ₹ {invoice.Amount:N2}.";
         return RedirectToLeadDetails(leadType, leadId);
     }
 
@@ -1099,13 +1804,13 @@ public class AdminController : Controller
             invoice.Status = "Paid";
             invoice.PaidAt = DateTime.Now;
             await SetLeadStatusAsync(invoice.LeadType, invoice.LeadId, LeadPipeline.Paid);
-            TempData["SuccessMessage"] = $"₹ {amount:N2} recorded. Invoice fully paid.";
+            TempData["SuccessMessage"] = $"₹ {amount:N2} confirmed as received. Invoice fully paid (₹ {invoice.Amount:N2}).";
         }
         else
         {
             invoice.Status = "Partial";
             invoice.PaidAt = null;
-            TempData["SuccessMessage"] = $"₹ {amount:N2} recorded. Balance due: ₹ {invoice.Balance:N2}.";
+            TempData["SuccessMessage"] = $"₹ {amount:N2} confirmed as received. Balance due: ₹ {invoice.Balance:N2}.";
         }
 
         await _context.SaveChangesAsync();
@@ -1137,7 +1842,9 @@ public class AdminController : Controller
         await SetLeadStatusAsync(invoice.LeadType, invoice.LeadId, LeadPipeline.Paid);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = $"Invoice {invoice.InvoiceNumber} marked as paid.";
+        TempData["SuccessMessage"] = remaining > 0
+            ? $"₹ {remaining:N2} confirmed as received. Invoice {invoice.InvoiceNumber} is fully paid (₹ {invoice.Amount:N2})."
+            : $"Invoice {invoice.InvoiceNumber} confirmed fully paid (₹ {invoice.Amount:N2}).";
         return RedirectToLeadDetails(invoice.LeadType, invoice.LeadId);
     }
 
@@ -1361,6 +2068,356 @@ public class AdminController : Controller
         };
     }
 
+    private async Task PopulateFollowUpsPanelAsync(string leadType, int leadId)
+    {
+        var items = await _context.FollowUpReminders
+            .AsNoTracking()
+            .Where(f => f.LeadType == leadType && f.LeadId == leadId)
+            .OrderBy(f => f.IsDone)
+            .ThenBy(f => f.DueAt)
+            .Take(20)
+            .ToListAsync();
+
+        ViewBag.FollowUpsPanel = new LeadFollowUpsPanelViewModel
+        {
+            LeadType = leadType,
+            LeadId = leadId,
+            Items = items.Select(f => new FollowUpReminderItem
+            {
+                Id = f.Id,
+                LeadType = f.LeadType,
+                LeadId = f.LeadId,
+                DueAt = f.DueAt,
+                Note = f.Note,
+                IsDone = f.IsDone,
+                CreatedAt = f.CreatedAt
+            }).ToList()
+        };
+    }
+
+    private async Task<Dictionary<(string LeadType, int LeadId), string>> ResolveLeadNamesAsync(
+        List<(string LeadType, int LeadId)> keys)
+    {
+        var map = new Dictionary<(string, int), string>();
+        if (keys.Count == 0) return map;
+
+        var enquiryIds = keys.Where(k => k.LeadType == LeadPipeline.LeadEnquiry).Select(k => k.LeadId).Distinct().ToList();
+        var clientIds = keys.Where(k => k.LeadType == LeadPipeline.LeadClient).Select(k => k.LeadId).Distinct().ToList();
+        var demoIds = keys.Where(k => k.LeadType == LeadPipeline.LeadDemo).Select(k => k.LeadId).Distinct().ToList();
+
+        if (enquiryIds.Count > 0)
+        {
+            foreach (var e in await _context.Enquiries.AsNoTracking().Where(x => enquiryIds.Contains(x.Id)).Select(x => new { x.Id, x.Name }).ToListAsync())
+                map[(LeadPipeline.LeadEnquiry, e.Id)] = e.Name;
+        }
+        if (clientIds.Count > 0)
+        {
+            foreach (var c in await _context.ClientLeads.AsNoTracking().Where(x => clientIds.Contains(x.Id)).Select(x => new { x.Id, x.Name }).ToListAsync())
+                map[(LeadPipeline.LeadClient, c.Id)] = c.Name;
+        }
+        if (demoIds.Count > 0)
+        {
+            foreach (var d in await _context.DemoRequests.AsNoTracking().Where(x => demoIds.Contains(x.Id)).Select(x => new { x.Id, x.Name }).ToListAsync())
+                map[(LeadPipeline.LeadDemo, d.Id)] = d.Name;
+        }
+
+        return map;
+    }
+
+    private string LeadDetailsPath(string leadType, int leadId) => leadType switch
+    {
+        LeadPipeline.LeadClient => Url.Action(nameof(ClientLeadDetails), new { id = leadId })!,
+        LeadPipeline.LeadDemo => Url.Action(nameof(DemoRequestDetails), new { id = leadId })!,
+        _ => Url.Action(nameof(EnquiryDetails), new { id = leadId })!
+    };
+
+    private IActionResult RedirectToLeadDetails(string leadType, int leadId) => leadType switch
+    {
+        LeadPipeline.LeadClient => RedirectToAction(nameof(ClientLeadDetails), new { id = leadId }),
+        LeadPipeline.LeadDemo => RedirectToAction(nameof(DemoRequestDetails), new { id = leadId }),
+        _ => RedirectToAction(nameof(EnquiryDetails), new { id = leadId })
+    };
+
+    private static string Truncate(string? text, int max)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "";
+        var t = text.Trim().Replace("\r\n", " ").Replace("\n", " ");
+        return t.Length <= max ? t : t[..(max - 1)] + "…";
+    }
+
+    private static string NormalizeTemplateChannel(string? channel) =>
+        string.Equals(channel, "Email", StringComparison.OrdinalIgnoreCase) ? "Email" : "WhatsApp";
+
+    private static string NormalizePhoneDigits(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone)) return "";
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        if (digits.Length > 10 && digits.StartsWith("91"))
+            digits = digits[^10..];
+        return digits;
+    }
+
+    private async Task<List<DuplicateLeadMatch>> FindDuplicateLeadsAsync(
+        string? phone, string? email, string? excludeType, int? excludeId)
+    {
+        var matches = new List<DuplicateLeadMatch>();
+        var phoneDigits = NormalizePhoneDigits(phone);
+        var emailNorm = string.IsNullOrWhiteSpace(email) ? null : email.Trim().ToLowerInvariant();
+
+        if (phoneDigits.Length >= 8)
+        {
+            foreach (var e in await _context.Enquiries.AsNoTracking().ToListAsync())
+            {
+                if (excludeType == LeadPipeline.LeadEnquiry && excludeId == e.Id) continue;
+                if (NormalizePhoneDigits(e.Phone) == phoneDigits)
+                {
+                    matches.Add(new DuplicateLeadMatch
+                    {
+                        SourceType = LeadPipeline.LeadEnquiry,
+                        Id = e.Id,
+                        Name = e.Name,
+                        Phone = e.Phone,
+                        Email = e.Email,
+                        Status = e.Status ?? "",
+                        CreatedAt = e.CreatedAt,
+                        MatchOn = "Phone",
+                        Url = Url.Action(nameof(EnquiryDetails), new { id = e.Id })!
+                    });
+                }
+            }
+            foreach (var c in await _context.ClientLeads.AsNoTracking().ToListAsync())
+            {
+                if (excludeType == LeadPipeline.LeadClient && excludeId == c.Id) continue;
+                if (NormalizePhoneDigits(c.Mobile) == phoneDigits)
+                {
+                    matches.Add(new DuplicateLeadMatch
+                    {
+                        SourceType = LeadPipeline.LeadClient,
+                        Id = c.Id,
+                        Name = c.Name,
+                        Phone = c.Mobile,
+                        Email = c.Email,
+                        Status = c.Status ?? "",
+                        CreatedAt = c.CreatedAt,
+                        MatchOn = "Phone",
+                        Url = Url.Action(nameof(ClientLeadDetails), new { id = c.Id })!
+                    });
+                }
+            }
+            foreach (var d in await _context.DemoRequests.AsNoTracking().ToListAsync())
+            {
+                if (excludeType == LeadPipeline.LeadDemo && excludeId == d.Id) continue;
+                if (NormalizePhoneDigits(d.Phone) == phoneDigits)
+                {
+                    matches.Add(new DuplicateLeadMatch
+                    {
+                        SourceType = LeadPipeline.LeadDemo,
+                        Id = d.Id,
+                        Name = d.Name,
+                        Phone = d.Phone,
+                        Email = d.Email,
+                        Status = d.Status ?? "",
+                        CreatedAt = d.CreatedAt,
+                        MatchOn = "Phone",
+                        Url = Url.Action(nameof(DemoRequestDetails), new { id = d.Id })!
+                    });
+                }
+            }
+            foreach (var p in await _context.PartnerClients.AsNoTracking().ToListAsync())
+            {
+                if (NormalizePhoneDigits(p.Mobile) == phoneDigits || NormalizePhoneDigits(p.WhatsApp) == phoneDigits)
+                {
+                    matches.Add(new DuplicateLeadMatch
+                    {
+                        SourceType = "PartnerClient",
+                        Id = p.Id,
+                        Name = p.Name,
+                        Phone = p.Mobile,
+                        Email = p.Email,
+                        Status = "Partner",
+                        CreatedAt = p.CreatedAt,
+                        MatchOn = "Phone",
+                        Url = Url.Action(nameof(PartnerClientDetails), new { id = p.Id })!
+                    });
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(emailNorm))
+        {
+            foreach (var e in await _context.Enquiries.AsNoTracking()
+                         .Where(x => x.Email != null && x.Email.ToLower() == emailNorm).ToListAsync())
+            {
+                if (excludeType == LeadPipeline.LeadEnquiry && excludeId == e.Id) continue;
+                if (matches.Any(m => m.SourceType == LeadPipeline.LeadEnquiry && m.Id == e.Id)) continue;
+                matches.Add(new DuplicateLeadMatch
+                {
+                    SourceType = LeadPipeline.LeadEnquiry,
+                    Id = e.Id,
+                    Name = e.Name,
+                    Phone = e.Phone,
+                    Email = e.Email,
+                    Status = e.Status ?? "",
+                    CreatedAt = e.CreatedAt,
+                    MatchOn = "Email",
+                    Url = Url.Action(nameof(EnquiryDetails), new { id = e.Id })!
+                });
+            }
+            foreach (var c in await _context.ClientLeads.AsNoTracking()
+                         .Where(x => x.Email != null && x.Email.ToLower() == emailNorm).ToListAsync())
+            {
+                if (excludeType == LeadPipeline.LeadClient && excludeId == c.Id) continue;
+                if (matches.Any(m => m.SourceType == LeadPipeline.LeadClient && m.Id == c.Id)) continue;
+                matches.Add(new DuplicateLeadMatch
+                {
+                    SourceType = LeadPipeline.LeadClient,
+                    Id = c.Id,
+                    Name = c.Name,
+                    Phone = c.Mobile,
+                    Email = c.Email,
+                    Status = c.Status ?? "",
+                    CreatedAt = c.CreatedAt,
+                    MatchOn = "Email",
+                    Url = Url.Action(nameof(ClientLeadDetails), new { id = c.Id })!
+                });
+            }
+            foreach (var d in await _context.DemoRequests.AsNoTracking()
+                         .Where(x => x.Email != null && x.Email.ToLower() == emailNorm).ToListAsync())
+            {
+                if (excludeType == LeadPipeline.LeadDemo && excludeId == d.Id) continue;
+                if (matches.Any(m => m.SourceType == LeadPipeline.LeadDemo && m.Id == d.Id)) continue;
+                matches.Add(new DuplicateLeadMatch
+                {
+                    SourceType = LeadPipeline.LeadDemo,
+                    Id = d.Id,
+                    Name = d.Name,
+                    Phone = d.Phone,
+                    Email = d.Email,
+                    Status = d.Status ?? "",
+                    CreatedAt = d.CreatedAt,
+                    MatchOn = "Email",
+                    Url = Url.Action(nameof(DemoRequestDetails), new { id = d.Id })!
+                });
+            }
+        }
+
+        return matches.OrderByDescending(m => m.CreatedAt).Take(20).ToList();
+    }
+
+    private async Task<List<GlobalSearchResultItem>> RunGlobalSearchAsync(string query, int take)
+    {
+        var results = new List<GlobalSearchResultItem>();
+        var q = query.Trim();
+        var like = q.ToLowerInvariant();
+        var phoneDigits = NormalizePhoneDigits(q);
+
+        foreach (var e in await _context.Enquiries.AsNoTracking()
+                     .Where(x => x.Name.Contains(q) || x.Email.Contains(q) || x.Phone.Contains(q) || x.Requirement.Contains(q))
+                     .OrderByDescending(x => x.CreatedAt).Take(10).ToListAsync())
+        {
+            results.Add(new GlobalSearchResultItem
+            {
+                Category = "Enquiry",
+                Title = e.Name,
+                Subtitle = $"{e.Phone} · {e.Requirement}",
+                Url = Url.Action(nameof(EnquiryDetails), new { id = e.Id })!,
+                Icon = "bi-envelope"
+            });
+        }
+
+        foreach (var c in await _context.ClientLeads.AsNoTracking()
+                     .Where(x => x.Name.Contains(q) || (x.Email != null && x.Email.Contains(q)) || x.Mobile.Contains(q) || x.Requirement.Contains(q))
+                     .OrderByDescending(x => x.CreatedAt).Take(10).ToListAsync())
+        {
+            results.Add(new GlobalSearchResultItem
+            {
+                Category = "External Client",
+                Title = c.Name,
+                Subtitle = $"{c.Mobile} · {c.Source}",
+                Url = Url.Action(nameof(ClientLeadDetails), new { id = c.Id })!,
+                Icon = "bi-people"
+            });
+        }
+
+        foreach (var d in await _context.DemoRequests.AsNoTracking()
+                     .Where(x => x.Name.Contains(q) || x.Email.Contains(q) || x.Phone.Contains(q) || x.CompanyName.Contains(q))
+                     .OrderByDescending(x => x.CreatedAt).Take(8).ToListAsync())
+        {
+            results.Add(new GlobalSearchResultItem
+            {
+                Category = "Demo",
+                Title = d.Name,
+                Subtitle = d.CompanyName,
+                Url = Url.Action(nameof(DemoRequestDetails), new { id = d.Id })!,
+                Icon = "bi-laptop"
+            });
+        }
+
+        foreach (var p in await _context.ChannelPartners.AsNoTracking()
+                     .Where(x => x.CompanyName.Contains(q) || x.OwnerName.Contains(q) || x.Email.Contains(q) || x.Mobile.Contains(q))
+                     .OrderByDescending(x => x.CreatedAt).Take(8).ToListAsync())
+        {
+            results.Add(new GlobalSearchResultItem
+            {
+                Category = "Partner",
+                Title = p.CompanyName,
+                Subtitle = p.OwnerName,
+                Url = Url.Action(nameof(ChannelPartnerDetails), new { id = p.Id })!,
+                Icon = "bi-shop"
+            });
+        }
+
+        foreach (var c in await _context.PartnerClients.AsNoTracking()
+                     .Where(x => x.Name.Contains(q) || x.Mobile.Contains(q) || (x.Email != null && x.Email.Contains(q)))
+                     .OrderByDescending(x => x.CreatedAt).Take(8).ToListAsync())
+        {
+            results.Add(new GlobalSearchResultItem
+            {
+                Category = "Partner Client",
+                Title = c.Name,
+                Subtitle = c.Mobile,
+                Url = Url.Action(nameof(PartnerClientDetails), new { id = c.Id })!,
+                Icon = "bi-people-fill"
+            });
+        }
+
+        foreach (var i in await _context.Invoices.AsNoTracking()
+                     .Where(x => x.InvoiceNumber.Contains(q) || x.Title.Contains(q))
+                     .OrderByDescending(x => x.CreatedAt).Take(8).ToListAsync())
+        {
+            results.Add(new GlobalSearchResultItem
+            {
+                Category = "Invoice",
+                Title = i.InvoiceNumber,
+                Subtitle = $"{i.Title} · ₹{i.Amount:N0}",
+                Url = LeadDetailsPath(i.LeadType, i.LeadId),
+                Icon = "bi-receipt"
+            });
+        }
+
+        foreach (var p in await _context.Proposals.AsNoTracking()
+                     .Where(x => x.Title.Contains(q))
+                     .OrderByDescending(x => x.CreatedAt).Take(8).ToListAsync())
+        {
+            results.Add(new GlobalSearchResultItem
+            {
+                Category = "Proposal",
+                Title = p.Title,
+                Subtitle = $"₹{p.Amount:N0}",
+                Url = LeadDetailsPath(p.LeadType, p.LeadId),
+                Icon = "bi-file-earmark-text"
+            });
+        }
+
+        if (phoneDigits.Length >= 8)
+        {
+            // Extra phone pass already partly covered by Contains; keep list lean
+        }
+
+        _ = like; // reserved for future ranking
+        return results.Take(take).ToList();
+    }
+
     private static bool IsKnownLeadType(string? leadType) =>
         leadType is LeadPipeline.LeadEnquiry or LeadPipeline.LeadClient or LeadPipeline.LeadDemo;
 
@@ -1461,6 +2518,124 @@ public class AdminController : Controller
         return null;
     }
 
+    private async Task DeleteEnquiryCascadeAsync(Enquiry enquiry)
+    {
+        var leadType = LeadPipeline.LeadEnquiry;
+        var id = enquiry.Id;
+
+        var followUps = await _context.FollowUpReminders
+            .Where(f => f.LeadType == leadType && f.LeadId == id)
+            .ToListAsync();
+        if (followUps.Count > 0)
+            _context.FollowUpReminders.RemoveRange(followUps);
+
+        var docs = await _context.LeadDocuments
+            .Where(d => d.LeadType == leadType && d.LeadId == id)
+            .ToListAsync();
+        foreach (var doc in docs)
+        {
+            var physical = MapUploadPath(doc.FilePath);
+            if (physical != null && System.IO.File.Exists(physical))
+                System.IO.File.Delete(physical);
+            _context.LeadDocuments.Remove(doc);
+        }
+
+        var proposals = await _context.Proposals
+            .Include(p => p.Invoice!)
+                .ThenInclude(i => i.Payments)
+            .Where(p => p.LeadType == leadType && p.LeadId == id)
+            .ToListAsync();
+
+        foreach (var proposal in proposals)
+        {
+            if (proposal.Invoice != null)
+            {
+                if (proposal.Invoice.Payments?.Count > 0)
+                    _context.InvoicePayments.RemoveRange(proposal.Invoice.Payments);
+                _context.Invoices.Remove(proposal.Invoice);
+            }
+            var pdfPath = MapUploadPath(proposal.FilePath);
+            if (pdfPath != null && System.IO.File.Exists(pdfPath))
+                System.IO.File.Delete(pdfPath);
+            _context.Proposals.Remove(proposal);
+        }
+
+        var orphanInvoices = await _context.Invoices
+            .Include(i => i.Payments)
+            .Where(i => i.LeadType == leadType && i.LeadId == id)
+            .ToListAsync();
+        foreach (var inv in orphanInvoices)
+        {
+            if (inv.Payments?.Count > 0)
+                _context.InvoicePayments.RemoveRange(inv.Payments);
+            _context.Invoices.Remove(inv);
+        }
+
+        if (enquiry.Notes.Count > 0)
+            _context.EnquiryNotes.RemoveRange(enquiry.Notes);
+
+        _context.Enquiries.Remove(enquiry);
+    }
+
+    private async Task DeleteDemoCascadeAsync(DemoRequest request)
+    {
+        var leadType = LeadPipeline.LeadDemo;
+        var id = request.Id;
+
+        var followUps = await _context.FollowUpReminders
+            .Where(f => f.LeadType == leadType && f.LeadId == id)
+            .ToListAsync();
+        if (followUps.Count > 0)
+            _context.FollowUpReminders.RemoveRange(followUps);
+
+        var docs = await _context.LeadDocuments
+            .Where(d => d.LeadType == leadType && d.LeadId == id)
+            .ToListAsync();
+        foreach (var doc in docs)
+        {
+            var physical = MapUploadPath(doc.FilePath);
+            if (physical != null && System.IO.File.Exists(physical))
+                System.IO.File.Delete(physical);
+            _context.LeadDocuments.Remove(doc);
+        }
+
+        var proposals = await _context.Proposals
+            .Include(p => p.Invoice!)
+                .ThenInclude(i => i.Payments)
+            .Where(p => p.LeadType == leadType && p.LeadId == id)
+            .ToListAsync();
+
+        foreach (var proposal in proposals)
+        {
+            if (proposal.Invoice != null)
+            {
+                if (proposal.Invoice.Payments?.Count > 0)
+                    _context.InvoicePayments.RemoveRange(proposal.Invoice.Payments);
+                _context.Invoices.Remove(proposal.Invoice);
+            }
+            var pdfPath = MapUploadPath(proposal.FilePath);
+            if (pdfPath != null && System.IO.File.Exists(pdfPath))
+                System.IO.File.Delete(pdfPath);
+            _context.Proposals.Remove(proposal);
+        }
+
+        var orphanInvoices = await _context.Invoices
+            .Include(i => i.Payments)
+            .Where(i => i.LeadType == leadType && i.LeadId == id)
+            .ToListAsync();
+        foreach (var inv in orphanInvoices)
+        {
+            if (inv.Payments?.Count > 0)
+                _context.InvoicePayments.RemoveRange(inv.Payments);
+            _context.Invoices.Remove(inv);
+        }
+
+        if (request.Notes.Count > 0)
+            _context.DemoRequestNotes.RemoveRange(request.Notes);
+
+        _context.DemoRequests.Remove(request);
+    }
+
     private async Task SetLeadStatusAsync(string leadType, int leadId, string status)
     {
         if (leadType == LeadPipeline.LeadEnquiry)
@@ -1479,13 +2654,6 @@ public class AdminController : Controller
             if (d != null) d.Status = status;
         }
     }
-
-    private IActionResult RedirectToLeadDetails(string leadType, int leadId) => leadType switch
-    {
-        LeadPipeline.LeadClient => RedirectToAction(nameof(ClientLeadDetails), new { id = leadId }),
-        LeadPipeline.LeadDemo => RedirectToAction(nameof(DemoRequestDetails), new { id = leadId }),
-        _ => RedirectToAction(nameof(EnquiryDetails), new { id = leadId })
-    };
 
     private async Task PopulateLeadSourcesAsync(string? selected = null)
     {

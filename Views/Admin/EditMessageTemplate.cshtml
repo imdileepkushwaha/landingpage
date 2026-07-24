@@ -1,0 +1,42 @@
+@model SoftflipSolutions.Models.MessageTemplate
+@{
+    ViewData["Title"] = "Edit Template";
+    Layout = "_AdminLayout";
+}
+
+<div class="lead-detail-toolbar">
+    <a asp-action="MessageTemplates" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<div class="glass-card p-4" style="max-width:720px;">
+    <h5 class="mb-3">Edit template</h5>
+    <form asp-action="EditMessageTemplate" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div class="mb-3">
+            <label class="form-label" asp-for="Name"></label>
+            <input asp-for="Name" class="form-control settings-input" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" asp-for="Channel"></label>
+            <select asp-for="Channel" class="form-select settings-input">
+                <option>WhatsApp</option>
+                <option>Email</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label" asp-for="Subject"></label>
+            <input asp-for="Subject" class="form-control settings-input" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" asp-for="Body"></label>
+            <textarea asp-for="Body" class="form-control settings-input" rows="8" required></textarea>
+            <div class="form-text text-muted">Placeholders: {{Name}} {{Requirement}} {{Phone}} {{Email}}</div>
+        </div>
+        <div class="form-check mb-3">
+            <input asp-for="IsActive" class="form-check-input" />
+            <label class="form-check-label" asp-for="IsActive">Active</label>
+        </div>
+        <button type="submit" class="btn btn-crm-primary">Update</button>
+    </form>
+</div>

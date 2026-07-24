@@ -1,0 +1,26 @@
+@model IEnumerable<SoftflipSolutions.ViewModels.DuplicateLeadMatch>
+@if (Model != null && Model.Any())
+{
+    <div class="alert alert-warning border-warning mb-4" role="alert">
+        <div class="d-flex gap-2 align-items-start">
+            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+            <div class="flex-grow-1">
+                <strong>Possible duplicate lead(s)</strong>
+                <p class="mb-2 small">Same phone or email already exists in the CRM:</p>
+                <ul class="mb-0 small">
+                    @foreach (var m in Model)
+                    {
+                        <li class="mb-1">
+                            <a href="@m.Url" class="fw-semibold">@m.Name</a>
+                            <span class="text-muted">· @m.SourceType · matched on @m.MatchOn · @m.CreatedAt.ToString("dd MMM yyyy")</span>
+                            @if (!string.IsNullOrWhiteSpace(m.Status))
+                            {
+                                <span class="badge bg-secondary ms-1">@m.Status</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+}

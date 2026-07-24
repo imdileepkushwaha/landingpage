@@ -1,0 +1,114 @@
+@model IEnumerable<SoftflipSolutions.ViewModels.AdminProposalListItem>
+@{
+    ViewData["Title"] = "All Proposals";
+    Layout = "_AdminLayout";
+    var source = (ViewBag.ProposalSource as string) ?? "all";
+    var adminCount = (int)(ViewBag.AdminProposalCount ?? Model.Count(x => x.Source == "Admin"));
+    var partnerCount = (int)(ViewBag.PartnerProposalCount ?? Model.Count(x => x.Source == "Partner"));
+}
+
+<div class="page-toolbar">
+    <h2>All Proposals</h2>
+    <div class="toolbar-actions d-flex gap-2 flex-wrap">
+        <a asp-action="Proposals" asp-route-source="all"
+           class="btn btn-sm rounded-pill px-3 @(source == "all" ? "btn-info" : "btn-crm-outline")">All</a>
+        <a asp-action="Proposals" asp-route-source="admin"
+           class="btn btn-sm rounded-pill px-3 @(source == "admin" ? "btn-info" : "btn-crm-outline")">Softflip (@adminCount)</a>
+        <a asp-action="Proposals" asp-route-source="partner"
+           class="btn btn-sm rounded-pill px-3 @(source == "partner" ? "btn-info" : "btn-crm-outline")">Partner (@partnerCount)</a>
+    </div>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-3 admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <div>
+            <h5 class="mb-1">@(source == "partner" ? "Partner proposals" : source == "admin" ? "Softflip proposals" : "Proposals")</h5>
+            <p class="mb-0 small text-muted">
+                @(source == "partner"
+                    ? "Quotations created by channel partners for their clients"
+                    : "Softflip deals and partner proposals in one place")
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge bg-primary bg-opacity-25 text-info border border-primary border-opacity-50 px-3 py-2 rounded-pill">Softflip: @adminCount</span>
+            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50 px-3 py-2 rounded-pill">Partner: @partnerCount</span>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Source</th>
+                    <th>Client</th>
+                    <th>Title</th>
+                    <th>Amount</th>
+                    <th>Valid until</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model)
+                {
+                    <tr>
+                        <td class="small text-muted">@row.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td>
+                            @if (row.Source == "Partner")
+                            {
+                                <span class="badge bg-success bg-opacity-25 text-success">Partner</span>
+                                @if (!string.IsNullOrWhiteSpace(row.PartnerName))
+                                {
+                                    <div class="small text-muted mt-1">@row.PartnerName</div>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge bg-info bg-opacity-25 text-info">@row.LeadType</span>
+                            }
+                        </td>
+                        <td class="fw-semibold">@row.LeadName</td>
+                        <td>
+                            @row.Title
+                            @if (row.HasInvoice)
+                            {
+                                <span class="badge bg-secondary ms-1">Invoiced</span>
+                            }
+                        </td>
+                        <td>₹@row.Amount.ToString("N2")</td>
+                        <td class="@(row.ValidUntil.Date < DateTime.Today ? "text-warning" : "")">@row.ValidUntil.ToString("dd MMM yyyy")</td>
+                        <td class="text-end">
+                            @if (row.Source == "Admin")
+                            {
+                                <a href="@LeadDetailUrl(row.LeadType, row.LeadId)" class="btn btn-icon-action" title="Open lead"><i class="bi bi-eye"></i></a>
+                                <a asp-action="DownloadProposal" asp-route-id="@row.Id" class="btn btn-icon-action" title="Download PDF"><i class="bi bi-download"></i></a>
+                            }
+                            else
+                            {
+                                <a asp-action="PartnerClientDetails" asp-route-id="@row.LeadId" class="btn btn-icon-action" title="Partner client"><i class="bi bi-eye"></i></a>
+                                <a asp-action="DownloadPartnerProposal" asp-route-id="@row.Id" class="btn btn-icon-action" title="Download PDF"><i class="bi bi-download"></i></a>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-file-earmark-text fs-1 d-block mb-2"></i>
+                            @(source == "partner" ? "No partner proposals yet." : "No proposals yet.")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@functions {
+    string LeadDetailUrl(string leadType, int leadId) => leadType switch
+    {
+        SoftflipSolutions.Models.LeadPipeline.LeadClient => Url.Action("ClientLeadDetails", "Admin", new { id = leadId })!,
+        SoftflipSolutions.Models.LeadPipeline.LeadDemo => Url.Action("DemoRequestDetails", "Admin", new { id = leadId })!,
+        _ => Url.Action("EnquiryDetails", "Admin", new { id = leadId })!
+    };
+}

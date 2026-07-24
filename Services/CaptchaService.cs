@@ -21,16 +21,45 @@ public class CaptchaService : ICaptchaService
 
     public CaptchaChallenge GenerateChallenge()
     {
-        var first = Random.Shared.Next(2, 10);
-        var second = Random.Shared.Next(1, 10);
         var token = Guid.NewGuid().ToString("N");
+        string question;
+        int expected;
 
-        _cache.Set(GetCacheKey(token), (first + second).ToString(), CaptchaLifetime);
+        // Mix operations so simple bots cannot always assume addition.
+        switch (Random.Shared.Next(0, 3))
+        {
+            case 0:
+            {
+                var first = Random.Shared.Next(3, 12);
+                var second = Random.Shared.Next(1, 9);
+                expected = first + second;
+                question = $"What is {first} + {second}?";
+                break;
+            }
+            case 1:
+            {
+                var first = Random.Shared.Next(8, 18);
+                var second = Random.Shared.Next(1, 7);
+                expected = first - second;
+                question = $"What is {first} − {second}?";
+                break;
+            }
+            default:
+            {
+                var first = Random.Shared.Next(2, 9);
+                var second = Random.Shared.Next(2, 6);
+                expected = first * second;
+                question = $"What is {first} × {second}?";
+                break;
+            }
+        }
+
+        _cache.Set(GetCacheKey(token), expected.ToString(), CaptchaLifetime);
 
         return new CaptchaChallenge
         {
             Token = token,
-            Question = $"What is {first} + {second}?"
+            Question = question
         };
     }
 
