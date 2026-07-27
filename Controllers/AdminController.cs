@@ -2017,11 +2017,11 @@ public class AdminController : Controller
         var publicUrl = "";
         if (proposal != null && !string.IsNullOrWhiteSpace(proposal.FilePath))
         {
-            publicUrl = $"{Request.Scheme}://{Request.Host}{proposal.FilePath}";
+            publicUrl = $"https://{Request.Host}{proposal.FilePath}";
         }
         else if (proposal != null)
         {
-            publicUrl = Url.Action(nameof(DownloadProposal), "Admin", new { id = proposal.Id }, Request.Scheme) ?? "";
+            publicUrl = Url.Action(nameof(DownloadProposal), "Admin", new { id = proposal.Id }, "https") ?? "";
         }
 
         ViewBag.DealPanel = new LeadDealPanelViewModel

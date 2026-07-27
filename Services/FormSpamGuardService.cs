@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace SoftflipSolutions.Services;
@@ -6,20 +7,23 @@ namespace SoftflipSolutions.Services;
 public interface IFormSpamGuard
 {
     string CreateFormToken();
-    /// <summary>
-    /// Returns false when the submission should be blocked.
-    /// If silentReject is true, show a fake success (bot/honeypot) without saving.
-    /// </summary>
-    bool TryValidate(string? formToken, string? honeypot, string clientKey, out bool silentReject, out string? errorMessage);
+    bool TryValidate(string? formToken, string clientKey, out string? errorMessage);
 }
 
+/// <summary>
+/// HMAC-signed form tokens (no server memory required for token check — safe across IIS recycle).
+/// Soft IP rate-limit still uses memory cache.
+/// </summary>
 public class FormSpamGuardService : IFormSpamGuard
 {
     private readonly IMemoryCache _cache;
     private static readonly TimeSpan TokenTtl = TimeSpan.FromHours(2);
-    private static readonly TimeSpan MinFillTime = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan RateWindow = TimeSpan.FromMinutes(15);
-    private const int MaxSubmissionsPerWindow = 4;
+    private const int MaxSubmissionsPerWindow = 8;
+
+    // App-specific signing key (not a user secret — prevents forged tokens).
+    private static readonly byte[] SigningKey = Encoding.UTF8.GetBytes(
+        "SoftflipSolutions.FormSpamGuard.v1.2026");
 
     public FormSpamGuardService(IMemoryCache cache)
     {
@@ -28,24 +32,15 @@ public class FormSpamGuardService : IFormSpamGuard
 
     public string CreateFormToken()
     {
-        var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
-        var issuedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(8));
+        var issuedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
         var payload = $"{nonce}:{issuedAt}";
-        _cache.Set(GetTokenKey(nonce), issuedAt, TokenTtl);
-        return payload;
+        return $"{payload}:{Sign(payload)}";
     }
 
-    public bool TryValidate(string? formToken, string? honeypot, string clientKey, out bool silentReject, out string? errorMessage)
+    public bool TryValidate(string? formToken, string clientKey, out string? errorMessage)
     {
-        silentReject = false;
         errorMessage = null;
-
-        // Bots that fill every field — do not reveal rejection.
-        if (!string.IsNullOrWhiteSpace(honeypot))
-        {
-            silentReject = true;
-            return false;
-        }
 
         if (string.IsNullOrWhiteSpace(formToken))
         {
@@ -53,33 +48,25 @@ public class FormSpamGuardService : IFormSpamGuard
             return false;
         }
 
-        var parts = formToken.Split(':', 2);
-        if (parts.Length != 2
+        var parts = formToken.Split(':');
+        if (parts.Length != 3
             || string.IsNullOrWhiteSpace(parts[0])
-            || !long.TryParse(parts[1], out var issuedAt))
+            || !long.TryParse(parts[1], out var issuedAt)
+            || string.IsNullOrWhiteSpace(parts[2]))
         {
             errorMessage = "Security check failed. Please refresh the page and try again.";
             return false;
         }
 
-        var cacheKey = GetTokenKey(parts[0]);
-        if (!_cache.TryGetValue(cacheKey, out long _))
+        var payload = $"{parts[0]}:{parts[1]}";
+        if (!FixedTimeEquals(Sign(payload), parts[2]))
         {
-            errorMessage = "Security check expired. Please refresh the page and try again.";
+            errorMessage = "Security check failed. Please refresh the page and try again.";
             return false;
         }
-
-        // One-time use
-        _cache.Remove(cacheKey);
 
         var age = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - issuedAt;
-        if (age < MinFillTime.TotalSeconds)
-        {
-            silentReject = true;
-            return false;
-        }
-
-        if (age > TokenTtl.TotalSeconds)
+        if (age < 0 || age > TokenTtl.TotalSeconds)
         {
             errorMessage = "Form expired. Please refresh the page and try again.";
             return false;
@@ -105,5 +92,16 @@ public class FormSpamGuardService : IFormSpamGuard
         return true;
     }
 
-    private static string GetTokenKey(string nonce) => $"form-token:{nonce}";
+    private static string Sign(string payload)
+    {
+        using var hmac = new HMACSHA256(SigningKey);
+        return Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload)));
+    }
+
+    private static bool FixedTimeEquals(string a, string b)
+    {
+        var ba = Encoding.UTF8.GetBytes(a);
+        var bb = Encoding.UTF8.GetBytes(b);
+        return ba.Length == bb.Length && CryptographicOperations.FixedTimeEquals(ba, bb);
+    }
 }

@@ -8,7 +8,7 @@
             <i class="bi bi-arrow-clockwise"></i>
         </button>
         <input type="hidden" name="CaptchaToken" value="@Model.Challenge.Token" data-captcha-token />
-        <input type="hidden" name="FormToken" value="@FormSpamGuard.CreateFormToken()" />
+        <input type="hidden" name="FormToken" value="@FormSpamGuard.CreateFormToken()" data-form-token />
         <input type="number"
                class="form-control dark-input captcha-answer-input"
                name="CaptchaAnswer"
@@ -19,15 +19,4 @@
                aria-label="Captcha answer"
                data-captcha-answer />
     </div>
-</div>
-
-@* Honeypot — leave empty. Hidden from users; bots often fill it. *@
-<div class="hp-field" aria-hidden="true">
-    <label for="websiteUrl_@Model.Prefix">Website</label>
-    <input type="text"
-           id="websiteUrl_@Model.Prefix"
-           name="WebsiteUrl"
-           tabindex="-1"
-           autocomplete="off"
-           value="" />
 </div>

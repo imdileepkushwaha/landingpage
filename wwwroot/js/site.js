@@ -11,6 +11,7 @@
     const data = await response.json();
     const question = root.querySelector('[data-captcha-question]');
     const token = root.querySelector('[data-captcha-token]');
+    const formToken = root.querySelector('[data-form-token]');
     const answer = root.querySelector('[data-captcha-answer]');
 
     if (question) {
@@ -19,6 +20,10 @@
 
     if (token) {
         token.value = data.token;
+    }
+
+    if (formToken && data.formToken) {
+        formToken.value = data.formToken;
     }
 
     if (answer) {

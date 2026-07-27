@@ -35,7 +35,12 @@ public class HomeController : Controller
     public IActionResult RefreshCaptcha()
     {
         var challenge = _captchaService.GenerateChallenge();
-        return Json(new { token = challenge.Token, question = challenge.Question });
+        return Json(new
+        {
+            token = challenge.Token,
+            question = challenge.Question,
+            formToken = _formSpamGuard.CreateFormToken()
+        });
     }
 
     [HttpPost]
@@ -44,20 +49,11 @@ public class HomeController : Controller
         Enquiry enquiry,
         string captchaToken,
         string captchaAnswer,
-        string? formToken,
-        string? websiteUrl)
+        string? formToken)
     {
-        if (!PassSpamChecks(formToken, websiteUrl, out var silentReject, out var spamError))
+        if (!PassSpamChecks(formToken, out var spamError))
         {
-            if (silentReject)
-            {
-                TempData["SuccessMessage"] = "Thank you for your enquiry. We will contact you soon.";
-                TempData["SubmittedForm"] = "enquiry";
-            }
-            else
-            {
-                TempData["ErrorMessage"] = spamError;
-            }
+            TempData["ErrorMessage"] = spamError;
             return RedirectToAction(nameof(Index));
         }
 
@@ -105,20 +101,11 @@ public class HomeController : Controller
         string captchaToken,
         string captchaAnswer,
         string formSource,
-        string? formToken,
-        string? websiteUrl)
+        string? formToken)
     {
-        if (!PassSpamChecks(formToken, websiteUrl, out var silentReject, out var spamError))
+        if (!PassSpamChecks(formToken, out var spamError))
         {
-            if (silentReject)
-            {
-                TempData["SuccessMessage"] = "Demo request submitted successfully.";
-                TempData["SubmittedForm"] = string.IsNullOrWhiteSpace(formSource) ? "demo-section" : formSource;
-            }
-            else
-            {
-                TempData["ErrorMessage"] = spamError;
-            }
+            TempData["ErrorMessage"] = spamError;
             return RedirectToAction(nameof(Index));
         }
 
@@ -181,10 +168,10 @@ public class HomeController : Controller
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
-    private bool PassSpamChecks(string? formToken, string? honeypot, out bool silentReject, out string? error)
+    private bool PassSpamChecks(string? formToken, out string? error)
     {
         var clientKey = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        return _formSpamGuard.TryValidate(formToken, honeypot, clientKey, out silentReject, out error);
+        return _formSpamGuard.TryValidate(formToken, clientKey, out error);
     }
 
     private async Task<bool> IsDuplicateEnquiryAsync(string email, string phone)

@@ -217,8 +217,8 @@
                                 @foreach (var p in proposals)
                                 {
                                     var pdfUrl = !string.IsNullOrWhiteSpace(p.FilePath)
-                                        ? $"{Context.Request.Scheme}://{Context.Request.Host}{p.FilePath}"
-                                        : Url.Action("DownloadProposal", "Partner", new { id = p.Id }, Context.Request.Scheme) ?? "";
+                                        ? $"https://{Context.Request.Host}{p.FilePath}"
+                                        : Url.Action("DownloadProposal", "Partner", new { id = p.Id }, "https") ?? "";
                                     var waPhone = new string((whatsapp ?? "").Where(char.IsDigit).ToArray());
                                     var waText = Uri.EscapeDataString(
                                         $"Hi {Model.Name},\n\nPlease find our proposal: {p.Title}\nAmount: ₹ {p.Amount:N2}\nValid until: {p.ValidUntil:dd MMM yyyy}\n\nDownload: {pdfUrl}\n\n— {ViewBag.Partner?.CompanyName ?? "Partner"}");
