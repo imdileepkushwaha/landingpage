@@ -26,6 +26,9 @@ public class CompanyProfile
     public string UpiId { get; set; } = string.Empty;
     public string UpiName { get; set; } = string.Empty;
 
+    /// <summary>When true, proposal header shows "An Authorised Channel Partner".</summary>
+    public bool IsAuthorizedPartner { get; set; }
+
     public bool HasLogo => !string.IsNullOrWhiteSpace(LogoPath);
     public bool HasSignature => !string.IsNullOrWhiteSpace(SignaturePath);
     public bool HasBankDetails =>

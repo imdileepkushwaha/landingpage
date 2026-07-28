@@ -282,21 +282,7 @@ public class PartnerController : Controller
             .FirstOrDefaultAsync(p => p.Id == id && p.ChannelPartnerId == partner.Id);
         if (proposal == null) return NotFound();
 
-        if (!string.IsNullOrWhiteSpace(proposal.FilePath))
-        {
-            var physical = Path.Combine(_env.WebRootPath, proposal.FilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-            if (System.IO.File.Exists(physical))
-                return PhysicalFile(physical, "application/pdf", $"Proposal-{proposal.Id}.pdf");
-        }
-
-        var company = partner.ToCompanyProfile();
-        var pdf = _dealPdfService.CreateProposalPdf(
-            ToPdfModel(proposal),
-            proposal.PartnerClient!.Name,
-            proposal.PartnerClient.Email,
-            proposal.PartnerClient.WhatsApp ?? proposal.PartnerClient.Mobile,
-            proposal.PartnerClient.Requirement,
-            company);
+        var pdf = await GetOrCreatePartnerProposalPdfAsync(proposal, partner);
         return File(pdf, "application/pdf", $"Proposal-{proposal.Id}.pdf");
     }
 
@@ -382,8 +368,20 @@ public class PartnerController : Controller
             client.Requirement,
             company);
 
-        proposal.FilePath = await SavePartnerProposalPdfAsync(partner.Id, pdf);
-        await _context.SaveChangesAsync();
+        // Reuse existing public path so WhatsApp/email links stay valid after regenerate.
+        if (!string.IsNullOrWhiteSpace(proposal.FilePath)
+            && proposal.FilePath.StartsWith("/uploads/partners/proposals/", StringComparison.OrdinalIgnoreCase))
+        {
+            var physical = Path.Combine(_env.WebRootPath, proposal.FilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(physical)!);
+            await System.IO.File.WriteAllBytesAsync(physical, pdf);
+        }
+        else
+        {
+            proposal.FilePath = await SavePartnerProposalPdfAsync(partner.Id, pdf);
+            await _context.SaveChangesAsync();
+        }
+
         return pdf;
     }
 

@@ -44,16 +44,18 @@ public class PublicFilesController : Controller
             return NotFound();
 
         var relative = $"/uploads/partners/proposals/{fileName}";
-        var physical = MapWww(relative);
-        if (physical != null && System.IO.File.Exists(physical))
-            return InlinePdf(physical);
-
         var proposal = await _context.PartnerProposals
             .Include(p => p.PartnerClient)
             .Include(p => p.ChannelPartner)
             .FirstOrDefaultAsync(p => p.FilePath == relative);
         if (proposal?.PartnerClient == null || proposal.ChannelPartner == null)
+        {
+            // Fallback: serve file from disk if DB row missing
+            var existing = MapWww(relative);
+            if (existing != null && System.IO.File.Exists(existing))
+                return InlinePdf(existing);
             return NotFound();
+        }
 
         var company = proposal.ChannelPartner.ToCompanyProfile();
         var pdf = _dealPdfService.CreateProposalPdf(
@@ -74,7 +76,7 @@ public class PublicFilesController : Controller
             proposal.PartnerClient.Requirement,
             company);
 
-        physical = await WriteBytesAsync(relative, pdf);
+        var physical = await WriteBytesAsync(relative, pdf);
         return InlinePdf(physical);
     }
 

@@ -101,6 +101,7 @@ public class ChannelPartner
         Website = Website ?? "",
         ContactPerson = OwnerName,
         SignatoryName = OwnerName,
-        SignatoryTitle = "Channel Partner"
+        SignatoryTitle = "Channel Partner",
+        IsAuthorizedPartner = true
     };
 }
