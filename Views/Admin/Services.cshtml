@@ -46,6 +46,12 @@
                         <td>
                             <div class="fw-bold">@s.Name</div>
                             <div class="small text-muted">@s.CreatedAt.ToString("dd MMM yyyy")</div>
+                            @if (!string.IsNullOrWhiteSpace(s.DemoLink))
+                            {
+                                <a href="@s.DemoLink" target="_blank" rel="noopener" class="small text-info text-decoration-none">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i>Demo
+                                </a>
+                            }
                         </td>
                         <td>₹ @s.Budget.ToString("N0")</td>
                         <td>@s.Commission.ToString("0.##")%</td>

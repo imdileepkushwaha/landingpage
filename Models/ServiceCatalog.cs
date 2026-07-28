@@ -17,6 +17,10 @@ public class ServiceCatalog
     [Display(Name = "Description")]
     public string? Description { get; set; }
 
+    [StringLength(2000)]
+    [Display(Name = "Demo link")]
+    public string? DemoLink { get; set; }
+
     [Required]
     [Range(0.01, 999999999)]
     [Display(Name = "Budget (₹)")]

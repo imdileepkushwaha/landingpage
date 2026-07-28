@@ -223,6 +223,10 @@ namespace SoftflipSolutions.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<string>("DemoLink")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 

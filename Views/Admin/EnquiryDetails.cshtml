@@ -118,9 +118,31 @@
 
                 @if (status != LeadPipeline.Rejected)
                 {
+                    var demoDetails = ViewBag.ServiceDemoDetails as string;
+                    var demoServiceName = ViewBag.ServiceDemoName as string ?? Model.Requirement;
+                    var matchedServiceId = ViewBag.MatchedServiceId as int?;
+                    var waDigits = new string((Model.Phone ?? "").Where(char.IsDigit).ToArray());
+                    if (waDigits.Length == 10) waDigits = "91" + waDigits;
+
                     <button type="button" class="btn btn-lead-email" data-bs-toggle="modal" data-bs-target="#emailModal">
                         <i class="bi bi-envelope-paper"></i> Compose Email
                     </button>
+                    @if (!string.IsNullOrWhiteSpace(demoDetails) && waDigits.Length >= 10)
+                    {
+                        var waBody = $"Hi {Model.Name},\n\nDemo details for {demoServiceName}:\n\n{demoDetails.Trim()}";
+                        var waUrl = $"https://wa.me/{waDigits}?text={Uri.EscapeDataString(waBody)}";
+                        <a href="@waUrl" target="_blank" rel="noopener" class="btn btn-success w-100 rounded-pill mt-2">
+                            <i class="bi bi-whatsapp me-1"></i> Send demo details
+                        </a>
+                    }
+                    else if (matchedServiceId != null && string.IsNullOrWhiteSpace(demoDetails))
+                    {
+                        <div class="alert alert-warning mt-2 mb-0 py-2 small">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Matched service <strong>@demoServiceName</strong> has no demo details yet.
+                            <a asp-action="EditService" asp-route-id="@matchedServiceId" class="alert-link">Add demo link</a>
+                        </div>
+                    }
                 }
             </div>
         </div>

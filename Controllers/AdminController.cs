@@ -982,6 +982,7 @@ public class AdminController : Controller
 
         model.Name = model.Name.Trim();
         model.Description = string.IsNullOrWhiteSpace(model.Description) ? null : model.Description.Trim();
+        model.DemoLink = string.IsNullOrWhiteSpace(model.DemoLink) ? null : model.DemoLink.Trim();
         model.CreatedAt = DateTime.Now;
         model.IsActive = true;
         ProposalModuleSelectionHelper.EnsureDefaultPanels(model);
@@ -1027,6 +1028,7 @@ public class AdminController : Controller
 
         service.Name = model.Name.Trim();
         service.Description = string.IsNullOrWhiteSpace(model.Description) ? null : model.Description.Trim();
+        service.DemoLink = string.IsNullOrWhiteSpace(model.DemoLink) ? null : model.DemoLink.Trim();
         service.Budget = model.Budget;
         service.Commission = model.Commission;
         service.IsActive = model.IsActive;
@@ -1415,6 +1417,32 @@ public class AdminController : Controller
         ViewBag.DuplicateLeads = await FindDuplicateLeadsAsync(enquiry.Phone, enquiry.Email, LeadPipeline.LeadEnquiry, id);
         ViewBag.MessageTemplates = await _context.MessageTemplates.AsNoTracking()
             .Where(t => t.IsActive).OrderBy(t => t.Name).ToListAsync();
+
+        var req = (enquiry.Requirement ?? "").Trim();
+        string? serviceDemoDetails = null;
+        string? serviceDemoName = null;
+        int? matchedServiceId = null;
+        if (!string.IsNullOrWhiteSpace(req))
+        {
+            // Match by name first (even if DemoLink empty) so UI can explain why button is missing.
+            var catalog = await _context.ServiceCatalogs.AsNoTracking()
+                .Where(s => s.IsActive)
+                .OrderByDescending(s => s.CreatedAt)
+                .ToListAsync();
+            var matched = catalog.FirstOrDefault(s =>
+                string.Equals(s.Name, req, StringComparison.OrdinalIgnoreCase));
+            if (matched != null)
+            {
+                matchedServiceId = matched.Id;
+                serviceDemoName = matched.Name;
+                if (!string.IsNullOrWhiteSpace(matched.DemoLink))
+                    serviceDemoDetails = matched.DemoLink;
+            }
+        }
+
+        ViewBag.ServiceDemoDetails = serviceDemoDetails;
+        ViewBag.ServiceDemoName = serviceDemoName;
+        ViewBag.MatchedServiceId = matchedServiceId;
         return View(enquiry);
     }
 

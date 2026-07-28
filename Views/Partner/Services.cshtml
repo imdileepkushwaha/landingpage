@@ -36,7 +36,15 @@
                             </div>
                             @if (!string.IsNullOrWhiteSpace(svc.Description))
                             {
-                                <p class="small text-muted mb-3">@svc.Description</p>
+                                <p class="small text-muted mb-2">@svc.Description</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(svc.DemoLink))
+                            {
+                                <p class="mb-3">
+                                    <a href="@svc.DemoLink" target="_blank" rel="noopener" class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-play-circle me-1"></i> Open demo
+                                    </a>
+                                </p>
                             }
                             @if (featureCount == 0)
                             {

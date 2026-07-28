@@ -49,9 +49,30 @@
             }
             <p class="small mt-2 mb-0" style="color:#374151">
                 <strong>Budget:</strong> ₹ @Model.Budget.ToString("N0")
-                <span class="mx-2 text-muted">·</span>
+                <span class="mx-2">·</span>
                 <strong>Commission:</strong> @Model.Commission.ToString("0.##")%
             </p>
+            @if (!string.IsNullOrWhiteSpace(Model.DemoLink))
+            {
+                <div class="small mt-2 mb-0">
+                    <strong>Demo details:</strong>
+                    @{
+                        var demo = Model.DemoLink.Trim();
+                        var isUrl = demo.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                                    || demo.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+                    }
+                    @if (isUrl)
+                    {
+                        <a href="@demo" target="_blank" rel="noopener" class="text-info text-decoration-none">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>@demo
+                        </a>
+                    }
+                    else
+                    {
+                        <pre class="mb-0 mt-1 p-2 small" style="white-space:pre-wrap;background:#f3f4f6;border-radius:8px;color:#374151">@demo</pre>
+                    }
+                </div>
+            }
             <p class="small text-muted mt-2 mb-0">
                 Created @Model.CreatedAt.ToString("dd MMM yyyy") · @panels.Count panels · @featureCount features
             </p>

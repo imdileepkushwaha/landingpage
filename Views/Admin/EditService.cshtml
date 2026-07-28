@@ -47,6 +47,11 @@
                 <label class="lead-info-label" asp-for="Description"></label>
                 <textarea asp-for="Description" class="form-control settings-input" rows="3" maxlength="2000"></textarea>
             </div>
+            <div class="col-12">
+                <label class="lead-info-label" asp-for="DemoLink"></label>
+                <textarea asp-for="DemoLink" class="form-control settings-input" rows="4" maxlength="2000" placeholder="https://demo.example.com/product"></textarea>
+                <div class="form-text text-muted">Optional demo URL / login details — sent to matching enquiries via WhatsApp.</div>
+            </div>
         </div>
         <div class="mt-4">
             <button type="submit" class="btn btn-crm-primary"><i class="bi bi-check2-circle me-1"></i> Save changes</button>
