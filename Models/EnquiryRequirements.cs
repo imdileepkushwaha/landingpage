@@ -20,6 +20,8 @@ public static class EnquiryRequirements
         "Ecommerce + MLM Software",
         "School Management Software",
         "Hospital Management Software",
+        "HR Management Software",
+        "Payroll Management Software",
         "OPD + IPD Billing Software",
         "CRM Software",
         "Billing Software",
