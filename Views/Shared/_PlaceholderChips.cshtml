@@ -1,0 +1,32 @@
+@{
+    var targetId = ViewData["PlaceholderTargetId"] as string ?? "Body";
+}
+<div class="placeholder-chips mb-2 d-flex flex-wrap gap-1" data-placeholder-target="@targetId">
+    @foreach (var key in SoftflipSolutions.Services.HrmDocumentFieldHelper.AllPlaceholders)
+    {
+        <button type="button" class="btn btn-sm btn-outline-info rounded-pill py-0 px-2 placeholder-chip" data-token="{{@key}}">
+            @key
+        </button>
+    }
+</div>
+<script>
+(function () {
+    const wrap = document.currentScript.previousElementSibling;
+    if (!wrap || wrap.dataset.bound === '1') return;
+    wrap.dataset.bound = '1';
+    const targetId = wrap.getAttribute('data-placeholder-target');
+    const ta = document.getElementById(targetId);
+    if (!ta) return;
+    wrap.querySelectorAll('.placeholder-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const token = btn.getAttribute('data-token') || '';
+            const start = ta.selectionStart ?? ta.value.length;
+            const end = ta.selectionEnd ?? start;
+            ta.value = ta.value.slice(0, start) + token + ta.value.slice(end);
+            ta.focus();
+            const pos = start + token.length;
+            ta.setSelectionRange(pos, pos);
+        });
+    });
+})();
+</script>

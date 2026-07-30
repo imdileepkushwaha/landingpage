@@ -1,0 +1,169 @@
+@model SoftflipSolutions.ViewModels.PunchAttendanceViewModel
+@{
+    ViewData["Title"] = "Punch Attendance";
+    Layout = "_AdminLayout";
+    var selected = Model.EmployeeId.HasValue
+        ? Model.ActiveEmployees.FirstOrDefault(e => e.Id == Model.EmployeeId.Value)
+        : null;
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="glass-card p-4 h-100">
+            <div class="mb-4">
+                <h4 class="text-white mb-1"><i class="bi bi-fingerprint me-2"></i>Punch Attendance</h4>
+                <p class="text-muted small mb-0">Select employee → Punch In at start → Punch Out at end of day.</p>
+            </div>
+
+            @if (!Model.ActiveEmployees.Any())
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-person-plus fs-1 d-block mb-2"></i>
+                    <p>No active employees. Add an employee first.</p>
+                    <a asp-action="AddEmployee" class="btn btn-crm-primary btn-sm">
+                        <i class="bi bi-person-plus me-1"></i> Add Employee
+                    </a>
+                </div>
+            }
+            else
+            {
+                <form method="get" asp-action="PunchAttendance" class="mb-4">
+                    <label class="form-label settings-label">Employee</label>
+                    <select name="employeeId" class="form-select settings-input" onchange="this.form.submit()">
+                        <option value="">— Select employee —</option>
+                        @foreach (var emp in Model.ActiveEmployees)
+                        {
+                            if (Model.EmployeeId == emp.Id)
+                            {
+                                <option value="@emp.Id" selected>@emp.DisplayLabel (@emp.Department)</option>
+                            }
+                            else
+                            {
+                                <option value="@emp.Id">@emp.DisplayLabel (@emp.Department)</option>
+                            }
+                        }
+                    </select>
+                </form>
+
+                @if (selected != null)
+                {
+                    <div class="mb-3 p-3 rounded-3" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);">
+                        <div class="fw-bold text-white">@selected.FullName</div>
+                        <div class="small text-muted">@selected.Designation · @selected.Department</div>
+                        @if (Model.LastPunchForSelected != null)
+                        {
+                            <div class="small mt-2">
+                                Last today:
+                                <span class="badge @(Model.LastPunchForSelected.PunchType == "In" ? "bg-success" : "bg-warning text-dark") bg-opacity-25 @(Model.LastPunchForSelected.PunchType == "In" ? "text-success" : "")">
+                                    @Model.LastPunchForSelected.PunchType
+                                </span>
+                                at @Model.LastPunchForSelected.PunchedAt.ToString("hh:mm tt")
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="small text-muted mt-2">No punch yet today — start with Punch In.</div>
+                        }
+                    </div>
+
+                    <form asp-action="PunchAttendance" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="employeeId" value="@selected.Id" />
+                        <input type="hidden" name="punchType" value="@Model.SuggestedPunchType" />
+
+                        <div class="mb-3">
+                            <label class="form-label settings-label">Notes (optional)</label>
+                            <input type="text" name="notes" class="form-control settings-input" maxlength="200" placeholder="e.g. WFH / Late / Meeting" />
+                        </div>
+
+                        <button type="submit" class="btn btn-crm-primary w-100 py-3 @(Model.SuggestedPunchType == "Out" ? "btn-warning" : "")">
+                            @if (Model.SuggestedPunchType == "In")
+                            {
+                                <i class="bi bi-box-arrow-in-right me-2"></i>
+                                <span>Punch In · @DateTime.Now.ToString("hh:mm tt")</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-box-arrow-right me-2"></i>
+                                <span>Punch Out · @DateTime.Now.ToString("hh:mm tt")</span>
+                            }
+                        </button>
+                        <p class="small text-muted text-center mt-2 mb-0">
+                            Next action: <strong>Punch @Model.SuggestedPunchType</strong>
+                        </p>
+                    </form>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="glass-card p-0 overflow-hidden h-100">
+            <div class="p-4 border-bottom admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+                <h5 class="mb-1">Today's punches</h5>
+                <p class="mb-0 small text-muted">@DateTime.Today.ToString("dddd, dd MMM yyyy")</p>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-borderless mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Employee</th>
+                            <th>Type</th>
+                            <th>Notes</th>
+                            <th>By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model.TodayPunches)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@p.PunchedAt.ToString("hh:mm tt")</td>
+                                <td>
+                                    <div>@(p.Employee?.FullName ?? $"#{p.EmployeeId}")</div>
+                                    <div class="small text-muted">@(p.Employee?.EmployeeCode)</div>
+                                </td>
+                                <td>
+                                    @if (p.PunchType == "In")
+                                    {
+                                        <span class="badge bg-success bg-opacity-25 text-success"><i class="bi bi-box-arrow-in-right me-1"></i>In</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning bg-opacity-25 text-warning"><i class="bi bi-box-arrow-right me-1"></i>Out</span>
+                                    }
+                                </td>
+                                <td class="small text-muted">@(p.Notes ?? "—")</td>
+                                <td class="small text-muted">@(p.PunchedBy ?? "—")</td>
+                            </tr>
+                        }
+                        @if (!Model.TodayPunches.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="bi bi-clock-history fs-1 d-block mb-2"></i>
+                                    No punches recorded today.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

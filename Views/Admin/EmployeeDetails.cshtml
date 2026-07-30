@@ -1,0 +1,416 @@
+@model SoftflipSolutions.Models.Employee
+@{
+    ViewData["Title"] = Model.FullName;
+    Layout = "_AdminLayout";
+    var initial = string.IsNullOrEmpty(Model.FullName) ? "?" : Model.FullName.Substring(0, 1).ToUpper();
+    var punches = Model.AttendancePunches?.OrderByDescending(p => p.PunchedAt).ToList() ?? new List<SoftflipSolutions.Models.AttendancePunch>();
+    var docs = Model.Documents?.OrderByDescending(d => d.GeneratedAt).ToList() ?? new List<SoftflipSolutions.Models.EmployeeDocument>();
+    var today = DateTime.Today;
+    var tomorrow = today.AddDays(1);
+    var todayPunches = punches.Where(p => p.PunchedAt >= today && p.PunchedAt < tomorrow).ToList();
+    var lastPunch = todayPunches.FirstOrDefault() ?? punches.FirstOrDefault();
+    var tenureDays = Math.Max(0, (DateTime.Today - Model.DateOfJoining.Date).Days);
+    var hasTemplates = ViewBag.HasActiveTemplates as bool? ?? false;
+    var quickTemplates = ViewBag.QuickTemplates as List<SoftflipSolutions.Models.EmployeeDocumentTemplate>
+        ?? new List<SoftflipSolutions.Models.EmployeeDocumentTemplate>();
+
+    string SizeLabel(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:0.#} KB";
+        return $"{bytes / (1024.0 * 1024.0):0.##} MB";
+    }
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success deal-alert alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger deal-alert alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="cp-detail-toolbar">
+    <a asp-action="Employees" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> Back to employees</a>
+    <div class="cp-detail-toolbar-actions">
+        <a asp-action="EditEmployee" asp-route-id="@Model.Id" class="btn cp-link-btn">
+            <i class="bi bi-pencil-square"></i> Edit
+        </a>
+        <a asp-action="PunchAttendance" asp-route-employeeId="@Model.Id" class="btn cp-link-btn">
+            <i class="bi bi-fingerprint"></i> Punch Attendance
+        </a>
+        <a asp-action="GenerateEmployeeDocument" asp-route-employeeId="@Model.Id" class="btn cp-link-btn">
+            <i class="bi bi-file-earmark-pdf"></i> Generate Document
+        </a>
+    </div>
+</div>
+
+<div class="cp-hero @(Model.IsActive ? "is-active" : "is-inactive")">
+    <div class="cp-hero-main">
+        <div class="cp-hero-logo">
+            <span>@initial</span>
+        </div>
+        <div class="cp-hero-copy">
+            <div class="cp-hero-badges">
+                <span class="cp-badge partner"><i class="bi bi-person-badge me-1"></i> @Model.EmployeeCode</span>
+                @if (Model.IsActive)
+                {
+                    <span class="cp-badge success"><i class="bi bi-check-circle me-1"></i> Active</span>
+                }
+                else
+                {
+                    <span class="cp-badge muted"><i class="bi bi-pause-circle me-1"></i> Inactive</span>
+                }
+            </div>
+            <h1>@Model.FullName</h1>
+            <p>
+                <i class="bi bi-briefcase"></i> @Model.Designation
+                <span class="cp-dot">·</span>
+                <i class="bi bi-building"></i> @Model.Department
+                <span class="cp-dot">·</span>
+                Joined @Model.DateOfJoining.ToString("dd MMM yyyy")
+            </p>
+        </div>
+    </div>
+    <form asp-action="ToggleEmployee" method="post" class="cp-hero-action">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn @(Model.IsActive ? "cp-btn-danger" : "cp-btn-success")">
+            <i class="bi @(Model.IsActive ? "bi-slash-circle" : "bi-check2-circle")"></i>
+            @(Model.IsActive ? "Deactivate" : "Activate")
+        </button>
+    </form>
+</div>
+
+<div class="cp-stats">
+    <div class="cp-stat">
+        <div class="cp-stat-ico clients"><i class="bi bi-hash"></i></div>
+        <div>
+            <strong>@Model.EmployeeCode</strong>
+            <span>Employee code</span>
+        </div>
+    </div>
+    <div class="cp-stat">
+        <div class="cp-stat-ico proposals"><i class="bi bi-calendar-check"></i></div>
+        <div>
+            <strong>@tenureDays</strong>
+            <span>Days with company</span>
+        </div>
+    </div>
+    <div class="cp-stat">
+        <div class="cp-stat-ico location"><i class="bi bi-fingerprint"></i></div>
+        <div>
+            <strong>@todayPunches.Count</strong>
+            <span>Punches today</span>
+        </div>
+    </div>
+    <div class="cp-stat">
+        <div class="cp-stat-ico login"><i class="bi bi-clock-history"></i></div>
+        <div>
+            @if (lastPunch != null)
+            {
+                <strong>@lastPunch.PunchType · @lastPunch.PunchedAt.ToString("hh:mm tt")</strong>
+                <span>@(lastPunch.PunchedAt.Date == today ? "Last today" : lastPunch.PunchedAt.ToString("dd MMM"))</span>
+            }
+            else
+            {
+                <strong>—</strong>
+                <span>No punches yet</span>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="cp-card">
+            <div class="cp-card-head">
+                <h5><i class="bi bi-person-lines-fill me-2"></i>Employee details</h5>
+            </div>
+            <div class="cp-card-body">
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-person-badge"></i></div>
+                    <div>
+                        <span class="cp-info-label">Employee code</span>
+                        <strong>@Model.EmployeeCode</strong>
+                    </div>
+                </div>
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-person"></i></div>
+                    <div>
+                        <span class="cp-info-label">Full name</span>
+                        <strong>@Model.FullName</strong>
+                    </div>
+                </div>
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-briefcase"></i></div>
+                    <div>
+                        <span class="cp-info-label">Designation</span>
+                        <strong>@Model.Designation</strong>
+                    </div>
+                </div>
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-building"></i></div>
+                    <div>
+                        <span class="cp-info-label">Department</span>
+                        <strong>@Model.Department</strong>
+                    </div>
+                </div>
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-calendar-event"></i></div>
+                    <div>
+                        <span class="cp-info-label">Date of joining</span>
+                        <strong>@Model.DateOfJoining.ToString("dd MMM yyyy")</strong>
+                    </div>
+                </div>
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-telephone"></i></div>
+                    <div>
+                        <span class="cp-info-label">Mobile</span>
+                        <a href="tel:@Model.Mobile">@Model.Mobile</a>
+                    </div>
+                </div>
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-envelope"></i></div>
+                    <div>
+                        <span class="cp-info-label">Email</span>
+                        <a href="mailto:@Model.Email">@Model.Email</a>
+                    </div>
+                </div>
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-geo-alt"></i></div>
+                    <div>
+                        <span class="cp-info-label">Address</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Address) ? "—" : Model.Address)</strong>
+                    </div>
+                </div>
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-toggle-on"></i></div>
+                    <div>
+                        <span class="cp-info-label">Status</span>
+                        <strong>@(Model.IsActive ? "Active" : "Inactive")</strong>
+                    </div>
+                </div>
+                <div class="cp-info">
+                    <div class="cp-info-ico"><i class="bi bi-plus-circle"></i></div>
+                    <div>
+                        <span class="cp-info-label">Created</span>
+                        <strong>@Model.CreatedAt.ToString("dd MMM yyyy, hh:mm tt")</strong>
+                    </div>
+                </div>
+                @if (Model.UpdatedAt.HasValue)
+                {
+                    <div class="cp-info">
+                        <div class="cp-info-ico"><i class="bi bi-pencil"></i></div>
+                        <div>
+                            <span class="cp-info-label">Last updated</span>
+                            <strong>@Model.UpdatedAt.Value.ToString("dd MMM yyyy, hh:mm tt")</strong>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="cp-card">
+            <div class="cp-card-head d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent attendance</h5>
+                    <p class="mb-0 small text-muted">Last @punches.Count punch(es)</p>
+                </div>
+                <a asp-action="PunchAttendance" asp-route-employeeId="@Model.Id" class="btn btn-sm btn-info rounded-pill px-3">
+                    <i class="bi bi-fingerprint me-1"></i> Punch now
+                </a>
+            </div>
+            <div class="cp-card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-borderless mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Type</th>
+                                <th>Notes</th>
+                                <th>By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in punches)
+                            {
+                                <tr>
+                                    <td class="small">@p.PunchedAt.ToString("dd MMM yyyy")</td>
+                                    <td class="fw-semibold">@p.PunchedAt.ToString("hh:mm tt")</td>
+                                    <td>
+                                        @if (p.PunchType == "In")
+                                        {
+                                            <span class="badge bg-success bg-opacity-25 text-success"><i class="bi bi-box-arrow-in-right me-1"></i>In</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning bg-opacity-25 text-warning"><i class="bi bi-box-arrow-right me-1"></i>Out</span>
+                                        }
+                                    </td>
+                                    <td class="small text-muted">@(p.Notes ?? "—")</td>
+                                    <td class="small text-muted">@(p.PunchedBy ?? "—")</td>
+                                </tr>
+                            }
+                            @if (!punches.Any())
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <i class="bi bi-fingerprint fs-1 d-block mb-2"></i>
+                                        No attendance punches yet.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="cp-card mt-4">
+    <div class="cp-card-head d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Quick create</h5>
+            <p class="mb-0 small text-muted">Pick a letter type — opens the generate form for @Model.FullName</p>
+        </div>
+        <a asp-action="BulkGenerateDocuments" class="btn btn-sm cp-link-btn">
+            <i class="bi bi-people"></i> Bulk generate
+        </a>
+    </div>
+    <div class="cp-card-body hrm-qc-body">
+        @if (quickTemplates.Any())
+        {
+            <div class="hrm-qc-grid">
+                @foreach (var t in quickTemplates)
+                {
+                    var accent = SoftflipSolutions.Services.HrmDocumentFieldHelper.AccentKeyForType(t.DocumentType);
+                    <a asp-action="GenerateEmployeeDocument"
+                       asp-route-employeeId="@Model.Id"
+                       asp-route-templateId="@t.Id"
+                       class="hrm-qc-tile">
+                        <span class="hrm-qc-ico @accent">
+                            <i class="bi @SoftflipSolutions.Services.HrmDocumentFieldHelper.IconForType(t.DocumentType)"></i>
+                        </span>
+                        <span class="hrm-qc-copy">
+                            <strong>@t.Name</strong>
+                            <small>@SoftflipSolutions.Services.HrmDocumentFieldHelper.LabelForType(t.DocumentType)</small>
+                        </span>
+                        <span class="hrm-qc-go" aria-hidden="true"><i class="bi bi-arrow-right"></i></span>
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="hrm-qc-empty">
+                <i class="bi bi-file-earmark-plus"></i>
+                <p class="mb-0">No templates yet. <a asp-action="EmployeeDocumentTemplates">Add templates</a>.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="cp-card mt-4">
+    <div class="cp-card-head d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h5 class="mb-0"><i class="bi bi-folder2-open me-2"></i>Employee documents</h5>
+            <p class="mb-0 small text-muted">Status: Draft → Downloaded → Sent · Softflip letterhead PDF</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge bg-primary bg-opacity-25 text-info">@docs.Count file@(docs.Count == 1 ? "" : "s")</span>
+            @if (hasTemplates)
+            {
+                <a asp-action="GenerateEmployeeDocument" asp-route-employeeId="@Model.Id" class="btn btn-sm btn-info rounded-pill px-3">
+                    <i class="bi bi-plus-lg me-1"></i> Generate
+                </a>
+            }
+        </div>
+    </div>
+    <div class="cp-card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-borderless mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Document</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Generated</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in docs)
+                    {
+                        var status = SoftflipSolutions.Services.HrmDocumentFieldHelper.StatusLabel(d.SentAt, d.DownloadedAt);
+                        var statusClass = SoftflipSolutions.Services.HrmDocumentFieldHelper.StatusBadgeClass(d.SentAt, d.DownloadedAt);
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-file-earmark-pdf text-danger fs-5"></i>
+                                    <div>
+                                        <div class="fw-semibold">@d.Title</div>
+                                        <div class="small text-muted">@SizeLabel(d.FileSize) · @(d.GeneratedBy ?? "Admin")</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-info bg-opacity-25 text-info">@d.DocumentType</span></td>
+                            <td>
+                                <span class="badge @statusClass">@status</span>
+                                @if (d.SentAt.HasValue)
+                                {
+                                    <div class="small text-muted">@d.SentToEmail</div>
+                                }
+                            </td>
+                            <td class="small">@d.GeneratedAt.ToString("dd MMM yyyy, hh:mm tt")</td>
+                            <td class="text-end">
+                                <div class="admin-row-actions">
+                                    <a asp-action="DownloadEmployeeDocument" asp-route-id="@d.Id" class="btn btn-icon-action" title="Download">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <a asp-action="WhatsAppEmployeeDocument" asp-route-id="@d.Id" class="btn btn-icon-action" title="WhatsApp share" target="_blank" rel="noopener">
+                                        <i class="bi bi-whatsapp"></i>
+                                    </a>
+                                    <form asp-action="EmailEmployeeDocument" method="post" class="d-inline" onsubmit="return confirm('Send this PDF to @Model.Email?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@d.Id" />
+                                        <button type="submit" class="btn btn-icon-action" title="Email to @Model.Email">
+                                            <i class="bi bi-envelope"></i>
+                                        </button>
+                                    </form>
+                                    <form asp-action="DeleteEmployeeDocument" method="post" class="d-inline" onsubmit="return confirm('Delete this document?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@d.Id" />
+                                        <button type="submit" class="btn btn-icon-action danger" title="Delete">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (!docs.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-file-earmark-pdf fs-1 d-block mb-2"></i>
+                                No documents yet — use Quick create above.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

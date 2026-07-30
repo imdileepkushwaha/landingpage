@@ -1,0 +1,50 @@
+@model SoftflipSolutions.Models.Employee
+@{
+    ViewData["Title"] = "My Profile";
+    Layout = "_EmployeeLayout";
+}
+
+<div class="glass-card p-4" style="max-width:720px;">
+    <h4 class="mb-1">My Profile</h4>
+    <p class="text-muted small mb-4">@Model.EmployeeCode · @Model.Designation · @Model.Department</p>
+
+    <form asp-action="Profile" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Full name</label>
+                <input class="form-control" value="@Model.FullName" disabled />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input class="form-control" value="@Model.Email" disabled />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Mobile</label>
+                <input type="text" name="mobile" class="form-control" value="@Model.Mobile" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Date of joining</label>
+                <input class="form-control" value="@Model.DateOfJoining.ToString("dd MMM yyyy")" disabled />
+            </div>
+            <div class="col-12">
+                <label class="form-label">Address</label>
+                <textarea name="address" class="form-control" rows="2">@Model.Address</textarea>
+            </div>
+        </div>
+
+        <h6 class="mt-3 mb-2">Change password (optional)</h6>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label class="form-label">New password</label>
+                <input type="password" name="newPassword" class="form-control" minlength="4" autocomplete="new-password" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Confirm password</label>
+                <input type="password" name="confirmPassword" class="form-control" minlength="4" autocomplete="new-password" />
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-info"><i class="bi bi-check2-circle me-1"></i> Save profile</button>
+    </form>
+</div>

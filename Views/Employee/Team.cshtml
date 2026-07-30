@@ -1,0 +1,41 @@
+@model IEnumerable<SoftflipSolutions.Models.Employee>
+@{
+    ViewData["Title"] = "Team Directory";
+    Layout = "_EmployeeLayout";
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom">
+        <h4 class="mb-1">Team Directory</h4>
+        <p class="mb-0 small text-muted">Active Softflip colleagues</p>
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Contact</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in Model)
+                {
+                    <tr>
+                        <td class="text-info fw-semibold">@e.EmployeeCode</td>
+                        <td>
+                            <div class="fw-bold">@e.FullName</div>
+                            <div class="small text-muted">@e.Designation</div>
+                        </td>
+                        <td>@e.Department</td>
+                        <td>
+                            <div class="small">@e.Mobile</div>
+                            <div class="small text-muted">@e.Email</div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

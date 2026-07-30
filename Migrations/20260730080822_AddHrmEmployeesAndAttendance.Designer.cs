@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SoftflipSolutions.Data;
 
@@ -11,9 +12,11 @@ using SoftflipSolutions.Data;
 namespace SoftflipSolutions.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260730080822_AddHrmEmployeesAndAttendance")]
+    partial class AddHrmEmployeesAndAttendance
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -354,9 +357,6 @@ namespace SoftflipSolutions.Migrations
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
 
-                    b.Property<bool>("CanLogin")
-                        .HasColumnType("bit");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -396,10 +396,6 @@ namespace SoftflipSolutions.Migrations
                         .HasMaxLength(25)
                         .HasColumnType("nvarchar(25)");
 
-                    b.Property<string>("PasswordHash")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -412,195 +408,6 @@ namespace SoftflipSolutions.Migrations
                         .IsUnique();
 
                     b.ToTable("Employees");
-                });
-
-            modelBuilder.Entity("SoftflipSolutions.Models.EmployeeDocument", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ContentType")
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
-
-                    b.Property<string>("DocumentType")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
-
-                    b.Property<DateTime?>("DownloadedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ExtraFieldsJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("GeneratedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("GeneratedBy")
-                        .HasMaxLength(80)
-                        .HasColumnType("nvarchar(80)");
-
-                    b.Property<DateTime?>("SentAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("SentToEmail")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<int?>("TemplateId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.HasIndex("TemplateId");
-
-                    b.ToTable("EmployeeDocuments");
-                });
-
-            modelBuilder.Entity("SoftflipSolutions.Models.EmployeeDocumentTemplate", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DocumentType")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsSystem")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
-
-                    b.Property<string>("Subject")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("EmployeeDocumentTemplates");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Body = "OFFER LETTER\r\n\r\nDate: {{Date}}\r\n\r\nTo,\r\nMr./Ms. {{EmployeeName}}\r\n{{Address}}\r\n\r\nSubject: Offer of Employment - {{Designation}}\r\n\r\nDear {{EmployeeName}},\r\n\r\nWe are pleased to offer you the position of {{Designation}} at {{CompanyName}}, subject to the terms and conditions mentioned in this offer letter.\r\n\r\nWe believe that your skills, learning ability, and enthusiasm will contribute positively to our organization, and we look forward to having you as a part of our team.\r\n\r\n1. Designation\r\nYour designation will be:\r\n{{Designation}}\r\nYou will work under the supervision of the Technical/Project Manager and will be responsible for supporting software development, IT coordination, testing, documentation, and day-to-day technical activities assigned by the management.\r\n\r\n2. Date of Joining\r\nYour expected date of joining will be:\r\n{{JoiningDate}}\r\nYou are requested to report to the office at {{ReportingTime}} on your joining date.\r\n\r\n3. Training / Probation Period\r\nYou will initially be appointed as a Trainee for a period of {{ProbationMonths}} months.\r\nDuring the training period, your performance will be evaluated on the basis of:\r\nTechnical learning and programming skills\r\nSoftware development work\r\nProblem-solving ability\r\nProject participation\r\nIT coordination and support\r\nCommunication and teamwork\r\nPunctuality and discipline\r\nAbility to complete assigned tasks within deadlines\r\nBased on your performance, you may be confirmed as a regular employee after successful completion of the training/probation period.\r\n\r\n4. Compensation\r\nDuring the training period, you will receive a stipend/salary of:\r\n₹{{Amount}} per month\r\nAfter successful completion of the training/probation period, your compensation may be revised based on your performance and company policy.\r\nAny applicable statutory deductions will be made as per the applicable rules.\r\n\r\n5. Job Responsibilities\r\nAs {{Designation}}, your responsibilities may include:\r\n\r\nSoftware Development\r\nDevelopment and maintenance of web-based applications.\r\nCoding, debugging, testing, and implementation of software modules.\r\nWorking with technologies such as HTML, CSS, Bootstrap, JavaScript, C#, ASP.NET and MS SQL Server, as required by projects.\r\nUnderstanding project requirements and converting them into technical solutions.\r\nDatabase development, queries, stored procedures, and data management.\r\nFixing bugs and resolving technical issues.\r\nMaintaining proper coding and project documentation.\r\nParticipating in software testing and deployment.\r\n\r\nIT Coordination\r\nCoordinate with team members regarding project requirements and task status.\r\nAssist in collecting and documenting client requirements.\r\nCoordinate between development, testing, support, and management teams.\r\nMaintain project/task status reports.\r\nProvide basic technical support to internal users and clients when required.\r\nMonitor assigned IT-related activities and ensure timely completion.\r\nAssist in software installation, configuration, testing, and troubleshooting.\r\n\r\nGeneral Responsibilities\r\nFollow company policies, processes, and instructions.\r\nMaintain confidentiality of company and client information.\r\nMaintain professional communication with clients and team members.\r\nComplete assigned tasks within the agreed timeline.\r\nContinuously improve technical and professional skills.\r\n\r\n6. Working Hours\r\nYour normal working hours will be:\r\n{{WorkingHours}}\r\nWorking Days: {{WorkingDays}}\r\nThe working schedule may be changed according to project requirements and company policy.\r\n\r\n7. Place of Work\r\nYour primary place of work will be:\r\n{{CompanyName}}\r\n{{CompanyAddress}}\r\nHowever, you may occasionally be required to visit client locations or other work locations for project-related activities, if required.\r\n\r\n8. Leave and Holidays\r\nLeave and holidays will be governed by the company's leave policy applicable to employees at your level and designation.\r\nPrior approval from the reporting manager/management will be required for planned leave.\r\n\r\n9. Confidentiality\r\nDuring your employment, you may have access to confidential information relating to the company, clients, software source code, databases, credentials, business plans, pricing, documents, and other proprietary information.\r\nYou agree not to disclose, copy, transfer, misuse, or share such information with any unauthorized person during or after your employment.\r\nAll source code, project files, documents, databases, credentials, designs, and other work products created as part of your employment shall remain the property of {{CompanyName}} or the respective client, as applicable.\r\n\r\n10. Company Assets\r\nAny laptop, computer, software, documents, access credentials, ID card, storage devices, or other company property provided to you shall be used only for authorized business purposes.\r\nAll company property must be returned upon completion or termination of employment.\r\n\r\n11. Performance and Confirmation\r\nYour continuation and confirmation after the training/probation period will depend upon your overall performance, conduct, technical capabilities, attendance, discipline, teamwork, and business requirements of the company.\r\nThe company reserves the right to extend the training/probation period if required.\r\n\r\n12. Termination / Notice Period\r\nDuring the training/probation period, either party may terminate the employment by providing {{NoticeDays}} days' written notice, or salary in lieu of notice, subject to company policy and applicable law.\r\nAfter confirmation, the applicable notice period will be as per the company's employment policy.\r\nThe company may take immediate disciplinary action in cases involving serious misconduct, unauthorized disclosure of confidential information, fraud, data misuse, or other serious violations, subject to applicable law.\r\n\r\n13. Background Verification\r\nYour appointment is subject to satisfactory verification of the information and documents provided by you, including educational qualifications, identity, previous employment details, and other information where applicable.\r\nProviding false or misleading information may result in withdrawal of the offer or termination of employment.\r\n\r\n14. Documents Required at Joining\r\nYou are required to submit copies of the following documents, as applicable:\r\nAadhaar Card / Valid ID Proof\r\nPAN Card\r\nEducational Qualification Certificates\r\nPassport-size photographs\r\nBank Account Details\r\nAddress Proof\r\nPrevious Employment/Experience Certificate, if applicable\r\nOther documents requested by the company\r\n\r\n15. Acceptance of Offer\r\nPlease sign and return a copy of this offer letter as confirmation of your acceptance of the above terms and conditions.\r\nWe welcome you to {{CompanyName}} and hope that your association with us will provide you with valuable learning opportunities, professional growth, and a successful career.\r\nWe wish you all the best for your new role.\r\n\r\nFor {{CompanyName}}\r\n\r\nAuthorized Signatory\r\nName: {{SignatoryName}}\r\nDesignation: {{SignatoryTitle}}\r\n\r\nACCEPTANCE BY EMPLOYEE\r\nI, {{EmployeeName}}, hereby accept the offer for the position of {{Designation}} at {{CompanyName}} and agree to abide by the terms and conditions mentioned in this offer letter and the applicable company policies.\r\nEmployee Name: __________________________\r\nSignature: _______________________________\r\nDate: ___________________________________\r\nPlace: ___________________________________",
-                            CreatedAt = new DateTime(2026, 7, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DocumentType = "OfferLetter",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Offer Letter",
-                            Subject = "Offer of Employment - {{Designation}}"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Body = "APPOINTMENT LETTER\r\n\r\nDate: {{Date}}\r\n\r\nTo,\r\n{{EmployeeName}}\r\n{{Address}}\r\n\r\nSubject: Appointment as {{Designation}}\r\n\r\nDear {{EmployeeName}},\r\n\r\nWe are pleased to appoint you as {{Designation}} in the {{Department}} department of {{CompanyName}} with effect from {{JoiningDate}}.\r\n\r\n1. Designation & Department\r\nYou are appointed as {{Designation}} in {{Department}}.\r\n\r\n2. Compensation\r\nYour stipend/salary will be ₹{{Amount}} per month, subject to applicable statutory deductions.\r\n\r\n3. Working Hours\r\n{{WorkingHours}}\r\nWorking Days: {{WorkingDays}}\r\n\r\n4. Probation\r\nYou will be on probation for {{ProbationMonths}} months from the date of joining.\r\n\r\n5. Place of Work\r\n{{CompanyName}}\r\n{{CompanyAddress}}\r\n\r\n6. Notice Period\r\nEither party may terminate this appointment by giving {{NoticeDays}} days' written notice, or payment in lieu thereof, as per company policy.\r\n\r\nPlease report at {{ReportingTime}} on {{JoiningDate}}.\r\n\r\nWe welcome you to {{CompanyName}} and wish you a successful association.\r\n\r\nFor {{CompanyName}}\r\n{{SignatoryName}}\r\n{{SignatoryTitle}}",
-                            CreatedAt = new DateTime(2026, 7, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DocumentType = "Appointment",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Appointment Letter",
-                            Subject = "Appointment as {{Designation}}"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Body = "EXPERIENCE CERTIFICATE\r\n\r\nDate: {{Date}}\r\n\r\nTO WHOMSOEVER IT MAY CONCERN\r\n\r\nThis is to certify that {{EmployeeName}} (Employee Code: {{EmployeeCode}}) worked with {{CompanyName}} as {{Designation}} in the {{Department}} department.\r\n\r\nPeriod of employment: {{FromDate}} to {{ToDate}}\r\n\r\nDuring the tenure, {{EmployeeName}} performed duties related to the role of {{Designation}} and maintained professional conduct.\r\n\r\nWe wish {{EmployeeName}} success in future endeavors.\r\n\r\nFor {{CompanyName}}\r\n{{SignatoryName}}\r\n{{SignatoryTitle}}\r\n{{CompanyAddress}}\r\n{{CompanyPhone}} | {{CompanyEmail}}",
-                            CreatedAt = new DateTime(2026, 7, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DocumentType = "Experience",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Experience Certificate",
-                            Subject = "Experience Certificate - {{EmployeeName}}"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Body = "RELIEVING LETTER\r\n\r\nDate: {{Date}}\r\n\r\nTo,\r\n{{EmployeeName}}\r\n{{Address}}\r\n\r\nSubject: Relieving Letter\r\n\r\nDear {{EmployeeName}},\r\n\r\nThis is to confirm that you have been relieved from your duties as {{Designation}} at {{CompanyName}} with effect from {{LastWorkingDate}}.\r\n\r\nYour last working day with the organization was {{LastWorkingDate}}.\r\n\r\nAll company property, credentials, and documents entrusted to you must be returned (if not already done). Full and final settlement will be processed as per company policy.\r\n\r\nWe thank you for your association with {{CompanyName}} and wish you the best for the future.\r\n\r\nFor {{CompanyName}}\r\n{{SignatoryName}}\r\n{{SignatoryTitle}}",
-                            CreatedAt = new DateTime(2026, 7, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DocumentType = "Relieving",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Relieving Letter",
-                            Subject = "Relieving Letter - {{EmployeeName}}"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Body = "WARNING LETTER\r\n\r\nDate: {{Date}}\r\n\r\nTo,\r\n{{EmployeeName}}\r\n{{Designation}} · {{Department}}\r\nEmployee Code: {{EmployeeCode}}\r\n\r\nSubject: Warning Letter\r\n\r\nDear {{EmployeeName}},\r\n\r\nThis letter serves as a formal warning regarding the following matter:\r\n\r\n{{Reason}}\r\n\r\nYou are advised to improve and adhere to company policies, discipline, and performance expectations. Any further occurrence of a similar nature may lead to stricter disciplinary action, including termination, as per company policy.\r\n\r\nPlease treat this matter with seriousness.\r\n\r\nFor {{CompanyName}}\r\n{{SignatoryName}}\r\n{{SignatoryTitle}}\r\n\r\nAcknowledgement by Employee\r\nI have read and understood this warning letter.\r\nName: ________________ Signature: ________________ Date: ________________",
-                            CreatedAt = new DateTime(2026, 7, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DocumentType = "Warning",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Warning Letter",
-                            Subject = "Warning Letter - {{EmployeeName}}"
-                        });
-                });
-
-            modelBuilder.Entity("SoftflipSolutions.Models.EmployeeMenuPermission", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("MenuKey")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId", "MenuKey")
-                        .IsUnique();
-
-                    b.ToTable("EmployeeMenuPermissions");
                 });
 
             modelBuilder.Entity("SoftflipSolutions.Models.Enquiry", b =>
@@ -1220,35 +1027,6 @@ namespace SoftflipSolutions.Migrations
                     b.Navigation("DemoRequest");
                 });
 
-            modelBuilder.Entity("SoftflipSolutions.Models.EmployeeDocument", b =>
-                {
-                    b.HasOne("SoftflipSolutions.Models.Employee", "Employee")
-                        .WithMany("Documents")
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SoftflipSolutions.Models.EmployeeDocumentTemplate", "Template")
-                        .WithMany("Documents")
-                        .HasForeignKey("TemplateId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Employee");
-
-                    b.Navigation("Template");
-                });
-
-            modelBuilder.Entity("SoftflipSolutions.Models.EmployeeMenuPermission", b =>
-                {
-                    b.HasOne("SoftflipSolutions.Models.Employee", "Employee")
-                        .WithMany("MenuPermissions")
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
-                });
-
             modelBuilder.Entity("SoftflipSolutions.Models.EnquiryNote", b =>
                 {
                     b.HasOne("SoftflipSolutions.Models.Enquiry", "Enquiry")
@@ -1381,15 +1159,6 @@ namespace SoftflipSolutions.Migrations
             modelBuilder.Entity("SoftflipSolutions.Models.Employee", b =>
                 {
                     b.Navigation("AttendancePunches");
-
-                    b.Navigation("Documents");
-
-                    b.Navigation("MenuPermissions");
-                });
-
-            modelBuilder.Entity("SoftflipSolutions.Models.EmployeeDocumentTemplate", b =>
-                {
-                    b.Navigation("Documents");
                 });
 
             modelBuilder.Entity("SoftflipSolutions.Models.Enquiry", b =>

@@ -1,0 +1,109 @@
+@model IEnumerable<SoftflipSolutions.Models.EmployeeDocumentTemplate>
+@{
+    ViewData["Title"] = "Document Templates";
+    Layout = "_AdminLayout";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-3 admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <div>
+            <h5 class="mb-1">Employee document templates</h5>
+            <p class="mb-0 small text-muted">
+                Offer, Appointment, Experience, Relieving, Warning · Softflip letterhead ·
+                click chips when editing body to insert placeholders
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="BulkGenerateDocuments" class="btn btn-sm btn-outline-info rounded-pill px-3">
+                <i class="bi bi-files me-1"></i> Bulk generate
+            </a>
+            <a asp-action="AddEmployeeDocumentTemplate" class="btn btn-sm btn-info rounded-pill px-3 fw-semibold">
+                <i class="bi bi-plus-lg me-1"></i> Add template
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Preview</th>
+                    <th>Status</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-bold">@t.Name</div>
+                            @if (t.IsSystem)
+                            {
+                                <span class="badge bg-info bg-opacity-25 text-info">System</span>
+                            }
+                        </td>
+                        <td><span class="badge bg-primary bg-opacity-25 text-info">@t.DocumentType</span></td>
+                        <td class="small text-muted" style="max-width:380px;">
+                            @if (!string.IsNullOrWhiteSpace(t.Subject))
+                            {
+                                <div class="fw-semibold text-white-50">@t.Subject</div>
+                            }
+                            @(t.Body.Length > 140 ? t.Body[..140].Replace("\n", " ") + "…" : t.Body.Replace("\n", " "))
+                        </td>
+                        <td>
+                            @if (t.IsActive)
+                            {
+                                <span class="badge bg-success bg-opacity-25 text-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Inactive</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <div class="admin-row-actions">
+                                <a asp-action="EditEmployeeDocumentTemplate" asp-route-id="@t.Id" class="btn btn-icon-action edit" title="Edit">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                @if (!t.IsSystem)
+                                {
+                                    <form asp-action="DeleteEmployeeDocumentTemplate" method="post" class="d-inline" onsubmit="return confirm('Delete this template?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@t.Id" />
+                                        <button type="submit" class="btn btn-icon-action danger" title="Delete"><i class="bi bi-trash3"></i></button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-file-earmark-text fs-1 d-block mb-2"></i>
+                            No templates yet.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

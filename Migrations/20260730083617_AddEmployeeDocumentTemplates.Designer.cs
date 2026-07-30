@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SoftflipSolutions.Data;
 
@@ -11,9 +12,11 @@ using SoftflipSolutions.Data;
 namespace SoftflipSolutions.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260730083617_AddEmployeeDocumentTemplates")]
+    partial class AddEmployeeDocumentTemplates
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -354,9 +357,6 @@ namespace SoftflipSolutions.Migrations
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
 
-                    b.Property<bool>("CanLogin")
-                        .HasColumnType("bit");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -396,10 +396,6 @@ namespace SoftflipSolutions.Migrations
                         .HasMaxLength(25)
                         .HasColumnType("nvarchar(25)");
 
-                    b.Property<string>("PasswordHash")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -430,9 +426,6 @@ namespace SoftflipSolutions.Migrations
                         .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
-
-                    b.Property<DateTime?>("DownloadedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
@@ -532,75 +525,7 @@ namespace SoftflipSolutions.Migrations
                             IsSystem = true,
                             Name = "Offer Letter",
                             Subject = "Offer of Employment - {{Designation}}"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Body = "APPOINTMENT LETTER\r\n\r\nDate: {{Date}}\r\n\r\nTo,\r\n{{EmployeeName}}\r\n{{Address}}\r\n\r\nSubject: Appointment as {{Designation}}\r\n\r\nDear {{EmployeeName}},\r\n\r\nWe are pleased to appoint you as {{Designation}} in the {{Department}} department of {{CompanyName}} with effect from {{JoiningDate}}.\r\n\r\n1. Designation & Department\r\nYou are appointed as {{Designation}} in {{Department}}.\r\n\r\n2. Compensation\r\nYour stipend/salary will be ₹{{Amount}} per month, subject to applicable statutory deductions.\r\n\r\n3. Working Hours\r\n{{WorkingHours}}\r\nWorking Days: {{WorkingDays}}\r\n\r\n4. Probation\r\nYou will be on probation for {{ProbationMonths}} months from the date of joining.\r\n\r\n5. Place of Work\r\n{{CompanyName}}\r\n{{CompanyAddress}}\r\n\r\n6. Notice Period\r\nEither party may terminate this appointment by giving {{NoticeDays}} days' written notice, or payment in lieu thereof, as per company policy.\r\n\r\nPlease report at {{ReportingTime}} on {{JoiningDate}}.\r\n\r\nWe welcome you to {{CompanyName}} and wish you a successful association.\r\n\r\nFor {{CompanyName}}\r\n{{SignatoryName}}\r\n{{SignatoryTitle}}",
-                            CreatedAt = new DateTime(2026, 7, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DocumentType = "Appointment",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Appointment Letter",
-                            Subject = "Appointment as {{Designation}}"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Body = "EXPERIENCE CERTIFICATE\r\n\r\nDate: {{Date}}\r\n\r\nTO WHOMSOEVER IT MAY CONCERN\r\n\r\nThis is to certify that {{EmployeeName}} (Employee Code: {{EmployeeCode}}) worked with {{CompanyName}} as {{Designation}} in the {{Department}} department.\r\n\r\nPeriod of employment: {{FromDate}} to {{ToDate}}\r\n\r\nDuring the tenure, {{EmployeeName}} performed duties related to the role of {{Designation}} and maintained professional conduct.\r\n\r\nWe wish {{EmployeeName}} success in future endeavors.\r\n\r\nFor {{CompanyName}}\r\n{{SignatoryName}}\r\n{{SignatoryTitle}}\r\n{{CompanyAddress}}\r\n{{CompanyPhone}} | {{CompanyEmail}}",
-                            CreatedAt = new DateTime(2026, 7, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DocumentType = "Experience",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Experience Certificate",
-                            Subject = "Experience Certificate - {{EmployeeName}}"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Body = "RELIEVING LETTER\r\n\r\nDate: {{Date}}\r\n\r\nTo,\r\n{{EmployeeName}}\r\n{{Address}}\r\n\r\nSubject: Relieving Letter\r\n\r\nDear {{EmployeeName}},\r\n\r\nThis is to confirm that you have been relieved from your duties as {{Designation}} at {{CompanyName}} with effect from {{LastWorkingDate}}.\r\n\r\nYour last working day with the organization was {{LastWorkingDate}}.\r\n\r\nAll company property, credentials, and documents entrusted to you must be returned (if not already done). Full and final settlement will be processed as per company policy.\r\n\r\nWe thank you for your association with {{CompanyName}} and wish you the best for the future.\r\n\r\nFor {{CompanyName}}\r\n{{SignatoryName}}\r\n{{SignatoryTitle}}",
-                            CreatedAt = new DateTime(2026, 7, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DocumentType = "Relieving",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Relieving Letter",
-                            Subject = "Relieving Letter - {{EmployeeName}}"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Body = "WARNING LETTER\r\n\r\nDate: {{Date}}\r\n\r\nTo,\r\n{{EmployeeName}}\r\n{{Designation}} · {{Department}}\r\nEmployee Code: {{EmployeeCode}}\r\n\r\nSubject: Warning Letter\r\n\r\nDear {{EmployeeName}},\r\n\r\nThis letter serves as a formal warning regarding the following matter:\r\n\r\n{{Reason}}\r\n\r\nYou are advised to improve and adhere to company policies, discipline, and performance expectations. Any further occurrence of a similar nature may lead to stricter disciplinary action, including termination, as per company policy.\r\n\r\nPlease treat this matter with seriousness.\r\n\r\nFor {{CompanyName}}\r\n{{SignatoryName}}\r\n{{SignatoryTitle}}\r\n\r\nAcknowledgement by Employee\r\nI have read and understood this warning letter.\r\nName: ________________ Signature: ________________ Date: ________________",
-                            CreatedAt = new DateTime(2026, 7, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DocumentType = "Warning",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Warning Letter",
-                            Subject = "Warning Letter - {{EmployeeName}}"
                         });
-                });
-
-            modelBuilder.Entity("SoftflipSolutions.Models.EmployeeMenuPermission", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("MenuKey")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId", "MenuKey")
-                        .IsUnique();
-
-                    b.ToTable("EmployeeMenuPermissions");
                 });
 
             modelBuilder.Entity("SoftflipSolutions.Models.Enquiry", b =>
@@ -1238,17 +1163,6 @@ namespace SoftflipSolutions.Migrations
                     b.Navigation("Template");
                 });
 
-            modelBuilder.Entity("SoftflipSolutions.Models.EmployeeMenuPermission", b =>
-                {
-                    b.HasOne("SoftflipSolutions.Models.Employee", "Employee")
-                        .WithMany("MenuPermissions")
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
-                });
-
             modelBuilder.Entity("SoftflipSolutions.Models.EnquiryNote", b =>
                 {
                     b.HasOne("SoftflipSolutions.Models.Enquiry", "Enquiry")
@@ -1383,8 +1297,6 @@ namespace SoftflipSolutions.Migrations
                     b.Navigation("AttendancePunches");
 
                     b.Navigation("Documents");
-
-                    b.Navigation("MenuPermissions");
                 });
 
             modelBuilder.Entity("SoftflipSolutions.Models.EmployeeDocumentTemplate", b =>

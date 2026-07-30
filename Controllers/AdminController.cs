@@ -16,6 +16,8 @@ public class AdminController : Controller
     private readonly ApplicationDbContext _context;
     private readonly IEmailService _emailService;
     private readonly IDealPdfService _dealPdfService;
+    private readonly IEmployeeDocumentPdfService _employeeDocPdf;
+    private readonly IEmployeeAccessService _employeeAccess;
     private readonly ICompanyProfileService _companyProfile;
     private readonly IWebHostEnvironment _env;
 
@@ -23,12 +25,16 @@ public class AdminController : Controller
         ApplicationDbContext context,
         IEmailService emailService,
         IDealPdfService dealPdfService,
+        IEmployeeDocumentPdfService employeeDocPdf,
+        IEmployeeAccessService employeeAccess,
         ICompanyProfileService companyProfile,
         IWebHostEnvironment env)
     {
         _context = context;
         _emailService = emailService;
         _dealPdfService = dealPdfService;
+        _employeeDocPdf = employeeDocPdf;
+        _employeeAccess = employeeAccess;
         _companyProfile = companyProfile;
         _env = env;
     }
@@ -655,6 +661,834 @@ public class AdminController : Controller
             TempData["SuccessMessage"] = "Template deleted.";
         }
         return RedirectToAction(nameof(MessageTemplates));
+    }
+
+    // ─── HRM: Employees & Attendance ─────────────────────────────────────────
+
+    public async Task<IActionResult> Employees()
+    {
+        var list = await _context.Employees
+            .OrderByDescending(e => e.IsActive)
+            .ThenBy(e => e.FullName)
+            .ToListAsync();
+        return View(list);
+    }
+
+    public async Task<IActionResult> AddEmployee()
+    {
+        return View(new Employee
+        {
+            EmployeeCode = await GenerateNextEmployeeCodeAsync(),
+            DateOfJoining = DateTime.Today,
+            IsActive = true
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddEmployee(Employee model)
+    {
+        ModelState.Remove(nameof(Employee.AttendancePunches));
+        ModelState.Remove(nameof(Employee.Documents));
+        ModelState.Remove(nameof(Employee.MenuPermissions));
+        ModelState.Remove(nameof(Employee.PasswordHash));
+        ModelState.Remove(nameof(Employee.EmployeeCode));
+
+        var email = (model.Email ?? "").Trim().ToLowerInvariant();
+
+        if (await _context.Employees.AnyAsync(e => e.Email == email))
+            ModelState.AddModelError(nameof(model.Email), "An employee with this email already exists.");
+
+        if (!ModelState.IsValid)
+        {
+            model.EmployeeCode = await GenerateNextEmployeeCodeAsync();
+            return View(model);
+        }
+
+        model.EmployeeCode = await GenerateNextEmployeeCodeAsync();
+        model.FullName = model.FullName.Trim();
+        model.Email = email;
+        model.Mobile = model.Mobile.Trim();
+        model.Department = model.Department.Trim();
+        model.Designation = model.Designation.Trim();
+        model.Address = string.IsNullOrWhiteSpace(model.Address) ? null : model.Address.Trim();
+        model.IsActive = true;
+        model.CanLogin = false;
+        model.CreatedAt = DateTime.Now;
+
+        _context.Employees.Add(model);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Employee \"{model.FullName}\" ({model.EmployeeCode}) added successfully.";
+        return RedirectToAction(nameof(Employees));
+    }
+
+    public async Task<IActionResult> EditEmployee(int? id)
+    {
+        if (id == null)
+            return RedirectToAction(nameof(Employees));
+
+        var employee = await _context.Employees.FindAsync(id.Value);
+        if (employee == null) return NotFound();
+        return View(employee);
+    }
+
+    public async Task<IActionResult> EmployeeDetails(int id)
+    {
+        var employee = await _context.Employees
+            .Include(e => e.AttendancePunches.OrderByDescending(p => p.PunchedAt).Take(30))
+            .Include(e => e.Documents.OrderByDescending(d => d.GeneratedAt))
+            .FirstOrDefaultAsync(e => e.Id == id);
+        if (employee == null) return NotFound();
+
+        ViewBag.HasActiveTemplates = await _context.EmployeeDocumentTemplates.AnyAsync(t => t.IsActive);
+        ViewBag.QuickTemplates = await _context.EmployeeDocumentTemplates
+            .AsNoTracking()
+            .Where(t => t.IsActive)
+            .OrderBy(t => t.DocumentType)
+            .ThenBy(t => t.Name)
+            .ToListAsync();
+        return View(employee);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditEmployee(int id, Employee model)
+    {
+        var employee = await _context.Employees.FindAsync(id);
+        if (employee == null) return NotFound();
+
+        ModelState.Remove(nameof(Employee.AttendancePunches));
+        ModelState.Remove(nameof(Employee.Documents));
+        ModelState.Remove(nameof(Employee.MenuPermissions));
+        ModelState.Remove(nameof(Employee.PasswordHash));
+        ModelState.Remove(nameof(Employee.EmployeeCode));
+
+        var email = (model.Email ?? "").Trim().ToLowerInvariant();
+
+        if (await _context.Employees.AnyAsync(e => e.Email == email && e.Id != id))
+            ModelState.AddModelError(nameof(model.Email), "An employee with this email already exists.");
+
+        if (!ModelState.IsValid)
+        {
+            model.Id = id;
+            model.EmployeeCode = employee.EmployeeCode;
+            model.CreatedAt = employee.CreatedAt;
+            model.CanLogin = employee.CanLogin;
+            return View(model);
+        }
+
+        // Employee code is system-generated — never change on edit
+        employee.FullName = model.FullName.Trim();
+        employee.Email = email;
+        employee.Mobile = model.Mobile.Trim();
+        employee.Department = model.Department.Trim();
+        employee.Designation = model.Designation.Trim();
+        employee.DateOfJoining = model.DateOfJoining;
+        employee.Address = string.IsNullOrWhiteSpace(model.Address) ? null : model.Address.Trim();
+        employee.IsActive = model.IsActive;
+        employee.UpdatedAt = DateTime.Now;
+
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = $"Employee \"{employee.FullName}\" updated.";
+        return RedirectToAction(nameof(EmployeeDetails), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteEmployee(int id)
+    {
+        var employee = await _context.Employees.FindAsync(id);
+        if (employee == null) return NotFound();
+
+        var name = employee.FullName;
+        _context.Employees.Remove(employee);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Employee \"{name}\" and their attendance records deleted.";
+        return RedirectToAction(nameof(Employees));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleEmployee(int id)
+    {
+        var employee = await _context.Employees.FindAsync(id);
+        if (employee == null) return NotFound();
+
+        employee.IsActive = !employee.IsActive;
+        employee.UpdatedAt = DateTime.Now;
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = employee.IsActive
+            ? $"{employee.FullName} is now active."
+            : $"{employee.FullName} is now inactive.";
+
+        var returnUrl = Request.Headers.Referer.ToString();
+        if (!string.IsNullOrEmpty(returnUrl) && returnUrl.Contains("EmployeeDetails", StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction(nameof(EmployeeDetails), new { id });
+
+        return RedirectToAction(nameof(Employees));
+    }
+
+    public async Task<IActionResult> PunchAttendance(int? employeeId)
+    {
+        var vm = await BuildPunchAttendanceViewModelAsync(employeeId);
+        return View(vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PunchAttendance(int employeeId, string punchType, string? notes)
+    {
+        var employee = await _context.Employees.FindAsync(employeeId);
+        if (employee == null)
+        {
+            TempData["ErrorMessage"] = "Employee not found.";
+            return RedirectToAction(nameof(PunchAttendance));
+        }
+
+        if (!employee.IsActive)
+        {
+            TempData["ErrorMessage"] = $"{employee.FullName} is inactive and cannot punch attendance.";
+            return RedirectToAction(nameof(PunchAttendance), new { employeeId });
+        }
+
+        var type = string.Equals(punchType, "Out", StringComparison.OrdinalIgnoreCase) ? "Out" : "In";
+        var today = DateTime.Today;
+        var tomorrow = today.AddDays(1);
+
+        var lastToday = await _context.AttendancePunches
+            .Where(p => p.EmployeeId == employeeId && p.PunchedAt >= today && p.PunchedAt < tomorrow)
+            .OrderByDescending(p => p.PunchedAt)
+            .FirstOrDefaultAsync();
+
+        if (lastToday != null && lastToday.PunchType == type)
+        {
+            TempData["ErrorMessage"] = $"{employee.FullName} already punched {type} today at {lastToday.PunchedAt:hh:mm tt}. Punch {(type == "In" ? "Out" : "In")} next.";
+            return RedirectToAction(nameof(PunchAttendance), new { employeeId });
+        }
+
+        if (type == "Out" && (lastToday == null || lastToday.PunchType != "In"))
+        {
+            TempData["ErrorMessage"] = $"{employee.FullName} has no Punch In today. Punch In first.";
+            return RedirectToAction(nameof(PunchAttendance), new { employeeId });
+        }
+
+        var punch = new AttendancePunch
+        {
+            EmployeeId = employeeId,
+            PunchType = type,
+            PunchedAt = DateTime.Now,
+            Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
+            PunchedBy = User.Identity?.Name ?? "Admin"
+        };
+
+        _context.AttendancePunches.Add(punch);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Punch {type} recorded for {employee.FullName} at {punch.PunchedAt:hh:mm tt}.";
+        return RedirectToAction(nameof(PunchAttendance), new { employeeId });
+    }
+
+    private async Task<PunchAttendanceViewModel> BuildPunchAttendanceViewModelAsync(int? employeeId)
+    {
+        var today = DateTime.Today;
+        var tomorrow = today.AddDays(1);
+
+        var vm = new PunchAttendanceViewModel
+        {
+            EmployeeId = employeeId,
+            ActiveEmployees = await _context.Employees
+                .Where(e => e.IsActive)
+                .OrderBy(e => e.FullName)
+                .ToListAsync(),
+            TodayPunches = await _context.AttendancePunches
+                .Include(p => p.Employee)
+                .Where(p => p.PunchedAt >= today && p.PunchedAt < tomorrow)
+                .OrderByDescending(p => p.PunchedAt)
+                .ToListAsync()
+        };
+
+        if (employeeId.HasValue)
+        {
+            vm.LastPunchForSelected = await _context.AttendancePunches
+                .Where(p => p.EmployeeId == employeeId.Value && p.PunchedAt >= today && p.PunchedAt < tomorrow)
+                .OrderByDescending(p => p.PunchedAt)
+                .FirstOrDefaultAsync();
+
+            vm.SuggestedPunchType = vm.LastPunchForSelected?.PunchType == "In" ? "Out" : "In";
+        }
+
+        return vm;
+    }
+
+    private async Task<string> GenerateNextEmployeeCodeAsync()
+    {
+        const string prefix = "SF";
+        var codes = await _context.Employees
+            .AsNoTracking()
+            .Select(e => e.EmployeeCode)
+            .ToListAsync();
+
+        var maxNum = 0;
+        foreach (var code in codes)
+        {
+            if (string.IsNullOrWhiteSpace(code)) continue;
+            var value = code.Trim().ToUpperInvariant();
+            if (!value.StartsWith(prefix, StringComparison.Ordinal)) continue;
+            if (int.TryParse(value[prefix.Length..], out var n) && n > maxNum)
+                maxNum = n;
+        }
+
+        return $"{prefix}{(maxNum + 1):D3}";
+    }
+
+    // ─── HRM: Document Templates & Employee Documents ────────────────────────
+
+    public async Task<IActionResult> EmployeeDocumentTemplates()
+    {
+        var list = await _context.EmployeeDocumentTemplates
+            .OrderByDescending(t => t.IsActive)
+            .ThenBy(t => t.Name)
+            .ToListAsync();
+        return View(list);
+    }
+
+    public IActionResult AddEmployeeDocumentTemplate() => View(new EmployeeDocumentTemplate
+    {
+        DocumentType = "Custom",
+        IsActive = true,
+        Body = "Date: {{Date}}\n\nTo,\n{{EmployeeName}}\n{{Address}}\n\nSubject: {{Designation}}\n\nDear {{EmployeeName}},\n\n[Write letter body here]\n\nFor {{CompanyName}}\n{{SignatoryName}}\n{{SignatoryTitle}}"
+    });
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddEmployeeDocumentTemplate(EmployeeDocumentTemplate model)
+    {
+        ModelState.Remove(nameof(EmployeeDocumentTemplate.Documents));
+        if (!ModelState.IsValid) return View(model);
+
+        model.Name = model.Name.Trim();
+        model.DocumentType = NormalizeDocType(model.DocumentType);
+        model.Subject = string.IsNullOrWhiteSpace(model.Subject) ? null : model.Subject.Trim();
+        model.Body = model.Body.Trim();
+        model.IsSystem = false;
+        model.CreatedAt = DateTime.Now;
+        model.IsActive = true;
+
+        _context.EmployeeDocumentTemplates.Add(model);
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = $"Template \"{model.Name}\" saved.";
+        return RedirectToAction(nameof(EmployeeDocumentTemplates));
+    }
+
+    public async Task<IActionResult> EditEmployeeDocumentTemplate(int id)
+    {
+        var t = await _context.EmployeeDocumentTemplates.FindAsync(id);
+        return t == null ? NotFound() : View(t);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditEmployeeDocumentTemplate(int id, EmployeeDocumentTemplate model)
+    {
+        var t = await _context.EmployeeDocumentTemplates.FindAsync(id);
+        if (t == null) return NotFound();
+
+        ModelState.Remove(nameof(EmployeeDocumentTemplate.Documents));
+        if (!ModelState.IsValid) return View(model);
+
+        t.Name = model.Name.Trim();
+        t.DocumentType = NormalizeDocType(model.DocumentType);
+        t.Subject = string.IsNullOrWhiteSpace(model.Subject) ? null : model.Subject.Trim();
+        t.Body = model.Body.Trim();
+        t.IsActive = model.IsActive;
+        t.UpdatedAt = DateTime.Now;
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Template updated.";
+        return RedirectToAction(nameof(EmployeeDocumentTemplates));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteEmployeeDocumentTemplate(int id)
+    {
+        var t = await _context.EmployeeDocumentTemplates.FindAsync(id);
+        if (t == null) return NotFound();
+        if (t.IsSystem)
+        {
+            TempData["ErrorMessage"] = "System templates cannot be deleted. You can deactivate them instead.";
+            return RedirectToAction(nameof(EmployeeDocumentTemplates));
+        }
+
+        _context.EmployeeDocumentTemplates.Remove(t);
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Template deleted.";
+        return RedirectToAction(nameof(EmployeeDocumentTemplates));
+    }
+
+    public async Task<IActionResult> GenerateEmployeeDocument(int employeeId, int? templateId = null)
+    {
+        var employee = await _context.Employees.FindAsync(employeeId);
+        if (employee == null) return NotFound();
+
+        var templates = await _context.EmployeeDocumentTemplates
+            .Where(t => t.IsActive)
+            .OrderBy(t => t.DocumentType)
+            .ThenBy(t => t.Name)
+            .ToListAsync();
+
+        if (!templates.Any())
+        {
+            TempData["ErrorMessage"] = "No active document templates. Add a template under HRM → Document Templates first.";
+            return RedirectToAction(nameof(EmployeeDocumentTemplates));
+        }
+
+        var selected = templateId ?? templates.First().Id;
+        if (!templates.Any(t => t.Id == selected))
+            selected = templates.First().Id;
+
+        var vm = new GenerateEmployeeDocumentViewModel
+        {
+            EmployeeId = employeeId,
+            Employee = employee,
+            TemplateId = selected,
+            Templates = templates
+        };
+        await ApplyLastDocExtrasAsync(vm);
+        return View(vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GenerateEmployeeDocument(GenerateEmployeeDocumentViewModel model)
+    {
+        var employee = await _context.Employees.FindAsync(model.EmployeeId);
+        if (employee == null) return NotFound();
+
+        var template = await _context.EmployeeDocumentTemplates.FindAsync(model.TemplateId);
+        if (template == null || !template.IsActive)
+        {
+            TempData["ErrorMessage"] = "Selected template is not available.";
+            return RedirectToAction(nameof(GenerateEmployeeDocument), new { employeeId = model.EmployeeId });
+        }
+
+        await SaveLastDocExtrasAsync(model);
+
+        if (string.Equals(model.SubmitAction, "preview", StringComparison.OrdinalIgnoreCase))
+            return await PreviewEmployeeDocumentPdf(employee, template, model);
+
+        var (doc, pdf) = await CreateAndStoreEmployeeDocumentAsync(employee, template, model);
+        var alsoEmail = string.Equals(model.SubmitAction, "email", StringComparison.OrdinalIgnoreCase);
+
+        if (alsoEmail)
+        {
+            var company = await _companyProfile.GetAsync();
+            var ok = await SendEmployeeDocumentEmailAsync(employee, doc, pdf, company);
+            TempData["SuccessMessage"] = ok
+                ? $"\"{doc.Title}\" generated and emailed to {employee.Email}."
+                : $"\"{doc.Title}\" generated, but email failed. Check SMTP in Settings.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = $"\"{doc.Title}\" generated successfully.";
+        }
+
+        return RedirectToAction(nameof(EmployeeDetails), new { id = employee.Id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PreviewEmployeeDocument(GenerateEmployeeDocumentViewModel model)
+    {
+        model.SubmitAction = "preview";
+        return await GenerateEmployeeDocument(model);
+    }
+
+    public async Task<IActionResult> BulkGenerateDocuments(int? templateId = null)
+    {
+        var templates = await _context.EmployeeDocumentTemplates
+            .Where(t => t.IsActive)
+            .OrderBy(t => t.Name)
+            .ToListAsync();
+        if (!templates.Any())
+        {
+            TempData["ErrorMessage"] = "Add document templates first.";
+            return RedirectToAction(nameof(EmployeeDocumentTemplates));
+        }
+
+        var selected = templateId ?? templates.First().Id;
+        var vm = new BulkGenerateDocumentsViewModel
+        {
+            TemplateId = selected,
+            Templates = templates,
+            Employees = await _context.Employees
+                .Where(e => e.IsActive)
+                .OrderBy(e => e.FullName)
+                .ToListAsync()
+        };
+        await ApplyLastDocExtrasToBulkAsync(vm);
+        return View(vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BulkGenerateDocuments(BulkGenerateDocumentsViewModel model)
+    {
+        var template = await _context.EmployeeDocumentTemplates.FindAsync(model.TemplateId);
+        if (template == null || !template.IsActive)
+        {
+            TempData["ErrorMessage"] = "Template not found.";
+            return RedirectToAction(nameof(BulkGenerateDocuments));
+        }
+
+        var ids = model.SelectedEmployeeIds?.Distinct().ToArray() ?? Array.Empty<int>();
+        if (ids.Length == 0)
+        {
+            TempData["ErrorMessage"] = "Select at least one employee.";
+            return RedirectToAction(nameof(BulkGenerateDocuments), new { templateId = model.TemplateId });
+        }
+
+        var genVm = new GenerateEmployeeDocumentViewModel
+        {
+            TemplateId = model.TemplateId,
+            Amount = model.Amount,
+            ReportingTime = model.ReportingTime,
+            ProbationMonths = model.ProbationMonths,
+            WorkingHours = model.WorkingHours,
+            WorkingDays = model.WorkingDays,
+            NoticeDays = model.NoticeDays,
+            Reason = model.Reason,
+            LastWorkingDate = model.LastWorkingDate,
+            FromDate = model.FromDate,
+            ToDate = model.ToDate
+        };
+        await SaveLastDocExtrasAsync(genVm);
+
+        var employees = await _context.Employees.Where(e => ids.Contains(e.Id)).ToListAsync();
+        var company = await _companyProfile.GetAsync();
+        var created = 0;
+        var mailed = 0;
+
+        foreach (var employee in employees)
+        {
+            genVm.EmployeeId = employee.Id;
+            var (doc, pdf) = await CreateAndStoreEmployeeDocumentAsync(employee, template, genVm);
+            created++;
+            if (model.AlsoEmail && await SendEmployeeDocumentEmailAsync(employee, doc, pdf, company))
+                mailed++;
+        }
+
+        TempData["SuccessMessage"] = model.AlsoEmail
+            ? $"Generated {created} document(s); emailed {mailed}."
+            : $"Generated {created} document(s) successfully.";
+        return RedirectToAction(nameof(BulkGenerateDocuments), new { templateId = model.TemplateId });
+    }
+
+    public async Task<IActionResult> DownloadEmployeeDocument(int id)
+    {
+        var doc = await _context.EmployeeDocuments.FindAsync(id);
+        if (doc == null) return NotFound();
+
+        var full = ResolveEmployeeDocPath(doc.FilePath);
+        if (full == null || !System.IO.File.Exists(full))
+        {
+            TempData["ErrorMessage"] = "Document file not found on disk.";
+            return RedirectToAction(nameof(EmployeeDetails), new { id = doc.EmployeeId });
+        }
+
+        doc.DownloadedAt ??= DateTime.Now;
+        await _context.SaveChangesAsync();
+
+        var bytes = await System.IO.File.ReadAllBytesAsync(full);
+        var downloadName = SanitizeFileName(doc.Title) + ".pdf";
+        return File(bytes, doc.ContentType ?? "application/pdf", downloadName);
+    }
+
+    public async Task<IActionResult> WhatsAppEmployeeDocument(int id)
+    {
+        var doc = await _context.EmployeeDocuments
+            .Include(d => d.Employee)
+            .FirstOrDefaultAsync(d => d.Id == id);
+        if (doc?.Employee == null) return NotFound();
+
+        var downloadUrl = Url.Action(nameof(DownloadEmployeeDocument), "Admin", new { id = doc.Id }, Request.Scheme)
+                          ?? $"{Request.Scheme}://{Request.Host}/Admin/DownloadEmployeeDocument/{doc.Id}";
+        var phone = new string((doc.Employee.Mobile ?? "").Where(char.IsDigit).ToArray());
+        if (phone.Length == 10) phone = "91" + phone;
+        var text = Uri.EscapeDataString($"Hi {doc.Employee.FullName}, please find your document \"{doc.Title}\": {downloadUrl}");
+        var wa = string.IsNullOrWhiteSpace(phone)
+            ? $"https://wa.me/?text={text}"
+            : $"https://wa.me/{phone}?text={text}";
+        return Redirect(wa);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EmailEmployeeDocument(int id)
+    {
+        var doc = await _context.EmployeeDocuments
+            .Include(d => d.Employee)
+            .FirstOrDefaultAsync(d => d.Id == id);
+        if (doc?.Employee == null) return NotFound();
+
+        var full = ResolveEmployeeDocPath(doc.FilePath);
+        if (full == null || !System.IO.File.Exists(full))
+        {
+            TempData["ErrorMessage"] = "Document file not found on disk.";
+            return RedirectToAction(nameof(EmployeeDetails), new { id = doc.EmployeeId });
+        }
+
+        var bytes = await System.IO.File.ReadAllBytesAsync(full);
+        var company = await _companyProfile.GetAsync();
+        var ok = await SendEmployeeDocumentEmailAsync(doc.Employee, doc, bytes, company);
+        TempData[ok ? "SuccessMessage" : "ErrorMessage"] = ok
+            ? $"Document emailed to {doc.Employee.Email}."
+            : "Email could not be sent. Check SMTP settings in Admin → Settings.";
+
+        return RedirectToAction(nameof(EmployeeDetails), new { id = doc.EmployeeId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteEmployeeDocument(int id)
+    {
+        var doc = await _context.EmployeeDocuments.FindAsync(id);
+        if (doc == null) return NotFound();
+
+        var employeeId = doc.EmployeeId;
+        var full = ResolveEmployeeDocPath(doc.FilePath);
+        _context.EmployeeDocuments.Remove(doc);
+        await _context.SaveChangesAsync();
+
+        if (full != null && System.IO.File.Exists(full))
+        {
+            try { System.IO.File.Delete(full); } catch { /* ignore */ }
+        }
+
+        TempData["SuccessMessage"] = "Document deleted.";
+        return RedirectToAction(nameof(EmployeeDetails), new { id = employeeId });
+    }
+
+    private async Task<(EmployeeDocument doc, byte[] pdf)> CreateAndStoreEmployeeDocumentAsync(
+        Employee employee,
+        EmployeeDocumentTemplate template,
+        GenerateEmployeeDocumentViewModel model)
+    {
+        var company = await _companyProfile.GetAsync();
+        var extras = BuildDocumentExtras(model);
+        var rendered = RenderEmployeeDocumentBody(template.Body, employee, company, extras);
+        var title = string.IsNullOrWhiteSpace(model.CustomTitle)
+            ? $"{template.Name} — {employee.FullName}"
+            : model.CustomTitle.Trim();
+
+        var pdf = _employeeDocPdf.CreateDocumentPdf(employee, template, company, extras, rendered, template.Name);
+
+        var dir = Path.Combine(_env.WebRootPath, "uploads", "employee-docs", employee.Id.ToString());
+        Directory.CreateDirectory(dir);
+        var fileName = $"{SanitizeFileName(template.Name)}_{employee.EmployeeCode}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+        var fullPath = Path.Combine(dir, fileName);
+        await System.IO.File.WriteAllBytesAsync(fullPath, pdf);
+
+        var doc = new EmployeeDocument
+        {
+            EmployeeId = employee.Id,
+            TemplateId = template.Id,
+            Title = title,
+            DocumentType = template.DocumentType,
+            FilePath = $"/uploads/employee-docs/{employee.Id}/{fileName}",
+            ContentType = "application/pdf",
+            FileSize = pdf.Length,
+            GeneratedAt = DateTime.Now,
+            GeneratedBy = User.Identity?.Name ?? "Admin",
+            ExtraFieldsJson = System.Text.Json.JsonSerializer.Serialize(extras)
+        };
+
+        _context.EmployeeDocuments.Add(doc);
+        await _context.SaveChangesAsync();
+        return (doc, pdf);
+    }
+
+    private async Task<IActionResult> PreviewEmployeeDocumentPdf(
+        Employee employee,
+        EmployeeDocumentTemplate template,
+        GenerateEmployeeDocumentViewModel model)
+    {
+        var company = await _companyProfile.GetAsync();
+        var extras = BuildDocumentExtras(model);
+        var rendered = RenderEmployeeDocumentBody(template.Body, employee, company, extras);
+        var pdf = _employeeDocPdf.CreateDocumentPdf(employee, template, company, extras, rendered, template.Name);
+        Response.Headers["Content-Disposition"] = $"inline; filename=\"{SanitizeFileName(template.Name)}-preview.pdf\"";
+        return File(pdf, "application/pdf");
+    }
+
+    private async Task<bool> SendEmployeeDocumentEmailAsync(
+        Employee employee,
+        EmployeeDocument doc,
+        byte[] pdf,
+        CompanyProfile company)
+    {
+        var html = $@"
+<p>Dear {System.Net.WebUtility.HtmlEncode(employee.FullName)},</p>
+<p>Please find attached <strong>{System.Net.WebUtility.HtmlEncode(doc.Title)}</strong> from {System.Net.WebUtility.HtmlEncode(company.CompanyName)}.</p>
+<p>If you have any questions, reply to this email or contact us.</p>
+<p>Regards,<br/>{System.Net.WebUtility.HtmlEncode(company.CompanyName)}</p>";
+
+        var ok = await _emailService.SendEmailAsync(
+            employee.Email,
+            doc.Title,
+            html,
+            pdf,
+            SanitizeFileName(doc.Title) + ".pdf");
+
+        if (ok)
+        {
+            doc.SentAt = DateTime.Now;
+            doc.SentToEmail = employee.Email;
+            await _context.SaveChangesAsync();
+        }
+
+        return ok;
+    }
+
+    private const string HrmDocLastExtrasKey = "HrmDocLastExtras";
+
+    private async Task ApplyLastDocExtrasAsync(GenerateEmployeeDocumentViewModel vm)
+    {
+        var raw = await _context.AdminSettings.AsNoTracking()
+            .Where(s => s.Key == HrmDocLastExtrasKey)
+            .Select(s => s.Value)
+            .FirstOrDefaultAsync();
+        if (string.IsNullOrWhiteSpace(raw)) return;
+        try
+        {
+            var map = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(raw);
+            if (map == null) return;
+            if (map.TryGetValue("Amount", out var a)) vm.Amount = a;
+            if (map.TryGetValue("ReportingTime", out var rt)) vm.ReportingTime = rt;
+            if (map.TryGetValue("ProbationMonths", out var pm)) vm.ProbationMonths = pm;
+            if (map.TryGetValue("WorkingHours", out var wh)) vm.WorkingHours = wh;
+            if (map.TryGetValue("WorkingDays", out var wd)) vm.WorkingDays = wd;
+            if (map.TryGetValue("NoticeDays", out var nd)) vm.NoticeDays = nd;
+            if (map.TryGetValue("Reason", out var r)) vm.Reason = r;
+            if (map.TryGetValue("LastWorkingDate", out var lwd)) vm.LastWorkingDate = lwd;
+            if (map.TryGetValue("FromDate", out var fd)) vm.FromDate = fd;
+            if (map.TryGetValue("ToDate", out var td)) vm.ToDate = td;
+        }
+        catch { /* ignore */ }
+    }
+
+    private async Task ApplyLastDocExtrasToBulkAsync(BulkGenerateDocumentsViewModel vm)
+    {
+        var bridge = new GenerateEmployeeDocumentViewModel();
+        await ApplyLastDocExtrasAsync(bridge);
+        vm.Amount = bridge.Amount;
+        vm.ReportingTime = bridge.ReportingTime;
+        vm.ProbationMonths = bridge.ProbationMonths;
+        vm.WorkingHours = bridge.WorkingHours;
+        vm.WorkingDays = bridge.WorkingDays;
+        vm.NoticeDays = bridge.NoticeDays;
+        vm.Reason = bridge.Reason;
+        vm.LastWorkingDate = bridge.LastWorkingDate;
+        vm.FromDate = bridge.FromDate;
+        vm.ToDate = bridge.ToDate;
+    }
+
+    private async Task SaveLastDocExtrasAsync(GenerateEmployeeDocumentViewModel model)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(BuildDocumentExtras(model));
+        var setting = await _context.AdminSettings.FirstOrDefaultAsync(s => s.Key == HrmDocLastExtrasKey);
+        if (setting == null)
+            _context.AdminSettings.Add(new AdminSetting { Key = HrmDocLastExtrasKey, Value = json });
+        else
+            setting.Value = json;
+        await _context.SaveChangesAsync();
+    }
+
+    private string? ResolveEmployeeDocPath(string? publicPath)
+    {
+        if (string.IsNullOrWhiteSpace(publicPath)) return null;
+        var relative = publicPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+        if (!relative.StartsWith("uploads" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            return null;
+        return Path.GetFullPath(Path.Combine(_env.WebRootPath, relative));
+    }
+
+    private static string NormalizeDocType(string? type)
+    {
+        var t = (type ?? "Custom").Trim();
+        return t switch
+        {
+            "OfferLetter" or "Appointment" or "Experience" or "Relieving" or "Warning" or "Custom" => t,
+            _ => "Custom"
+        };
+    }
+
+    private static Dictionary<string, string> BuildDocumentExtras(GenerateEmployeeDocumentViewModel model) => new()
+    {
+        ["Amount"] = model.Amount?.Trim() ?? "",
+        ["ReportingTime"] = model.ReportingTime?.Trim() ?? "10:00 AM",
+        ["ProbationMonths"] = model.ProbationMonths?.Trim() ?? "3",
+        ["WorkingHours"] = model.WorkingHours?.Trim() ?? "10:00 AM to 7:00 PM",
+        ["WorkingDays"] = model.WorkingDays?.Trim() ?? "Monday to Saturday",
+        ["NoticeDays"] = model.NoticeDays?.Trim() ?? "15",
+        ["Reason"] = model.Reason?.Trim() ?? "",
+        ["LastWorkingDate"] = model.LastWorkingDate?.Trim() ?? "",
+        ["FromDate"] = model.FromDate?.Trim() ?? "",
+        ["ToDate"] = model.ToDate?.Trim() ?? ""
+    };
+
+    private static string RenderEmployeeDocumentBody(
+        string templateBody,
+        Employee employee,
+        CompanyProfile company,
+        IDictionary<string, string> extras)
+    {
+        string Get(string key) => extras.TryGetValue(key, out var v) ? v : "";
+
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["EmployeeName"] = employee.FullName,
+            ["EmployeeCode"] = employee.EmployeeCode,
+            ["Designation"] = employee.Designation,
+            ["Department"] = employee.Department,
+            ["Mobile"] = employee.Mobile,
+            ["Email"] = employee.Email,
+            ["Address"] = string.IsNullOrWhiteSpace(employee.Address) ? "—" : employee.Address,
+            ["JoiningDate"] = employee.DateOfJoining.ToString("dd/MM/yyyy"),
+            ["Date"] = DateTime.Today.ToString("dd/MM/yyyy"),
+            ["CompanyName"] = company.CompanyName,
+            ["CompanyAddress"] = company.Address,
+            ["CompanyPhone"] = company.ContactPhone,
+            ["CompanyEmail"] = company.ContactEmail,
+            ["CompanyWebsite"] = company.Website,
+            ["SignatoryName"] = string.IsNullOrWhiteSpace(company.SignatoryName) ? company.CompanyName : company.SignatoryName,
+            ["SignatoryTitle"] = string.IsNullOrWhiteSpace(company.SignatoryTitle) ? "Authorized Signatory" : company.SignatoryTitle,
+            ["Amount"] = Get("Amount"),
+            ["ReportingTime"] = Get("ReportingTime"),
+            ["ProbationMonths"] = Get("ProbationMonths"),
+            ["WorkingHours"] = Get("WorkingHours"),
+            ["WorkingDays"] = Get("WorkingDays"),
+            ["NoticeDays"] = Get("NoticeDays"),
+            ["Reason"] = Get("Reason"),
+            ["LastWorkingDate"] = string.IsNullOrWhiteSpace(Get("LastWorkingDate")) ? DateTime.Today.ToString("dd/MM/yyyy") : Get("LastWorkingDate"),
+            ["FromDate"] = string.IsNullOrWhiteSpace(Get("FromDate")) ? employee.DateOfJoining.ToString("dd/MM/yyyy") : Get("FromDate"),
+            ["ToDate"] = string.IsNullOrWhiteSpace(Get("ToDate")) ? DateTime.Today.ToString("dd/MM/yyyy") : Get("ToDate")
+        };
+
+        var result = templateBody;
+        foreach (var kv in map)
+            result = result.Replace("{{" + kv.Key + "}}", kv.Value ?? "", StringComparison.OrdinalIgnoreCase);
+        return result;
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var cleaned = new string(name.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray()).Trim();
+        return string.IsNullOrWhiteSpace(cleaned) ? "document" : cleaned;
     }
 
     [HttpGet]
@@ -2722,7 +3556,7 @@ public class AdminController : Controller
 
     // --- Settings & SMTP Management ---
 
-    public async Task<IActionResult> Settings()
+    public async Task<IActionResult> Settings(int? employeeId = null)
     {
         var settingsList = await _context.AdminSettings.ToListAsync();
         var settingsDict = settingsList.ToDictionary(s => s.Key, s => s.Value);
@@ -2739,7 +3573,86 @@ public class AdminController : Controller
         var adminUser = await _context.AdminUsers.FirstOrDefaultAsync();
         ViewBag.AdminUsername = adminUser?.Username ?? "admin";
 
+        var employees = await _context.Employees
+            .OrderByDescending(e => e.IsActive)
+            .ThenBy(e => e.FullName)
+            .ToListAsync();
+
+        var selectedId = employeeId
+            ?? (TempData["AccessEmployeeId"] != null && int.TryParse(TempData["AccessEmployeeId"]?.ToString(), out var tid) ? tid : (int?)null)
+            ?? employees.FirstOrDefault()?.Id;
+
+        var accessVm = new EmployeeAccessSettingsViewModel
+        {
+            Employees = employees,
+            SelectedEmployeeId = selectedId,
+            EmployeeLoginUrl = Url.Action("Login", "Employee", null, Request.Scheme) ?? "/Employee/Login"
+        };
+
+        if (selectedId.HasValue)
+        {
+            accessVm.SelectedEmployee = employees.FirstOrDefault(e => e.Id == selectedId.Value);
+            if (accessVm.SelectedEmployee != null)
+            {
+                accessVm.CanLogin = accessVm.SelectedEmployee.CanLogin;
+                accessVm.SelectedMenus = await _employeeAccess.GetMenuKeysAsync(selectedId.Value);
+            }
+        }
+
+        ViewBag.EmployeeAccess = accessVm;
         return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateEmployeeAccess(
+        int employeeId,
+        string? password,
+        string[]? menus,
+        bool canLogin = false)
+    {
+        TempData["SettingsTab"] = "employee-access";
+        TempData["AccessEmployeeId"] = employeeId.ToString();
+
+        var employee = await _context.Employees.FindAsync(employeeId);
+        if (employee == null)
+        {
+            TempData["ErrorMessage"] = "Employee not found.";
+            return RedirectToAction(nameof(Settings), new { employeeId });
+        }
+
+        employee.CanLogin = canLogin;
+        if (!string.IsNullOrWhiteSpace(password))
+        {
+            if (password.Trim().Length < 4)
+            {
+                TempData["ErrorMessage"] = "Password must be at least 4 characters.";
+                return RedirectToAction(nameof(Settings), new { employeeId });
+            }
+            employee.PasswordHash = password.Trim();
+        }
+
+        if (canLogin && string.IsNullOrWhiteSpace(employee.PasswordHash))
+        {
+            TempData["ErrorMessage"] = "Set a password before enabling employee login.";
+            employee.CanLogin = false;
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Settings), new { employeeId });
+        }
+
+        employee.UpdatedAt = DateTime.Now;
+        await _context.SaveChangesAsync();
+
+        var menuList = menus ?? Array.Empty<string>();
+        if (!canLogin)
+            await _employeeAccess.SetMenusAsync(employeeId, Array.Empty<string>());
+        else
+            await _employeeAccess.SetMenusAsync(employeeId, menuList.Length > 0 ? menuList : EmployeeMenuCatalog.DefaultKeys);
+
+        TempData["SuccessMessage"] = canLogin
+            ? $"Access saved for {employee.FullName}. They can sign in at /Employee/Login with their email."
+            : $"Login disabled for {employee.FullName}.";
+        return RedirectToAction(nameof(Settings), new { employeeId });
     }
 
     [HttpPost]

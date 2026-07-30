@@ -1,0 +1,49 @@
+@model SoftflipSolutions.Models.EmployeeDocumentTemplate
+@{
+    ViewData["Title"] = "Add Document Template";
+    Layout = "_AdminLayout";
+}
+
+<div class="lead-detail-toolbar">
+    <a asp-action="EmployeeDocumentTemplates" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<div class="glass-card p-4">
+    <div class="mb-4">
+        <h4 class="text-white mb-1">Add document template</h4>
+        <p class="text-muted small mb-0">PDFs use Softflip letterhead. Use placeholders like <code>{{EmployeeName}}</code>, <code>{{Designation}}</code>, <code>{{Amount}}</code>.</p>
+    </div>
+
+    <form asp-action="AddEmployeeDocumentTemplate" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label settings-label" asp-for="Name"></label>
+                <input asp-for="Name" class="form-control settings-input" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label" asp-for="DocumentType"></label>
+                <select asp-for="DocumentType" class="form-select settings-input">
+                    <option value="OfferLetter">Offer Letter</option>
+                    <option value="Appointment">Appointment</option>
+                    <option value="Experience">Experience</option>
+                    <option value="Relieving">Relieving</option>
+                    <option value="Warning">Warning</option>
+                    <option value="Custom">Custom</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <label class="form-label settings-label" asp-for="Subject"></label>
+                <input asp-for="Subject" class="form-control settings-input" placeholder="Optional subject line with placeholders" />
+            </div>
+            <div class="col-12">
+                <label class="form-label settings-label" asp-for="Body"></label>
+                @{ ViewData["PlaceholderTargetId"] = "Body"; }
+                <partial name="_PlaceholderChips" />
+                <textarea asp-for="Body" id="Body" class="form-control settings-input" rows="18" required></textarea>
+                <div class="form-text settings-hint">Click a chip above to insert a placeholder at the cursor.</div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-crm-primary"><i class="bi bi-check2-circle me-1"></i> Save template</button>
+    </form>
+</div>

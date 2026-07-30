@@ -26,10 +26,38 @@
             </button>
         </div>
         <div class="nav-menu">
+            @{
+                var currentAction = ViewContext.RouteData.Values["Action"]?.ToString();
+                var hrmActions = new[] { "Employees", "AddEmployee", "EditEmployee", "EmployeeDetails", "PunchAttendance", "EmployeeDocumentTemplates", "AddEmployeeDocumentTemplate", "EditEmployeeDocumentTemplate", "GenerateEmployeeDocument", "BulkGenerateDocuments" };
+                var hrmOpen = hrmActions.Contains(currentAction);
+            }
             <div class="nav-section-title">Main Menu</div>
-            <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")" asp-action="Index" asp-controller="Admin">
+            <a class="nav-link @(currentAction == "Index" ? "active" : "")" asp-action="Index" asp-controller="Admin">
                 <i class="bi bi-grid"></i> Dashboard
             </a>
+
+            <div class="nav-section-title">HRM</div>
+            <div class="nav-group @(hrmOpen ? "open" : "")" data-nav-group>
+                <button type="button" class="nav-link nav-group-toggle @(hrmOpen ? "active" : "")" data-nav-toggle aria-expanded="@(hrmOpen ? "true" : "false")">
+                    <i class="bi bi-person-badge"></i>
+                    <span>HRM</span>
+                    <i class="bi bi-chevron-down nav-group-caret"></i>
+                </button>
+                <div class="nav-submenu">
+                    <a class="nav-link nav-sublink @(new[] { "Employees", "AddEmployee", "EditEmployee", "EmployeeDetails" }.Contains(currentAction) ? "active" : "")" asp-action="Employees" asp-controller="Admin">
+                        <i class="bi bi-people"></i> Employee List
+                    </a>
+                    <a class="nav-link nav-sublink @(currentAction == "PunchAttendance" ? "active" : "")" asp-action="PunchAttendance" asp-controller="Admin">
+                        <i class="bi bi-fingerprint"></i> Punch Attendance
+                    </a>
+                    <a class="nav-link nav-sublink @(new[] { "EmployeeDocumentTemplates", "AddEmployeeDocumentTemplate", "EditEmployeeDocumentTemplate" }.Contains(currentAction) ? "active" : "")" asp-action="EmployeeDocumentTemplates" asp-controller="Admin">
+                        <i class="bi bi-file-earmark-text"></i> Document Templates
+                    </a>
+                    <a class="nav-link nav-sublink @(currentAction == "BulkGenerateDocuments" ? "active" : "")" asp-action="BulkGenerateDocuments" asp-controller="Admin">
+                        <i class="bi bi-files"></i> Bulk Documents
+                    </a>
+                </div>
+            </div>
 
             <div class="nav-section-title">CRM</div>
             <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Enquiries" ? "active" : "")" asp-action="Enquiries" asp-controller="Admin">
@@ -70,7 +98,6 @@
 
             @{
                 var reportActions = new[] { "SalesSummary", "PartnerPerformance", "CommissionTracker", "Activity", "Proposals", "Invoices", "FollowUps" };
-                var currentAction = ViewContext.RouteData.Values["Action"]?.ToString();
                 var reportsOpen = reportActions.Contains(currentAction);
             }
             <div class="nav-section-title">Reports</div>

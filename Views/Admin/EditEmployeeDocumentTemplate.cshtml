@@ -1,0 +1,57 @@
+@model SoftflipSolutions.Models.EmployeeDocumentTemplate
+@{
+    ViewData["Title"] = "Edit Document Template";
+    Layout = "_AdminLayout";
+}
+
+<div class="lead-detail-toolbar">
+    <a asp-action="EmployeeDocumentTemplates" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<div class="glass-card p-4" style="max-width:900px;">
+    <div class="mb-4">
+        <h4 class="text-white mb-1">Edit template</h4>
+        <p class="text-muted small mb-0">@Model.Name @(Model.IsSystem ? "(system template)" : "")</p>
+    </div>
+
+    <form asp-action="EditEmployeeDocumentTemplate" asp-route-id="@Model.Id" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label settings-label" asp-for="Name"></label>
+                <input asp-for="Name" class="form-control settings-input" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label" asp-for="DocumentType"></label>
+                <select asp-for="DocumentType" class="form-select settings-input">
+                    <option value="OfferLetter">Offer Letter</option>
+                    <option value="Appointment">Appointment</option>
+                    <option value="Experience">Experience</option>
+                    <option value="Relieving">Relieving</option>
+                    <option value="Warning">Warning</option>
+                    <option value="Custom">Custom</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <label class="form-label settings-label" asp-for="Subject"></label>
+                <input asp-for="Subject" class="form-control settings-input" />
+            </div>
+            <div class="col-12">
+                <label class="form-label settings-label" asp-for="Body"></label>
+                @{ ViewData["PlaceholderTargetId"] = "Body"; }
+                <partial name="_PlaceholderChips" />
+                <textarea asp-for="Body" id="Body" class="form-control settings-input" rows="18" required></textarea>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <div class="form-check form-switch mb-2">
+                    <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                    <label class="form-check-label settings-label" asp-for="IsActive">Active</label>
+                </div>
+            </div>
+        </div>
+        <div class="settings-panel-actions">
+            <a asp-action="EmployeeDocumentTemplates" class="btn btn-lead-back">Cancel</a>
+            <button type="submit" class="btn btn-crm-primary"><i class="bi bi-check2-circle me-1"></i> Save changes</button>
+        </div>
+    </form>
+</div>

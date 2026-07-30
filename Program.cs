@@ -18,6 +18,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IDealPdfService, DealPdfService>();
+builder.Services.AddScoped<IEmployeeDocumentPdfService, EmployeeDocumentPdfService>();
+builder.Services.AddScoped<IEmployeeAccessService, EmployeeAccessService>();
 builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
 builder.Services.AddScoped<IPartnerVisitingCardService, PartnerVisitingCardService>();
 builder.Services.AddSingleton<ICaptchaService, CaptchaService>();
@@ -38,6 +40,13 @@ builder.Services.AddAuthentication("AdminCookie")
         options.LoginPath = "/Partner/Login";
         options.LogoutPath = "/Partner/Logout";
         options.AccessDeniedPath = "/Partner/Login";
+    })
+    .AddCookie("EmployeeCookie", options =>
+    {
+        options.Cookie.Name = "EmployeeAuth";
+        options.LoginPath = "/Employee/Login";
+        options.LogoutPath = "/Employee/Logout";
+        options.AccessDeniedPath = "/Employee/Login";
     });
 
 var app = builder.Build();

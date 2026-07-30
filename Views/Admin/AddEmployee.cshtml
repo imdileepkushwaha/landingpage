@@ -1,0 +1,81 @@
+@model SoftflipSolutions.Models.Employee
+@{
+    ViewData["Title"] = "Add Employee";
+    Layout = "_AdminLayout";
+}
+
+<div class="lead-detail-toolbar">
+    <a asp-action="Employees" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<div class="glass-card p-4">
+    <div class="mb-4">
+        <h4 class="text-white mb-1">Add Employee</h4>
+        <p class="text-muted small mb-0">Create an employee record, then use Punch Attendance for daily check-in / check-out.</p>
+    </div>
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+    <form asp-action="AddEmployee" method="post">
+        @Html.AntiForgeryToken()
+        <div class="settings-section-label"><i class="bi bi-person-badge me-1"></i> Identity</div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label settings-label" asp-for="EmployeeCode"></label>
+                <input asp-for="EmployeeCode" class="form-control settings-input" readonly tabindex="-1" />
+                <div class="form-text settings-hint">Auto-generated</div>
+            </div>
+            <div class="col-md-8">
+                <label class="form-label settings-label" asp-for="FullName"></label>
+                <input asp-for="FullName" class="form-control settings-input" required />
+            </div>
+        </div>
+
+        <div class="settings-section-label"><i class="bi bi-briefcase me-1"></i> Role</div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label class="form-label settings-label" asp-for="Department"></label>
+                <input asp-for="Department" class="form-control settings-input" required placeholder="e.g. Engineering" list="deptList" />
+                <datalist id="deptList">
+                    <option value="Engineering"></option>
+                    <option value="Sales"></option>
+                    <option value="HR"></option>
+                    <option value="Finance"></option>
+                    <option value="Operations"></option>
+                    <option value="Support"></option>
+                </datalist>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label" asp-for="Designation"></label>
+                <input asp-for="Designation" class="form-control settings-input" required placeholder="e.g. Software Developer" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label" asp-for="DateOfJoining"></label>
+                <input asp-for="DateOfJoining" type="date" class="form-control settings-input" required />
+            </div>
+        </div>
+
+        <div class="settings-section-label"><i class="bi bi-telephone me-1"></i> Contact</div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label class="form-label settings-label" asp-for="Mobile"></label>
+                <input asp-for="Mobile" class="form-control settings-input" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label" asp-for="Email"></label>
+                <input asp-for="Email" type="email" class="form-control settings-input" required />
+            </div>
+            <div class="col-12">
+                <label class="form-label settings-label" asp-for="Address"></label>
+                <textarea asp-for="Address" class="form-control settings-input" rows="2" placeholder="Optional"></textarea>
+            </div>
+        </div>
+
+        <div class="settings-panel-actions">
+            <a asp-action="Employees" class="btn btn-lead-back">Cancel</a>
+            <button type="submit" class="btn btn-crm-primary">
+                <i class="bi bi-check2-circle me-1"></i> Create Employee
+            </button>
+        </div>
+    </form>
+</div>

@@ -5812,5 +5812,126 @@ body.sidebar-collapsed .nav-group-caret { display: none; }
     .sales-hero-value { font-size: 1.45rem; }
 }
 
+/* HRM — Quick create on employee details */
+.hrm-qc-body {
+    padding: 14px 16px 16px !important;
+}
+
+.hrm-qc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+@media (min-width: 768px) {
+    .hrm-qc-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1200px) {
+    .hrm-qc-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1400px) {
+    .hrm-qc-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
+
+.hrm-qc-tile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    text-decoration: none;
+    color: inherit;
+    background: #f8fafc;
+    border: 1px solid #e8eaef;
+    border-radius: 12px;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.hrm-qc-tile:hover {
+    background: #fff;
+    border-color: #00aeef;
+    color: inherit;
+    transform: translateY(-1px);
+}
+
+.hrm-qc-tile:hover .hrm-qc-go {
+    background: rgba(0, 174, 239, 0.12);
+    color: #0096ce;
+}
+
+.hrm-qc-ico {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.15rem;
+}
+
+.hrm-qc-ico.offer { background: rgba(34, 197, 94, 0.12); color: #16a34a; }
+.hrm-qc-ico.appointment { background: rgba(0, 174, 239, 0.12); color: #0096ce; }
+.hrm-qc-ico.experience { background: rgba(59, 130, 246, 0.12); color: #2563eb; }
+.hrm-qc-ico.relieving { background: rgba(245, 158, 11, 0.14); color: #d97706; }
+.hrm-qc-ico.warning { background: rgba(239, 68, 68, 0.12); color: #dc2626; }
+.hrm-qc-ico.custom { background: rgba(107, 114, 128, 0.12); color: #4b5563; }
+
+.hrm-qc-copy {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.hrm-qc-copy strong {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #152238;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hrm-qc-copy small {
+    font-size: 0.72rem;
+    color: #6b7280;
+    line-height: 1.2;
+}
+
+.hrm-qc-go {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #9ca3af;
+    background: #eef0f4;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.hrm-qc-empty {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 8px;
+    color: #6b7280;
+}
+
+.hrm-qc-empty i {
+    font-size: 1.35rem;
+    color: #00aeef;
+}
 
 

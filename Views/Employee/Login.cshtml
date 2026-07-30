@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Employee Login";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Employee Login - Softflip Solutions</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/partner-panel.css" asp-append-version="true" />
+</head>
+<body class="auth-body">
+    <div class="auth-shell">
+        <aside class="auth-brand partner">
+            <div class="auth-brand-top">
+                <img src="~/admin/img/softflip-logo.png" alt="Softflip" class="auth-logo" />
+                <span>Employee Panel</span>
+            </div>
+            <div class="auth-brand-body">
+                <p class="auth-eyebrow">Staff portal</p>
+                <h1>Your Softflip workplace hub</h1>
+                <p class="auth-lead">Punch attendance, download HR documents, and manage your profile — menus controlled by admin.</p>
+                <ul class="auth-points">
+                    <li><i class="bi bi-check2-circle"></i> Punch In / Out</li>
+                    <li><i class="bi bi-check2-circle"></i> Offer letters &amp; documents</li>
+                    <li><i class="bi bi-check2-circle"></i> Menu access set in Settings</li>
+                </ul>
+            </div>
+            <div class="auth-brand-foot">© @DateTime.Now.Year Softflip Solutions</div>
+        </aside>
+
+        <main class="auth-panel">
+            <div class="auth-card">
+                <div class="auth-card-ico partner"><i class="bi bi-person-badge"></i></div>
+                <h2>Employee sign in</h2>
+                <p class="auth-sub">Use your work email and password from Softflip admin</p>
+
+                @if (ViewBag.Error != null)
+                {
+                    <div class="auth-alert">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span>@ViewBag.Error</span>
+                    </div>
+                }
+
+                <form asp-action="Login" method="post" class="auth-form">
+                    @Html.AntiForgeryToken()
+                    <div class="auth-field">
+                        <label>Email</label>
+                        <div class="auth-input">
+                            <i class="bi bi-envelope"></i>
+                            <input type="email" name="email" placeholder="you@softflipsolutions.com" required autocomplete="username" />
+                        </div>
+                    </div>
+                    <div class="auth-field">
+                        <label>Password</label>
+                        <div class="auth-input">
+                            <i class="bi bi-lock"></i>
+                            <input type="password" name="password" id="empPassword" placeholder="Enter password" required autocomplete="current-password" />
+                            <button type="button" class="auth-eye" data-pass-toggle data-target="empPassword" aria-label="Show password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="auth-submit partner">
+                        Sign in <i class="bi bi-arrow-right"></i>
+                    </button>
+                </form>
+
+                <a href="/" class="auth-back"><i class="bi bi-arrow-left"></i> Back to website</a>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.querySelectorAll('[data-pass-toggle]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-target');
+                const input = id && document.getElementById(id);
+                const icon = btn.querySelector('i');
+                if (!input || !icon) return;
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+            });
+        });
+    </script>
+</body>
+</html>

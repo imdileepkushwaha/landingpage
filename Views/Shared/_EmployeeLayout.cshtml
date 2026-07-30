@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Softflip Employee</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/partner-panel.css" asp-append-version="true" />
+</head>
+@{
+    var employee = ViewBag.Employee as SoftflipSolutions.Models.Employee;
+    var allowed = ViewBag.AllowedMenus as HashSet<string> ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    var action = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
+    var name = employee?.FullName ?? User.Identity?.Name ?? "Employee";
+    var code = employee?.EmployeeCode ?? User.FindFirst("EmployeeCode")?.Value ?? "";
+    var avatarUrl = $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(name)}&background=cceef9&color=0077a3&bold=true&size=72";
+
+    bool Can(string key) => allowed.Contains(key);
+}
+<body class="partner-body">
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+    <aside class="sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <a class="header-brand" asp-action="Index" asp-controller="Employee">
+                <div class="logo-icon-wrapper">
+                    <img src="~/admin/img/softflip-logo.png" alt="Softflip" />
+                </div>
+                <div class="logo-text-admin">Soft<span>flip</span></div>
+            </a>
+            <button type="button" class="header-toggle d-none d-lg-inline-flex" onclick="toggleSidebar()" aria-label="Collapse sidebar">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        </div>
+        <div class="nav-menu">
+            @{
+                string? lastSection = null;
+                foreach (var item in SoftflipSolutions.Services.EmployeeMenuCatalog.All)
+                {
+                    if (!Can(item.Key)) continue;
+                    if (lastSection != item.Section)
+                    {
+                        lastSection = item.Section;
+                        <div class="nav-section-title">@item.Section</div>
+                    }
+                    var isActive = SoftflipSolutions.Services.EmployeeMenuCatalog.KeyForAction(action) == item.Key;
+                    <a class="nav-link @(isActive ? "active" : "")" asp-action="@item.Action" asp-controller="Employee">
+                        <i class="bi @item.Icon"></i> @item.Label
+                    </a>
+                }
+            }
+        </div>
+        <div class="sidebar-footer">
+            <a asp-action="Logout" asp-controller="Employee" class="sidebar-logout" title="Sign out">
+                <span class="sidebar-logout-ico"><i class="bi bi-box-arrow-right"></i></span>
+                <span class="sidebar-logout-text">
+                    <strong>Sign out</strong>
+                    <small>End employee session</small>
+                </span>
+            </a>
+        </div>
+    </aside>
+
+    <div class="main-content">
+        <header class="top-header">
+            <button type="button" class="header-toggle mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="header-search">
+                <span class="text-muted small px-2">@code · Employee Panel</span>
+            </div>
+            <div class="header-actions">
+                <div class="header-dropdown user-profile" data-panel="account">
+                    <button type="button" class="user-avatar-btn header-menu-trigger" aria-expanded="false">
+                        <span class="user-avatar-wrap">
+                            <img src="@avatarUrl" alt="@name">
+                            <span class="status-dot"></span>
+                        </span>
+                    </button>
+                    <div class="header-panel user-menu-panel" hidden>
+                        <div class="user-menu-head">
+                            <img src="@avatarUrl" alt="">
+                            <div>
+                                <strong>@name</strong>
+                                <small>@(employee?.Designation ?? "Employee")</small>
+                            </div>
+                        </div>
+                        <div class="user-menu-foot">
+                            <a class="user-menu-item danger" asp-action="Logout" asp-controller="Employee">
+                                <i class="bi bi-box-arrow-right"></i> Sign out
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content-body">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-collapsed');
+            document.getElementById('adminSidebar').classList.toggle('show');
+            document.getElementById('sidebarBackdrop').classList.toggle('show');
+        }
+        (function () {
+            const closeAll = () => {
+                document.querySelectorAll('.header-panel').forEach(p => { p.hidden = true; });
+            };
+            document.querySelectorAll('.header-dropdown').forEach(drop => {
+                const btn = drop.querySelector('.header-menu-trigger');
+                const panel = drop.querySelector('.header-panel');
+                if (!btn || !panel) return;
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const open = panel.hidden;
+                    closeAll();
+                    if (open) panel.hidden = false;
+                });
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.header-dropdown')) closeAll();
+            });
+        })();
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

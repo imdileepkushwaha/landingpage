@@ -1,0 +1,127 @@
+@model SoftflipSolutions.ViewModels.BulkGenerateDocumentsViewModel
+@using SoftflipSolutions.Services
+@{
+    ViewData["Title"] = "Bulk Generate Documents";
+    Layout = "_AdminLayout";
+    var selected = Model.Templates.FirstOrDefault(t => t.Id == Model.TemplateId);
+    var docType = selected?.DocumentType ?? "Custom";
+}
+
+<div class="lead-detail-toolbar">
+    <a asp-action="EmployeeDocumentTemplates" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> Templates</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="glass-card p-4 mb-4">
+    <h4 class="text-white mb-1">Bulk generate</h4>
+    <p class="text-muted small mb-0">Create the same letter for multiple employees in one go.</p>
+</div>
+
+<form asp-action="BulkGenerateDocuments" method="post">
+    @Html.AntiForgeryToken()
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="glass-card p-4 h-100">
+                <label class="form-label settings-label">Template</label>
+                <select name="TemplateId" class="form-select settings-input mb-3" onchange="location.href='@Url.Action("BulkGenerateDocuments")?templateId='+this.value">
+                    @foreach (var t in Model.Templates)
+                    {
+                        if (t.Id == Model.TemplateId)
+                        {
+                            <option value="@t.Id" selected>@t.Name (@t.DocumentType)</option>
+                        }
+                        else
+                        {
+                            <option value="@t.Id">@t.Name (@t.DocumentType)</option>
+                        }
+                    }
+                </select>
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label settings-label mb-0">Employees</label>
+                    <button type="button" class="btn btn-sm btn-outline-info" id="btnSelectAll">Select all</button>
+                </div>
+                <div style="max-height:360px;overflow:auto;" class="border rounded p-2" style="border-color:rgba(255,255,255,.08)!important;">
+                    @foreach (var e in Model.Employees)
+                    {
+                        <div class="form-check mb-2">
+                            <input class="form-check-input emp-check" type="checkbox" name="SelectedEmployeeIds" value="@e.Id" id="emp_@e.Id" />
+                            <label class="form-check-label" for="emp_@e.Id">@e.DisplayLabel <span class="text-muted small">· @e.Department</span></label>
+                        </div>
+                    }
+                    @if (!Model.Employees.Any())
+                    {
+                        <div class="text-muted small p-2">No active employees.</div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="glass-card p-4">
+                @if (HrmDocumentFieldHelper.ShowOfferFields(docType))
+                {
+                    <div class="settings-section-label">Shared offer fields</div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6"><label class="form-label settings-label">Amount (₹)</label><input asp-for="Amount" class="form-control settings-input" /></div>
+                        <div class="col-md-6"><label class="form-label settings-label">Reporting time</label><input asp-for="ReportingTime" class="form-control settings-input" /></div>
+                        <div class="col-md-4"><label class="form-label settings-label">Probation</label><input asp-for="ProbationMonths" class="form-control settings-input" /></div>
+                        <div class="col-md-4"><label class="form-label settings-label">Hours</label><input asp-for="WorkingHours" class="form-control settings-input" /></div>
+                        <div class="col-md-4"><label class="form-label settings-label">Days</label><input asp-for="WorkingDays" class="form-control settings-input" /></div>
+                        <div class="col-md-4"><label class="form-label settings-label">Notice days</label><input asp-for="NoticeDays" class="form-control settings-input" /></div>
+                    </div>
+                }
+                @if (HrmDocumentFieldHelper.ShowRelievingFields(docType))
+                {
+                    <div class="settings-section-label">Dates</div>
+                    <div class="row g-3 mb-3">
+                        @if (docType == "Experience")
+                        {
+                            <div class="col-md-6"><label class="form-label settings-label">From</label><input asp-for="FromDate" class="form-control settings-input" /></div>
+                            <div class="col-md-6"><label class="form-label settings-label">To</label><input asp-for="ToDate" class="form-control settings-input" /></div>
+                        }
+                        @if (docType == "Relieving")
+                        {
+                            <div class="col-md-6"><label class="form-label settings-label">Last working date</label><input asp-for="LastWorkingDate" class="form-control settings-input" /></div>
+                        }
+                    </div>
+                }
+                @if (HrmDocumentFieldHelper.ShowWarningFields(docType))
+                {
+                    <div class="mb-3"><label class="form-label settings-label">Reason</label><textarea asp-for="Reason" class="form-control settings-input" rows="3"></textarea></div>
+                }
+
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input" type="checkbox" asp-for="AlsoEmail" />
+                    <label class="form-check-label" asp-for="AlsoEmail">Also email each employee after generate</label>
+                </div>
+
+                <button type="submit" class="btn btn-crm-primary" onclick="return document.querySelectorAll('.emp-check:checked').length > 0 || (alert('Select at least one employee'), false);">
+                    <i class="bi bi-files me-1"></i> Generate for selected
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+    document.getElementById('btnSelectAll')?.addEventListener('click', () => {
+        document.querySelectorAll('.emp-check').forEach(cb => cb.checked = true);
+    });
+</script>
+}

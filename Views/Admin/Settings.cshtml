@@ -3,6 +3,8 @@
     Layout = "_AdminLayout";
     var company = ViewBag.Company as SoftflipSolutions.Models.CompanyProfile ?? new SoftflipSolutions.Models.CompanyProfile();
     var activeTab = (ViewBag.ActiveSettingsTab as string) ?? "company";
+    var access = ViewBag.EmployeeAccess as SoftflipSolutions.ViewModels.EmployeeAccessSettingsViewModel
+        ?? new SoftflipSolutions.ViewModels.EmployeeAccessSettingsViewModel();
 }
 
 @if (TempData["SuccessMessage"] != null)
@@ -60,6 +62,14 @@
                     <span class="settings-nav-text">
                         <strong>Email (SMTP)</strong>
                         <small>Outgoing mail</small>
+                    </span>
+                    <i class="bi bi-chevron-right settings-nav-arrow"></i>
+                </button>
+                <button class="nav-link @(activeTab == "employee-access" ? "active" : "")" data-bs-toggle="pill" data-bs-target="#tab-employee-access" type="button">
+                    <span class="settings-nav-ico contacts"><i class="bi bi-person-badge"></i></span>
+                    <span class="settings-nav-text">
+                        <strong>Employee access</strong>
+                        <small>Login &amp; menus</small>
                     </span>
                     <i class="bi bi-chevron-right settings-nav-arrow"></i>
                 </button>
@@ -297,6 +307,106 @@
                             <button type="submit" class="btn btn-crm-primary"><i class="bi bi-save2 me-1"></i> Save SMTP</button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <div class="tab-pane fade @(activeTab == "employee-access" ? "show active" : "")" id="tab-employee-access">
+                <div class="glass-card p-4">
+                    <h4 class="mb-1"><i class="bi bi-person-badge text-info me-2"></i> Employee access &amp; menus</h4>
+                    <p class="text-muted mb-4">
+                        Enable panel login and choose which menus each employee can see.
+                        Login URL: <a href="@access.EmployeeLoginUrl" target="_blank" rel="noopener">@access.EmployeeLoginUrl</a>
+                    </p>
+
+                    @if (!access.Employees.Any())
+                    {
+                        <div class="text-muted py-4 text-center">
+                            <i class="bi bi-people fs-1 d-block mb-2"></i>
+                            No employees yet. <a asp-action="AddEmployee">Add an employee</a> first.
+                        </div>
+                    }
+                    else
+                    {
+                        <form method="get" asp-action="Settings" class="mb-4">
+                            <input type="hidden" name="employeeId" id="settingsEmpPicker" value="@access.SelectedEmployeeId" />
+                            <label class="form-label settings-label">Select employee</label>
+                            <select class="form-select settings-input" onchange="location.href='@Url.Action("Settings")?employeeId='+this.value+'#tab-employee-access'">
+                                @foreach (var e in access.Employees)
+                                {
+                                    if (e.Id == access.SelectedEmployeeId)
+                                    {
+                                        <option value="@e.Id" selected>@e.DisplayLabel @(e.CanLogin ? "· Login ON" : "") @(e.IsActive ? "" : "· Inactive")</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@e.Id">@e.DisplayLabel @(e.CanLogin ? "· Login ON" : "") @(e.IsActive ? "" : "· Inactive")</option>
+                                    }
+                                }
+                            </select>
+                        </form>
+
+                        @if (access.SelectedEmployee != null)
+                        {
+                            var emp = access.SelectedEmployee;
+                            <form asp-action="UpdateEmployeeAccess" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="employeeId" value="@emp.Id" />
+
+                                <div class="settings-user-chip mb-4">
+                                    <span class="settings-user-avatar">@(emp.FullName.Substring(0, 1).ToUpper())</span>
+                                    <div>
+                                        <strong>@emp.FullName</strong>
+                                        <small>@emp.Email · @emp.Designation</small>
+                                    </div>
+                                </div>
+
+                                <div class="settings-ssl-card mb-4">
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="canLogin" name="canLogin" value="true" @(access.CanLogin ? "checked" : "")>
+                                        <label class="form-check-label" for="canLogin">
+                                            <strong>Enable employee panel login</strong>
+                                            <span>Allow this employee to sign in at /Employee/Login</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4" style="max-width:360px;">
+                                    <label class="form-label settings-label">Panel password @(string.IsNullOrEmpty(emp.PasswordHash) ? "(required to enable)" : "(leave blank to keep)")</label>
+                                    <div class="settings-input-wrap password">
+                                        <i class="bi bi-key settings-input-ico"></i>
+                                        <input type="password" name="password" class="form-control settings-input has-ico has-toggle" minlength="4" autocomplete="new-password" placeholder="Set / reset password" />
+                                        <button type="button" class="settings-pass-toggle" data-pass-toggle aria-label="Show password">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="settings-section-label"><i class="bi bi-list-check me-1"></i> Menus visible in employee panel</div>
+                                <div class="row g-3 mb-4">
+                                    @foreach (var menu in access.MenuCatalog)
+                                    {
+                                        var checkedAttr = access.SelectedMenus.Contains(menu.Key) || (access.CanLogin && !access.SelectedMenus.Any() && SoftflipSolutions.Services.EmployeeMenuCatalog.DefaultKeys.Contains(menu.Key));
+                                        <div class="col-md-6">
+                                            <div class="settings-ssl-card h-100">
+                                                <div class="form-check mb-0">
+                                                    <input class="form-check-input" type="checkbox" name="menus" value="@menu.Key" id="menu_@menu.Key"
+                                                           @(checkedAttr ? "checked" : "")>
+                                                    <label class="form-check-label" for="menu_@menu.Key">
+                                                        <strong><i class="bi @menu.Icon me-1"></i> @menu.Label</strong>
+                                                        <span>@menu.Section · @(menu.Description ?? menu.Label)</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="settings-panel-actions">
+                                    <button type="submit" class="btn btn-crm-primary"><i class="bi bi-save2 me-1"></i> Save employee access</button>
+                                </div>
+                            </form>
+                        }
+                    }
                 </div>
             </div>
 

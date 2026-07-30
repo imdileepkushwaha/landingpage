@@ -48,7 +48,8 @@ public class DealPdfService : IDealPdfService
             {
                 page.Size(PageSizes.A4);
                 page.MarginHorizontal(40);
-                page.MarginVertical(28);
+                page.MarginTop(28);
+                page.MarginBottom(SoftflipLetterheadFooter.RequiredBottomMargin);
                 page.DefaultTextStyle(x => x.FontSize(10.5f).FontColor(Colors.Grey.Darken3).LineHeight(1.45f));
 
                 page.Header().Element(c => ComposeBrandedHeader(c, company, "PROPOSAL", accent));
@@ -122,7 +123,8 @@ public class DealPdfService : IDealPdfService
                 {
                     page.Size(PageSizes.A4);
                     page.MarginHorizontal(34);
-                    page.MarginVertical(28);
+                    page.MarginTop(28);
+                    page.MarginBottom(SoftflipLetterheadFooter.RequiredBottomMargin);
                     page.DefaultTextStyle(x => x.FontSize(10).FontColor(Colors.Grey.Darken3).LineHeight(1.35f));
 
                     page.Header().Element(c => ComposeBrandedHeader(c, company, "PROPOSAL", accent));
@@ -142,7 +144,8 @@ public class DealPdfService : IDealPdfService
             {
                 page.Size(PageSizes.A4);
                 page.MarginHorizontal(34);
-                page.MarginVertical(28);
+                page.MarginTop(28);
+                page.MarginBottom(SoftflipLetterheadFooter.RequiredBottomMargin);
                 page.DefaultTextStyle(x => x.FontSize(10).FontColor(Colors.Grey.Darken3).LineHeight(1.35f));
 
                 page.Header().Element(c => ComposeBrandedHeader(c, company, "PROPOSAL", accent));
@@ -306,7 +309,9 @@ public class DealPdfService : IDealPdfService
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
-                page.Margin(36);
+                page.MarginHorizontal(36);
+                page.MarginTop(36);
+                page.MarginBottom(SoftflipLetterheadFooter.RequiredBottomMargin);
                 page.DefaultTextStyle(x => x.FontSize(10).FontColor(Colors.Grey.Darken3));
 
                 page.Header().Element(c => ComposeBrandedHeader(c, company, "INVOICE", accent));
@@ -484,15 +489,9 @@ public class DealPdfService : IDealPdfService
         });
     }
 
-    private static void ComposeFooter(IContainer container, CompanyProfile company, string rightText)
+    private void ComposeFooter(IContainer container, CompanyProfile company, string rightText)
     {
-        container.Column(col =>
-        {
-            col.Item().Height(1.5f).Background(Color.FromHex("00AEEF"));
-            col.Item().PaddingTop(8).AlignCenter().Text(
-                    string.IsNullOrWhiteSpace(company.Address) ? "" : company.Address)
-                .FontSize(8).FontColor(Colors.Grey.Darken1).AlignCenter();
-        });
+        SoftflipLetterheadFooter.Compose(container, company);
     }
 
     private static List<ProposalModuleSelection> ParseModules(string? json)

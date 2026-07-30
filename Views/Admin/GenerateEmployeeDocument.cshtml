@@ -1,0 +1,159 @@
+@model SoftflipSolutions.ViewModels.GenerateEmployeeDocumentViewModel
+@using SoftflipSolutions.Services
+@{
+    ViewData["Title"] = "Generate Document";
+    Layout = "_AdminLayout";
+    var emp = Model.Employee!;
+    var selected = Model.Templates.FirstOrDefault(t => t.Id == Model.TemplateId);
+    var docType = selected?.DocumentType ?? "Custom";
+}
+
+<div class="lead-detail-toolbar">
+    <a asp-action="EmployeeDetails" asp-route-id="@Model.EmployeeId" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> Back to employee</a>
+    <a asp-action="BulkGenerateDocuments" class="btn cp-link-btn"><i class="bi bi-people"></i> Bulk generate</a>
+</div>
+
+<div class="mb-4">
+    <h4 class="text-white mb-1">Create document</h4>
+    <p class="text-muted small mb-0">
+        For <strong class="text-white">@emp.FullName</strong> (@emp.EmployeeCode) · Softflip letterhead PDF
+    </p>
+</div>
+
+<div class="row g-3 mb-4">
+    @foreach (var t in Model.Templates)
+    {
+        var active = t.Id == Model.TemplateId;
+        <div class="col-6 col-md-4 col-xl-3">
+            <a asp-action="GenerateEmployeeDocument"
+               asp-route-employeeId="@Model.EmployeeId"
+               asp-route-templateId="@t.Id"
+               class="glass-card p-3 h-100 d-block text-decoration-none @(active ? "border border-info" : "")"
+               style="@(active ? "box-shadow:0 0 0 1px rgba(0,174,239,.45);" : "")">
+                <div class="fs-3 mb-2 @HrmDocumentFieldHelper.ColorClassForType(t.DocumentType)">
+                    <i class="bi @HrmDocumentFieldHelper.IconForType(t.DocumentType)"></i>
+                </div>
+                <div class="fw-semibold text-white">@t.Name</div>
+                <div class="small text-muted">@t.DocumentType</div>
+            </a>
+        </div>
+    }
+</div>
+
+@if (selected != null)
+{
+    <form asp-action="GenerateEmployeeDocument" method="post" id="genDocForm" target="_self">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="EmployeeId" />
+        <input type="hidden" asp-for="TemplateId" />
+        <input type="hidden" name="SubmitAction" id="submitAction" value="save" />
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="glass-card p-4">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                        <div>
+                            <h5 class="mb-1"><i class="bi @HrmDocumentFieldHelper.IconForType(docType) me-2"></i>@selected.Name</h5>
+                            <p class="small text-muted mb-0">Only fields needed for this letter type are shown. Last used values are remembered.</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label settings-label">Document title (optional)</label>
+                        <input asp-for="CustomTitle" class="form-control settings-input" placeholder="@selected.Name — @emp.FullName" />
+                    </div>
+
+                    @if (HrmDocumentFieldHelper.ShowOfferFields(docType))
+                    {
+                        <div class="settings-section-label"><i class="bi bi-cash-coin me-1"></i> Offer / appointment fields</div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">Stipend / Amount (₹)</label>
+                                <input asp-for="Amount" class="form-control settings-input" placeholder="e.g. 15000" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label settings-label">Reporting time</label>
+                                <input asp-for="ReportingTime" class="form-control settings-input" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label settings-label">Probation (months)</label>
+                                <input asp-for="ProbationMonths" class="form-control settings-input" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label settings-label">Working hours</label>
+                                <input asp-for="WorkingHours" class="form-control settings-input" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label settings-label">Working days</label>
+                                <input asp-for="WorkingDays" class="form-control settings-input" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label settings-label">Notice days</label>
+                                <input asp-for="NoticeDays" class="form-control settings-input" />
+                            </div>
+                        </div>
+                    }
+
+                    @if (HrmDocumentFieldHelper.ShowRelievingFields(docType))
+                    {
+                        <div class="settings-section-label"><i class="bi bi-calendar-range me-1"></i> Employment period</div>
+                        <div class="row g-3 mb-3">
+                            @if (docType == "Experience")
+                            {
+                                <div class="col-md-6">
+                                    <label class="form-label settings-label">From date</label>
+                                    <input asp-for="FromDate" class="form-control settings-input" placeholder="dd/MM/yyyy" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label settings-label">To date</label>
+                                    <input asp-for="ToDate" class="form-control settings-input" placeholder="dd/MM/yyyy" />
+                                </div>
+                            }
+                            @if (docType == "Relieving")
+                            {
+                                <div class="col-md-6">
+                                    <label class="form-label settings-label">Last working date</label>
+                                    <input asp-for="LastWorkingDate" class="form-control settings-input" placeholder="dd/MM/yyyy" />
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (HrmDocumentFieldHelper.ShowWarningFields(docType))
+                    {
+                        <div class="settings-section-label"><i class="bi bi-exclamation-triangle me-1"></i> Warning details</div>
+                        <div class="mb-3">
+                            <label class="form-label settings-label">Reason</label>
+                            <textarea asp-for="Reason" class="form-control settings-input" rows="4" placeholder="Describe the issue clearly…"></textarea>
+                        </div>
+                    }
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-outline-info" onclick="document.getElementById('submitAction').value='preview'; document.getElementById('genDocForm').target='_blank';">
+                            <i class="bi bi-eye me-1"></i> Preview PDF
+                        </button>
+                        <button type="submit" class="btn btn-crm-primary" onclick="document.getElementById('submitAction').value='save'; document.getElementById('genDocForm').target='_self';">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> Generate &amp; save
+                        </button>
+                        <button type="submit" class="btn btn-info" onclick="document.getElementById('submitAction').value='email'; document.getElementById('genDocForm').target='_self';">
+                            <i class="bi bi-envelope me-1"></i> Generate &amp; email
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="glass-card p-4">
+                    <h6 class="mb-3">Auto-filled from employee</h6>
+                    <dl class="row small mb-0">
+                        <dt class="col-5 text-muted">Name</dt><dd class="col-7">@emp.FullName</dd>
+                        <dt class="col-5 text-muted">Code</dt><dd class="col-7">@emp.EmployeeCode</dd>
+                        <dt class="col-5 text-muted">Role</dt><dd class="col-7">@emp.Designation</dd>
+                        <dt class="col-5 text-muted">Dept</dt><dd class="col-7">@emp.Department</dd>
+                        <dt class="col-5 text-muted">Join</dt><dd class="col-7">@emp.DateOfJoining.ToString("dd MMM yyyy")</dd>
+                        <dt class="col-5 text-muted">Email</dt><dd class="col-7">@emp.Email</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </form>
+}

@@ -1,0 +1,59 @@
+@model SoftflipSolutions.Models.Employee
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_EmployeeLayout";
+    var todayPunches = ViewBag.TodayPunches as List<SoftflipSolutions.Models.AttendancePunch> ?? new();
+    var lastPunch = ViewBag.LastPunch as SoftflipSolutions.Models.AttendancePunch;
+    var docCount = ViewBag.DocCount as int? ?? 0;
+    var allowed = ViewBag.AllowedMenus as HashSet<string> ?? new HashSet<string>();
+}
+
+<div class="glass-card p-4 mb-4">
+    <h3 class="text-white mb-1">Hi, @Model.FullName</h3>
+    <p class="text-muted mb-0">@Model.Designation · @Model.Department · @Model.EmployeeCode</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="glass-card p-3 h-100">
+            <div class="small text-muted">Today's punches</div>
+            <div class="fs-3 fw-bold text-info">@todayPunches.Count</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="glass-card p-3 h-100">
+            <div class="small text-muted">Last punch</div>
+            <div class="fs-5 fw-bold">
+                @(lastPunch == null ? "—" : $"{lastPunch.PunchType} · {lastPunch.PunchedAt:hh:mm tt}")
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="glass-card p-3 h-100">
+            <div class="small text-muted">Documents</div>
+            <div class="fs-3 fw-bold text-info">@docCount</div>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card p-4">
+    <h5 class="mb-3">Quick links</h5>
+    <div class="d-flex flex-wrap gap-2">
+        @if (allowed.Contains("punch"))
+        {
+            <a asp-action="Punch" class="btn btn-info rounded-pill px-3"><i class="bi bi-fingerprint me-1"></i> Punch Attendance</a>
+        }
+        @if (allowed.Contains("documents"))
+        {
+            <a asp-action="Documents" class="btn btn-outline-info rounded-pill px-3"><i class="bi bi-folder2-open me-1"></i> My Documents</a>
+        }
+        @if (allowed.Contains("profile"))
+        {
+            <a asp-action="Profile" class="btn btn-outline-info rounded-pill px-3"><i class="bi bi-person me-1"></i> Profile</a>
+        }
+        @if (allowed.Contains("team"))
+        {
+            <a asp-action="Team" class="btn btn-outline-info rounded-pill px-3"><i class="bi bi-people me-1"></i> Team</a>
+        }
+    </div>
+</div>

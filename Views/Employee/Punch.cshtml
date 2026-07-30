@@ -1,0 +1,62 @@
+@model SoftflipSolutions.Models.Employee
+@{
+    ViewData["Title"] = "Punch Attendance";
+    Layout = "_EmployeeLayout";
+    var suggested = ViewBag.SuggestedPunchType as string ?? "In";
+    var last = ViewBag.LastPunch as SoftflipSolutions.Models.AttendancePunch;
+    var todayPunches = ViewBag.TodayPunches as List<SoftflipSolutions.Models.AttendancePunch> ?? new();
+}
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="glass-card p-4">
+            <h4 class="text-white mb-1"><i class="bi bi-fingerprint me-2"></i>Punch Attendance</h4>
+            <p class="text-muted small mb-4">@DateTime.Today.ToString("dddd, dd MMM yyyy")</p>
+
+            @if (last != null)
+            {
+                <div class="mb-3 small">Last today: <strong>@last.PunchType</strong> at @last.PunchedAt.ToString("hh:mm tt")</div>
+            }
+            else
+            {
+                <div class="mb-3 small text-muted">No punch yet today — start with Punch In.</div>
+            }
+
+            <form asp-action="Punch" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="punchType" value="@suggested" />
+                <div class="mb-3">
+                    <label class="form-label">Notes (optional)</label>
+                    <input type="text" name="notes" class="form-control" maxlength="200" placeholder="e.g. WFH / Late" />
+                </div>
+                <button type="submit" class="btn btn-info w-100 py-3">
+                    @(suggested == "In" ? "Punch In" : "Punch Out") · @DateTime.Now.ToString("hh:mm tt")
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="glass-card p-0 overflow-hidden">
+            <div class="p-3 border-bottom"><strong>Today</strong></div>
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle">
+                    <thead><tr><th>Time</th><th>Type</th><th>Notes</th></tr></thead>
+                    <tbody>
+                        @foreach (var p in todayPunches)
+                        {
+                            <tr>
+                                <td>@p.PunchedAt.ToString("hh:mm tt")</td>
+                                <td>@p.PunchType</td>
+                                <td class="small text-muted">@(p.Notes ?? "—")</td>
+                            </tr>
+                        }
+                        @if (!todayPunches.Any())
+                        {
+                            <tr><td colspan="3" class="text-center text-muted py-4">No punches yet.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

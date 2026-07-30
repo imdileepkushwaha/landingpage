@@ -1,0 +1,168 @@
+@model IEnumerable<SoftflipSolutions.Models.Employee>
+@{
+    ViewData["Title"] = "Employee List";
+    Layout = "_AdminLayout";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-3 admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <div>
+            <h5 class="mb-1">Employee List</h5>
+            <p class="mb-0 small text-muted">All employees — add new or edit existing records</p>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="badge bg-primary bg-opacity-25 text-info border border-primary border-opacity-50 px-3 py-2 rounded-pill">Total: @Model.Count()</span>
+            <a asp-action="AddEmployee" class="btn btn-sm btn-info rounded-pill px-3 fw-semibold">
+                <i class="bi bi-person-plus me-1"></i> Add Employee
+            </a>
+            <a asp-action="PunchAttendance" class="btn btn-sm btn-outline-info rounded-pill px-3">
+                <i class="bi bi-fingerprint me-1"></i> Punch
+            </a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Contact</th>
+                    <th>Joined</th>
+                    <th>Login</th>
+                    <th>Status</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in Model)
+                {
+                    <tr>
+                        <td><span class="fw-semibold text-info">@e.EmployeeCode</span></td>
+                        <td>
+                            <div class="fw-bold">@e.FullName</div>
+                            <div class="small text-muted">@e.Designation</div>
+                        </td>
+                        <td>@e.Department</td>
+                        <td>
+                            <div class="small">@e.Mobile</div>
+                            <div class="small text-muted">@e.Email</div>
+                        </td>
+                        <td class="small">@e.DateOfJoining.ToString("dd MMM yyyy")</td>
+                        <td>
+                            @if (e.CanLogin)
+                            {
+                                <span class="badge bg-success bg-opacity-25 text-success">ON</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary bg-opacity-25 text-secondary">OFF</span>
+                            }
+                        </td>
+                        <td>
+                            @if (e.IsActive)
+                            {
+                                <span class="badge bg-success bg-opacity-25 text-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Inactive</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <div class="admin-row-actions">
+                                <a asp-action="EmployeeDetails" asp-route-id="@e.Id" class="btn btn-icon-action" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a asp-action="EditEmployee" asp-route-id="@e.Id" class="btn btn-icon-action edit" title="Edit">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <a asp-action="PunchAttendance" asp-route-employeeId="@e.Id" class="btn btn-icon-action" title="Punch">
+                                    <i class="bi bi-fingerprint"></i>
+                                </a>
+                                <button type="button"
+                                        class="btn btn-icon-action danger"
+                                        title="Delete"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteEmployeeModal"
+                                        data-employee-id="@e.Id"
+                                        data-employee-name="@e.FullName">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-people fs-1 d-block mb-2"></i>
+                            No employees yet.
+                            <div class="mt-3">
+                                <a asp-action="AddEmployee" class="btn btn-crm-primary btn-sm">
+                                    <i class="bi bi-person-plus me-1"></i> Add Employee
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteEmployeeModal" tabindex="-1" aria-labelledby="deleteEmployeeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content admin-confirm-modal">
+            <div class="modal-header border-0 pb-0">
+                <div class="admin-confirm-ico"><i class="bi bi-trash3"></i></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <h5 class="modal-title mb-2" id="deleteEmployeeModalLabel">Delete employee?</h5>
+                <p class="mb-0 text-muted">
+                    This will permanently remove <strong id="deleteEmployeeName">this employee</strong> and related attendance / documents. This cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-lead-back" data-bs-dismiss="modal">Cancel</button>
+                <form asp-action="DeleteEmployee" method="post" id="deleteEmployeeForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteEmployeeId" value="" />
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash3 me-1"></i> Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const modal = document.getElementById('deleteEmployeeModal');
+            if (!modal) return;
+            modal.addEventListener('show.bs.modal', function (event) {
+                const btn = event.relatedTarget;
+                if (!btn) return;
+                document.getElementById('deleteEmployeeId').value = btn.getAttribute('data-employee-id') || '';
+                document.getElementById('deleteEmployeeName').textContent = btn.getAttribute('data-employee-name') || 'this employee';
+            });
+        })();
+    </script>
+}
