@@ -170,7 +170,7 @@ public class DealPdfService : IDealPdfService
                         row.RelativeItem().Padding(14).Column(left =>
                         {
                             left.Item().Text("PROJECT COST").FontSize(7.5f).FontColor(Colors.Grey.Medium).LetterSpacing(0.08f);
-                            left.Item().PaddingTop(3).Text("One-time project fee").FontSize(10).SemiBold().FontColor(navy);
+                            left.Item().PaddingTop(3).Text("Total project fee (payable in stages)").FontSize(10).SemiBold().FontColor(navy);
                         });
                         row.ConstantItem(168).Background(accent).Padding(14).AlignMiddle().AlignRight().Column(amt =>
                         {
@@ -182,9 +182,9 @@ public class DealPdfService : IDealPdfService
                     col.Item().Column(pay =>
                     {
                         pay.Item().Text("Payment Schedule").SemiBold().FontSize(11).FontColor(accent);
-                        pay.Item().PaddingTop(6).Text("• Advance: 20%").FontSize(10);
-                        pay.Item().Text("• After providing initial credentials: 50%").FontSize(10);
-                        pay.Item().Text("• After delivery: 30%").FontSize(10);
+                        pay.Item().PaddingTop(6).Text("1) 30% advance before project start.").FontSize(10);
+                        pay.Item().Text("2) 40% after initial credentials / development kickoff.").FontSize(10);
+                        pay.Item().Text("3) 30% after final delivery and handover.").FontSize(10);
                     });
 
                     col.Item().Column(time =>

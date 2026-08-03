@@ -1,0 +1,29 @@
+@{
+    ViewData["Title"] = "WhatsApp API Settings";
+    Layout = "_AdminLayout";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div class="glass-card p-4" style="max-width:640px;">
+    <h5 class="mb-3">WhatsApp Business API</h5>
+    <form asp-action="SaveWhatsAppSettings" method="post">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label class="form-label settings-label">API URL</label>
+            <input name="apiUrl" value="@ViewBag.ApiUrl" class="form-control settings-input" placeholder="https://graph.facebook.com/v18.0/..." />
+        </div>
+        <div class="mb-3">
+            <label class="form-label settings-label">API Token</label>
+            <input name="apiToken" type="password" value="@ViewBag.ApiToken" class="form-control settings-input" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label settings-label">Phone Number ID</label>
+            <input name="phoneNumberId" value="@ViewBag.PhoneNumberId" class="form-control settings-input" />
+        </div>
+        <button type="submit" class="btn btn-crm-primary"><i class="bi bi-check2-circle me-1"></i> Save settings</button>
+    </form>
+</div>

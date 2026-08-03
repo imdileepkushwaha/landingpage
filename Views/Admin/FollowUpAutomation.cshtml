@@ -1,0 +1,42 @@
+@model IEnumerable<SoftflipSolutions.Models.FollowUpReminder>
+@{
+    ViewData["Title"] = "Follow-up Automation";
+    Layout = "_AdminLayout";
+    var leadNames = ViewBag.LeadNames as Dictionary<(string, int), string> ?? new();
+    string LeadUrl(string t, int id) => t switch {
+        "ClientLead" => Url.Action("ClientLeadDetails", new { id })!,
+        "DemoRequest" => Url.Action("DemoRequestDetails", new { id })!,
+        _ => Url.Action("EnquiryDetails", new { id })!
+    };
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom admin-table-header" style="border-color:rgba(255,255,255,0.08)!important;">
+        <h5 class="mb-1">Overdue follow-ups</h5>
+        <p class="mb-0 small text-muted">Nudge creates an admin notification for the assigned team</p>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead><tr><th>Due</th><th>Lead</th><th>Note</th><th class="text-end">Action</th></tr></thead>
+            <tbody>
+                @foreach (var f in Model)
+                {
+                    var name = leadNames.GetValueOrDefault((f.LeadType, f.LeadId), $"{f.LeadType} #{f.LeadId}");
+                    <tr>
+                        <td class="text-warning fw-semibold">@f.DueAt.ToString("dd MMM yyyy")</td>
+                        <td><a href="@LeadUrl(f.LeadType, f.LeadId)" class="fw-semibold text-decoration-none">@name</a></td>
+                        <td class="small">@f.Note</td>
+                        <td class="text-end">
+                            <form asp-action="NudgeFollowUp" method="post" class="d-inline">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@f.Id" /><button class="btn btn-sm btn-outline-warning">Nudge</button></form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

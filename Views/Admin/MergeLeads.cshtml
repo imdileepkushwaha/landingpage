@@ -1,0 +1,83 @@
+@{
+    ViewData["Title"] = "Merge Leads";
+    Layout = "_AdminLayout";
+    var groups = ViewBag.Groups as List<SoftflipSolutions.ViewModels.MergeLeadGroupVm> ?? new();
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div class="glass-card p-4 mb-4">
+    <h5 class="mb-1">Potential duplicate client leads</h5>
+    <p class="text-muted small mb-0">Merge moves notes from the duplicate into the kept lead, then deletes the duplicate (ClientLead only).</p>
+</div>
+
+@if (!groups.Any())
+{
+    <div class="glass-card p-4 text-muted">No duplicate client leads found by phone or email.</div>
+}
+else
+{
+    @foreach (var group in groups)
+    {
+        <div class="glass-card p-4 mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <strong>Match on @group.MatchOn</strong>
+                <span class="badge bg-warning text-dark">@group.ClientLeads.Count leads</span>
+            </div>
+            @if (group.RelatedEnquiries.Any())
+            {
+                <p class="small text-muted mb-2">Related enquiries (not merged):</p>
+                <ul class="small mb-3">
+                    @foreach (var e in group.RelatedEnquiries)
+                    {
+                        <li><a href="@e.DetailUrl">@e.Name</a> · @e.Phone · @e.Status</li>
+                    }
+                </ul>
+            }
+            <div class="table-responsive">
+                <table class="table table-borderless mb-0 align-middle">
+                    <thead><tr><th>Keep</th><th>Merge into keep</th><th>Name</th><th>Phone</th><th>Status</th><th>Created</th></tr></thead>
+                    <tbody>
+                        @foreach (var lead in group.ClientLeads)
+                        {
+                            <tr>
+                                <td colspan="6" class="pt-3 pb-1">
+                                    <form asp-action="MergeLeads" method="post" class="d-flex flex-wrap gap-2 align-items-center">
+                                        @Html.AntiForgeryToken()
+                                        <select name="keepId" class="form-select form-select-sm settings-input" style="max-width:140px;" required>
+                                            @foreach (var opt in group.ClientLeads)
+                                            {
+                                                <option value="@opt.Id" selected="@(opt.Id == lead.Id)">Keep #@opt.Id</option>
+                                            }
+                                        </select>
+                                        <select name="mergeId" class="form-select form-select-sm settings-input" style="max-width:140px;" required>
+                                            @foreach (var opt in group.ClientLeads.Where(o => o.Id != lead.Id))
+                                            {
+                                                <option value="@opt.Id">Merge #@opt.Id</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Merge and delete duplicate?');">Merge</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td></td><td></td>
+                                <td><a href="@lead.DetailUrl" class="fw-semibold">@lead.Name</a></td>
+                                <td>@lead.Phone</td>
+                                <td>@lead.Status</td>
+                                <td class="small">@lead.CreatedAt.ToString("dd MMM yyyy")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}

@@ -1,0 +1,443 @@
+        <div class="nav-menu">
+            @{
+                var currentAction = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
+                var allowedMenus = ViewBag.AdminMenuKeys as HashSet<string>
+                    ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var isSuperAdminNav = ViewBag.IsSuperAdmin as bool? ?? false;
+                bool Can(string key) => isSuperAdminNav || allowedMenus.Contains(key);
+                bool CanAny(params string[] keys) => keys.Any(Can);
+                bool Is(params string[] actions) => actions.Contains(currentAction);
+                bool IsAny(string[] actions) => actions.Contains(currentAction);
+
+                var crmActions = new[]
+                {
+                    "Enquiries", "EnquiryDetails", "DemoRequests", "DemoRequestDetails",
+                    "ClientLeads", "AddClientLead", "ClientLeadDetails", "EditClientLead", "EditEnquiry", "EditDemoRequest",
+                    "MergeLeads", "Services", "AddService", "EditService", "ServiceDetails"
+                };
+                var partnerActions = new[]
+                {
+                    "ChannelPartners", "AddChannelPartner", "EditChannelPartner", "ChannelPartnerDetails",
+                    "PartnerClients", "PartnerClientDetails"
+                };
+                var salesActions = new[]
+                {
+                    "PipelineBoard", "ConfirmedClients", "RejectedClients", "LeadTasks",
+                    "FollowUps", "FollowUpAutomation"
+                };
+                var billingActions = new[]
+                {
+                    "Proposals", "Invoices", "InvoiceReminders", "RecurringInvoices"
+                };
+                var hrmActions = new[]
+                {
+                    "Employees", "AddEmployee", "EditEmployee", "EmployeeDetails",
+                    "PunchAttendance", "AttendanceReport",
+                    "LeaveRequests", "Holidays",
+                    "EmployeeDocumentTemplates", "AddEmployeeDocumentTemplate", "EditEmployeeDocumentTemplate",
+                    "GenerateEmployeeDocument", "BulkGenerateDocuments",
+                    "Payslips", "SalaryStructure", "EmployeeFiles"
+                };
+                var reportActions = new[]
+                {
+                    "SalesSummary", "PartnerPerformance", "CommissionTracker", "Activity"
+                };
+                var systemActions = new[]
+                {
+                    "Settings", "MessageTemplates", "AddMessageTemplate", "EditMessageTemplate",
+                    "AdminUsers", "AuditLogs", "Notifications", "EmailLogs", "DataExport", "WhatsAppSettings"
+                };
+
+                var crmOpen = IsAny(crmActions);
+                var partnerOpen = IsAny(partnerActions);
+                var salesOpen = IsAny(salesActions);
+                var billingOpen = IsAny(billingActions);
+                var hrmOpen = IsAny(hrmActions);
+                var reportsOpen = IsAny(reportActions);
+                var systemOpen = IsAny(systemActions);
+            }
+
+            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Dashboard))
+            {
+                <div class="nav-section-title">Overview</div>
+                <a class="nav-link @(currentAction == "Index" ? "active" : "")" asp-action="Index" asp-controller="Admin">
+                    <i class="bi bi-grid"></i> Dashboard
+                </a>
+            }
+
+            @if (CanAny(
+                SoftflipSolutions.Services.AdminMenuCatalog.Enquiries,
+                SoftflipSolutions.Services.AdminMenuCatalog.DemoRequests,
+                SoftflipSolutions.Services.AdminMenuCatalog.ClientLeads,
+                SoftflipSolutions.Services.AdminMenuCatalog.MergeLeads,
+                SoftflipSolutions.Services.AdminMenuCatalog.Services,
+                SoftflipSolutions.Services.AdminMenuCatalog.ChannelPartners,
+                SoftflipSolutions.Services.AdminMenuCatalog.PartnerClients))
+            {
+                <div class="nav-section-title">CRM</div>
+                @if (CanAny(
+                    SoftflipSolutions.Services.AdminMenuCatalog.Enquiries,
+                    SoftflipSolutions.Services.AdminMenuCatalog.DemoRequests,
+                    SoftflipSolutions.Services.AdminMenuCatalog.ClientLeads,
+                    SoftflipSolutions.Services.AdminMenuCatalog.MergeLeads,
+                    SoftflipSolutions.Services.AdminMenuCatalog.Services))
+                {
+                    <div class="nav-group @(crmOpen ? "open" : "")" data-nav-group>
+                        <button type="button" class="nav-link nav-group-toggle @(crmOpen ? "active" : "")" data-nav-toggle aria-expanded="@(crmOpen ? "true" : "false")">
+                            <i class="bi bi-funnel"></i>
+                            <span>Leads &amp; Catalog</span>
+                            <i class="bi bi-chevron-down nav-group-caret"></i>
+                        </button>
+                        <div class="nav-submenu">
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Enquiries))
+                            {
+                                <a class="nav-link nav-sublink @(Is("Enquiries", "EnquiryDetails", "EditEnquiry") ? "active" : "")" asp-action="Enquiries" asp-controller="Admin">
+                                    <i class="bi bi-envelope"></i> Enquiries
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.DemoRequests))
+                            {
+                                <a class="nav-link nav-sublink @(Is("DemoRequests", "DemoRequestDetails", "EditDemoRequest") ? "active" : "")" asp-action="DemoRequests" asp-controller="Admin">
+                                    <i class="bi bi-laptop"></i> Demo Requests
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.ClientLeads))
+                            {
+                                <a class="nav-link nav-sublink @(Is("ClientLeads", "AddClientLead", "ClientLeadDetails", "EditClientLead") ? "active" : "")" asp-action="ClientLeads" asp-controller="Admin">
+                                    <i class="bi bi-people"></i> External Clients
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.MergeLeads))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "MergeLeads" ? "active" : "")" asp-action="MergeLeads" asp-controller="Admin">
+                                    <i class="bi bi-intersect"></i> Merge Leads
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Services))
+                            {
+                                <a class="nav-link nav-sublink @(Is("Services", "AddService", "EditService", "ServiceDetails") ? "active" : "")" asp-action="Services" asp-controller="Admin">
+                                    <i class="bi bi-box-seam"></i> Services
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+                @if (CanAny(
+                    SoftflipSolutions.Services.AdminMenuCatalog.ChannelPartners,
+                    SoftflipSolutions.Services.AdminMenuCatalog.PartnerClients))
+                {
+                    <div class="nav-group @(partnerOpen ? "open" : "")" data-nav-group>
+                        <button type="button" class="nav-link nav-group-toggle @(partnerOpen ? "active" : "")" data-nav-toggle aria-expanded="@(partnerOpen ? "true" : "false")">
+                            <i class="bi bi-shop"></i>
+                            <span>Partners</span>
+                            <i class="bi bi-chevron-down nav-group-caret"></i>
+                        </button>
+                        <div class="nav-submenu">
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.ChannelPartners))
+                            {
+                                <a class="nav-link nav-sublink @(Is("ChannelPartners", "AddChannelPartner", "EditChannelPartner", "ChannelPartnerDetails") ? "active" : "")" asp-action="ChannelPartners" asp-controller="Admin">
+                                    <i class="bi bi-building"></i> Channel Partners
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.PartnerClients))
+                            {
+                                <a class="nav-link nav-sublink @(Is("PartnerClients", "PartnerClientDetails") ? "active" : "")" asp-action="PartnerClients" asp-controller="Admin">
+                                    <i class="bi bi-people-fill"></i> Partner Clients
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+
+            @if (CanAny(
+                SoftflipSolutions.Services.AdminMenuCatalog.PipelineBoard,
+                SoftflipSolutions.Services.AdminMenuCatalog.ActiveDeals,
+                SoftflipSolutions.Services.AdminMenuCatalog.LeadTasks,
+                SoftflipSolutions.Services.AdminMenuCatalog.FollowUps,
+                SoftflipSolutions.Services.AdminMenuCatalog.FollowUpNudges,
+                SoftflipSolutions.Services.AdminMenuCatalog.Rejected,
+                SoftflipSolutions.Services.AdminMenuCatalog.Proposals,
+                SoftflipSolutions.Services.AdminMenuCatalog.Invoices,
+                SoftflipSolutions.Services.AdminMenuCatalog.InvoiceReminders,
+                SoftflipSolutions.Services.AdminMenuCatalog.RecurringInvoices))
+            {
+                <div class="nav-section-title">Sales</div>
+                @if (CanAny(
+                    SoftflipSolutions.Services.AdminMenuCatalog.PipelineBoard,
+                    SoftflipSolutions.Services.AdminMenuCatalog.ActiveDeals,
+                    SoftflipSolutions.Services.AdminMenuCatalog.LeadTasks,
+                    SoftflipSolutions.Services.AdminMenuCatalog.FollowUps,
+                    SoftflipSolutions.Services.AdminMenuCatalog.FollowUpNudges,
+                    SoftflipSolutions.Services.AdminMenuCatalog.Rejected))
+                {
+                    <div class="nav-group @(salesOpen ? "open" : "")" data-nav-group>
+                        <button type="button" class="nav-link nav-group-toggle @(salesOpen ? "active" : "")" data-nav-toggle aria-expanded="@(salesOpen ? "true" : "false")">
+                            <i class="bi bi-kanban"></i>
+                            <span>Pipeline</span>
+                            <i class="bi bi-chevron-down nav-group-caret"></i>
+                        </button>
+                        <div class="nav-submenu">
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.PipelineBoard))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "PipelineBoard" ? "active" : "")" asp-action="PipelineBoard" asp-controller="Admin">
+                                    <i class="bi bi-columns-gap"></i> Pipeline Board
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.ActiveDeals))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "ConfirmedClients" ? "active" : "")" asp-action="ConfirmedClients" asp-controller="Admin">
+                                    <i class="bi bi-briefcase"></i> Active Deals
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.LeadTasks))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "LeadTasks" ? "active" : "")" asp-action="LeadTasks" asp-controller="Admin">
+                                    <i class="bi bi-list-task"></i> Lead Tasks
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.FollowUps))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "FollowUps" ? "active" : "")" asp-action="FollowUps" asp-controller="Admin">
+                                    <i class="bi bi-alarm"></i> Follow-ups
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.FollowUpNudges))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "FollowUpAutomation" ? "active" : "")" asp-action="FollowUpAutomation" asp-controller="Admin">
+                                    <i class="bi bi-lightning"></i> Overdue Nudges
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Rejected))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "RejectedClients" ? "active" : "")" asp-action="RejectedClients" asp-controller="Admin">
+                                    <i class="bi bi-x-circle"></i> Rejected
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+                @if (CanAny(
+                    SoftflipSolutions.Services.AdminMenuCatalog.Proposals,
+                    SoftflipSolutions.Services.AdminMenuCatalog.Invoices,
+                    SoftflipSolutions.Services.AdminMenuCatalog.InvoiceReminders,
+                    SoftflipSolutions.Services.AdminMenuCatalog.RecurringInvoices))
+                {
+                    <div class="nav-group @(billingOpen ? "open" : "")" data-nav-group>
+                        <button type="button" class="nav-link nav-group-toggle @(billingOpen ? "active" : "")" data-nav-toggle aria-expanded="@(billingOpen ? "true" : "false")">
+                            <i class="bi bi-receipt"></i>
+                            <span>Billing</span>
+                            <i class="bi bi-chevron-down nav-group-caret"></i>
+                        </button>
+                        <div class="nav-submenu">
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Proposals))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "Proposals" ? "active" : "")" asp-action="Proposals" asp-controller="Admin">
+                                    <i class="bi bi-file-earmark-text"></i> Proposals
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Invoices))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "Invoices" ? "active" : "")" asp-action="Invoices" asp-controller="Admin">
+                                    <i class="bi bi-receipt-cutoff"></i> Invoices
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.InvoiceReminders))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "InvoiceReminders" ? "active" : "")" asp-action="InvoiceReminders" asp-controller="Admin">
+                                    <i class="bi bi-bell"></i> Invoice Reminders
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.RecurringInvoices))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "RecurringInvoices" ? "active" : "")" asp-action="RecurringInvoices" asp-controller="Admin">
+                                    <i class="bi bi-arrow-repeat"></i> Recurring Invoices
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+
+            @if (CanAny(
+                SoftflipSolutions.Services.AdminMenuCatalog.Employees,
+                SoftflipSolutions.Services.AdminMenuCatalog.Punch,
+                SoftflipSolutions.Services.AdminMenuCatalog.AttendanceReport,
+                SoftflipSolutions.Services.AdminMenuCatalog.Leave,
+                SoftflipSolutions.Services.AdminMenuCatalog.Holidays,
+                SoftflipSolutions.Services.AdminMenuCatalog.DocTemplates,
+                SoftflipSolutions.Services.AdminMenuCatalog.BulkDocuments,
+                SoftflipSolutions.Services.AdminMenuCatalog.Payslips))
+            {
+                <div class="nav-section-title">HRM</div>
+                <div class="nav-group @(hrmOpen ? "open" : "")" data-nav-group>
+                    <button type="button" class="nav-link nav-group-toggle @(hrmOpen ? "active" : "")" data-nav-toggle aria-expanded="@(hrmOpen ? "true" : "false")">
+                        <i class="bi bi-person-badge"></i>
+                        <span>Human Resources</span>
+                        <i class="bi bi-chevron-down nav-group-caret"></i>
+                    </button>
+                    <div class="nav-submenu">
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Employees))
+                        {
+                            <a class="nav-link nav-sublink @(Is("Employees", "AddEmployee", "EditEmployee", "EmployeeDetails", "EmployeeFiles", "SalaryStructure") ? "active" : "")" asp-action="Employees" asp-controller="Admin">
+                                <i class="bi bi-people"></i> Employees
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Punch))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "PunchAttendance" ? "active" : "")" asp-action="PunchAttendance" asp-controller="Admin">
+                                <i class="bi bi-fingerprint"></i> Punch Attendance
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.AttendanceReport))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "AttendanceReport" ? "active" : "")" asp-action="AttendanceReport" asp-controller="Admin">
+                                <i class="bi bi-table"></i> Attendance Report
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Leave))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "LeaveRequests" ? "active" : "")" asp-action="LeaveRequests" asp-controller="Admin">
+                                <i class="bi bi-calendar-x"></i> Leave
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Holidays))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "Holidays" ? "active" : "")" asp-action="Holidays" asp-controller="Admin">
+                                <i class="bi bi-calendar-event"></i> Holidays
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.DocTemplates))
+                        {
+                            <a class="nav-link nav-sublink @(Is("EmployeeDocumentTemplates", "AddEmployeeDocumentTemplate", "EditEmployeeDocumentTemplate", "GenerateEmployeeDocument") ? "active" : "")" asp-action="EmployeeDocumentTemplates" asp-controller="Admin">
+                                <i class="bi bi-file-earmark-text"></i> Document Templates
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.BulkDocuments))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "BulkGenerateDocuments" ? "active" : "")" asp-action="BulkGenerateDocuments" asp-controller="Admin">
+                                <i class="bi bi-files"></i> Bulk Documents
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Payslips))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "Payslips" ? "active" : "")" asp-action="Payslips" asp-controller="Admin">
+                                <i class="bi bi-cash-stack"></i> Payslips
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (CanAny(
+                SoftflipSolutions.Services.AdminMenuCatalog.SalesSummary,
+                SoftflipSolutions.Services.AdminMenuCatalog.PartnerPerformance,
+                SoftflipSolutions.Services.AdminMenuCatalog.Commission,
+                SoftflipSolutions.Services.AdminMenuCatalog.Activity))
+            {
+                <div class="nav-section-title">Insights</div>
+                <div class="nav-group @(reportsOpen ? "open" : "")" data-nav-group>
+                    <button type="button" class="nav-link nav-group-toggle @(reportsOpen ? "active" : "")" data-nav-toggle aria-expanded="@(reportsOpen ? "true" : "false")">
+                        <i class="bi bi-bar-chart-line"></i>
+                        <span>Reports</span>
+                        <i class="bi bi-chevron-down nav-group-caret"></i>
+                    </button>
+                    <div class="nav-submenu">
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.SalesSummary))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "SalesSummary" ? "active" : "")" asp-action="SalesSummary" asp-controller="Admin">
+                                <i class="bi bi-pie-chart"></i> Sales Summary
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.PartnerPerformance))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "PartnerPerformance" ? "active" : "")" asp-action="PartnerPerformance" asp-controller="Admin">
+                                <i class="bi bi-graph-up-arrow"></i> Partner Performance
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Commission))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "CommissionTracker" ? "active" : "")" asp-action="CommissionTracker" asp-controller="Admin">
+                                <i class="bi bi-percent"></i> Commission Tracker
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Activity))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "Activity" ? "active" : "")" asp-action="Activity" asp-controller="Admin">
+                                <i class="bi bi-activity"></i> Activity Timeline
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (CanAny(
+                SoftflipSolutions.Services.AdminMenuCatalog.Settings,
+                SoftflipSolutions.Services.AdminMenuCatalog.MessageTemplates,
+                SoftflipSolutions.Services.AdminMenuCatalog.AdminUsers,
+                SoftflipSolutions.Services.AdminMenuCatalog.Notifications,
+                SoftflipSolutions.Services.AdminMenuCatalog.AuditLogs,
+                SoftflipSolutions.Services.AdminMenuCatalog.EmailLogs,
+                SoftflipSolutions.Services.AdminMenuCatalog.DataExport,
+                SoftflipSolutions.Services.AdminMenuCatalog.WhatsApp))
+            {
+                <div class="nav-section-title">System</div>
+                <div class="nav-group @(systemOpen ? "open" : "")" data-nav-group>
+                    <button type="button" class="nav-link nav-group-toggle @(systemOpen ? "active" : "")" data-nav-toggle aria-expanded="@(systemOpen ? "true" : "false")">
+                        <i class="bi bi-gear"></i>
+                        <span>Administration</span>
+                        <i class="bi bi-chevron-down nav-group-caret"></i>
+                    </button>
+                    <div class="nav-submenu">
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Settings))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "Settings" ? "active" : "")" asp-action="Settings" asp-controller="Admin">
+                                <i class="bi bi-sliders"></i> Settings
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.MessageTemplates))
+                        {
+                            <a class="nav-link nav-sublink @(Is("MessageTemplates", "AddMessageTemplate", "EditMessageTemplate") ? "active" : "")" asp-action="MessageTemplates" asp-controller="Admin">
+                                <i class="bi bi-chat-quote"></i> Message Templates
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.AdminUsers))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "AdminUsers" ? "active" : "")" asp-action="AdminUsers" asp-controller="Admin">
+                                <i class="bi bi-shield-lock"></i> Admin Users
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.Notifications))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "Notifications" ? "active" : "")" asp-action="Notifications" asp-controller="Admin">
+                                <i class="bi bi-bell-fill"></i> Notifications
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.AuditLogs))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "AuditLogs" ? "active" : "")" asp-action="AuditLogs" asp-controller="Admin">
+                                <i class="bi bi-journal-text"></i> Audit Log
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.EmailLogs))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "EmailLogs" ? "active" : "")" asp-action="EmailLogs" asp-controller="Admin">
+                                <i class="bi bi-envelope-paper"></i> Email Log
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.DataExport))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "DataExport" ? "active" : "")" asp-action="DataExport" asp-controller="Admin">
+                                <i class="bi bi-download"></i> Data Export
+                            </a>
+                        }
+                        @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.WhatsApp))
+                        {
+                            <a class="nav-link nav-sublink @(currentAction == "WhatsAppSettings" ? "active" : "")" asp-action="WhatsAppSettings" asp-controller="Admin">
+                                <i class="bi bi-whatsapp"></i> WhatsApp API
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>

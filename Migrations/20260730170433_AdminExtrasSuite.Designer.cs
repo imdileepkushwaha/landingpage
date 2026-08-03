@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SoftflipSolutions.Data;
 
@@ -11,9 +12,11 @@ using SoftflipSolutions.Data;
 namespace SoftflipSolutions.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260730170433_AdminExtrasSuite")]
+    partial class AdminExtrasSuite
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,30 +24,6 @@ namespace SoftflipSolutions.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("SoftflipSolutions.Models.AdminMenuPermission", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AdminUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("MenuKey")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("nvarchar(60)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AdminUserId", "MenuKey")
-                        .IsUnique();
-
-                    b.ToTable("AdminMenuPermissions");
-                });
 
             modelBuilder.Entity("SoftflipSolutions.Models.AdminNotification", b =>
                 {
@@ -1674,17 +1653,6 @@ namespace SoftflipSolutions.Migrations
                     b.ToTable("ServiceSubModules");
                 });
 
-            modelBuilder.Entity("SoftflipSolutions.Models.AdminMenuPermission", b =>
-                {
-                    b.HasOne("SoftflipSolutions.Models.AdminUser", "AdminUser")
-                        .WithMany("MenuPermissions")
-                        .HasForeignKey("AdminUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AdminUser");
-                });
-
             modelBuilder.Entity("SoftflipSolutions.Models.AttendancePunch", b =>
                 {
                     b.HasOne("SoftflipSolutions.Models.Employee", "Employee")
@@ -1723,7 +1691,7 @@ namespace SoftflipSolutions.Migrations
                     b.HasOne("SoftflipSolutions.Models.Employee", "Manager")
                         .WithMany()
                         .HasForeignKey("ManagerId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Manager");
                 });
@@ -1918,11 +1886,6 @@ namespace SoftflipSolutions.Migrations
                         .IsRequired();
 
                     b.Navigation("Module");
-                });
-
-            modelBuilder.Entity("SoftflipSolutions.Models.AdminUser", b =>
-                {
-                    b.Navigation("MenuPermissions");
                 });
 
             modelBuilder.Entity("SoftflipSolutions.Models.ChannelPartner", b =>

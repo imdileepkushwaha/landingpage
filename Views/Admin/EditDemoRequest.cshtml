@@ -1,0 +1,53 @@
+@model SoftflipSolutions.Models.DemoRequest
+@{
+    ViewData["Title"] = "Edit Demo Request";
+    Layout = "_AdminLayout";
+    var statuses = new[] { "Pending", "Confirmed", "ProposalSent", "Invoiced", "Paid", "Rejected" };
+}
+
+<div class="lead-detail-toolbar">
+    <a asp-action="DemoRequestDetails" asp-route-id="@Model.Id" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<div class="glass-card p-4" style="max-width:820px;">
+    <h4 class="text-white mb-3">Edit Demo Request #@Model.Id</h4>
+    <form asp-action="EditDemoRequest" asp-route-id="@Model.Id" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label settings-label">Name</label>
+                <input asp-for="Name" class="form-control settings-input" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label">Company</label>
+                <input asp-for="CompanyName" class="form-control settings-input" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label">Phone</label>
+                <input asp-for="Phone" class="form-control settings-input" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label">Email</label>
+                <input asp-for="Email" type="email" class="form-control settings-input" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label">Status</label>
+                <select asp-for="Status" class="form-select settings-input">
+                    @foreach (var s in statuses) { <option value="@s">@s</option> }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label">Requirement</label>
+                <input asp-for="Requirement" class="form-control settings-input" required />
+            </div>
+            <div class="col-12">
+                <label class="form-label settings-label">Message</label>
+                <textarea asp-for="Message" class="form-control settings-input" rows="3"></textarea>
+            </div>
+        </div>
+        <div class="settings-panel-actions mt-4">
+            <a asp-action="DemoRequestDetails" asp-route-id="@Model.Id" class="btn btn-lead-back">Cancel</a>
+            <button type="submit" class="btn btn-crm-primary"><i class="bi bi-check2-circle me-1"></i> Save</button>
+        </div>
+    </form>
+</div>

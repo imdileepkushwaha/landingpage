@@ -1,0 +1,42 @@
+@model IEnumerable<SoftflipSolutions.Models.AttendancePunch>
+@{
+    ViewData["Title"] = "Attendance Report";
+    Layout = "_AdminLayout";
+    var month = (int)(ViewBag.Month ?? DateTime.Today.Month);
+    var year = (int)(ViewBag.Year ?? DateTime.Today.Year);
+    var employeeId = ViewBag.EmployeeId as int?;
+    var employees = ViewBag.Employees as List<SoftflipSolutions.Models.Employee> ?? new();
+}
+
+<div class="page-toolbar">
+    <h2>Attendance Report</h2>
+    <a asp-action="AttendanceReportExport" asp-route-month="@month" asp-route-year="@year" asp-route-employeeId="@employeeId" class="btn btn-sm btn-crm-outline rounded-pill px-3"><i class="bi bi-download me-1"></i> Excel</a>
+</div>
+
+<div class="glass-card p-4 mb-4">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-2"><label class="form-label small">Month</label><input name="month" type="number" min="1" max="12" value="@month" class="form-control settings-input" /></div>
+        <div class="col-md-2"><label class="form-label small">Year</label><input name="year" type="number" value="@year" class="form-control settings-input" /></div>
+        <div class="col-md-4"><label class="form-label small">Employee</label><select name="employeeId" class="form-select settings-input"><option value="">All</option>@foreach (var e in employees) { <option value="@e.Id" selected="@(employeeId == e.Id)">@e.DisplayLabel</option> }</select></div>
+        <div class="col-md-2"><button type="submit" class="btn btn-crm-primary w-100">Filter</button></div>
+    </form>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead><tr><th>Employee</th><th>Type</th><th>Punched At</th><th>Notes</th></tr></thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td>@(p.Employee?.DisplayLabel ?? $"#{p.EmployeeId}")</td>
+                        <td>@p.PunchType</td>
+                        <td>@p.PunchedAt.ToString("dd MMM yyyy HH:mm")</td>
+                        <td class="small text-muted">@(p.Notes ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

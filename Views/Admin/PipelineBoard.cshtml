@@ -1,0 +1,140 @@
+@using SoftflipSolutions.Models
+@{
+    ViewData["Title"] = "Pipeline Board";
+    Layout = "_AdminLayout";
+    var columns = ViewBag.Columns as Dictionary<string, List<SoftflipSolutions.ViewModels.PipelineCardVm>> ?? new();
+    var columnOrder = new[]
+    {
+        LeadPipeline.Pending,
+        LeadPipeline.Confirmed,
+        LeadPipeline.ProposalSent,
+        LeadPipeline.Invoiced,
+        LeadPipeline.Paid,
+        LeadPipeline.Rejected
+    };
+
+    string TypeLabel(string t) => t switch
+    {
+        LeadPipeline.LeadEnquiry => "Enquiry",
+        LeadPipeline.LeadDemo => "Demo",
+        LeadPipeline.LeadClient => "Client",
+        _ => t
+    };
+
+    string TypeIcon(string t) => t switch
+    {
+        LeadPipeline.LeadEnquiry => "bi-envelope",
+        LeadPipeline.LeadDemo => "bi-laptop",
+        LeadPipeline.LeadClient => "bi-people",
+        _ => "bi-person"
+    };
+
+    string ColTone(string col) => col switch
+    {
+        LeadPipeline.Pending => "pending",
+        LeadPipeline.Confirmed => "confirmed",
+        LeadPipeline.ProposalSent => "proposal",
+        LeadPipeline.Invoiced => "invoiced",
+        LeadPipeline.Paid => "paid",
+        LeadPipeline.Rejected => "rejected",
+        _ => "pending"
+    };
+
+    var total = columnOrder.Sum(c => (columns.GetValueOrDefault(c)?.Count ?? 0));
+    var active = columnOrder
+        .Where(c => c is LeadPipeline.Confirmed or LeadPipeline.ProposalSent or LeadPipeline.Invoiced)
+        .Sum(c => columns.GetValueOrDefault(c)?.Count ?? 0);
+    var paid = columns.GetValueOrDefault(LeadPipeline.Paid)?.Count ?? 0;
+    var pending = columns.GetValueOrDefault(LeadPipeline.Pending)?.Count ?? 0;
+}
+
+<div class="pb-page">
+    <div class="page-toolbar">
+        <div>
+            <h2>Pipeline Board</h2>
+            <p class="pb-subtitle mb-0">All leads across stages — click a card to open details.</p>
+        </div>
+        <div class="toolbar-actions">
+            <a asp-action="ConfirmedClients" class="btn btn-sm btn-crm-outline rounded-pill px-3">
+                <i class="bi bi-briefcase me-1"></i> Active Deals
+            </a>
+            <a asp-action="LeadTasks" class="btn btn-sm btn-crm-primary rounded-pill px-3">
+                <i class="bi bi-list-task me-1"></i> Lead Tasks
+            </a>
+        </div>
+    </div>
+
+    <div class="pb-stats">
+        <div class="pb-stat">
+            <span class="pb-stat-label">Total leads</span>
+            <strong class="pb-stat-value">@total</strong>
+        </div>
+        <div class="pb-stat pb-stat-pending">
+            <span class="pb-stat-label">Pending</span>
+            <strong class="pb-stat-value">@pending</strong>
+        </div>
+        <div class="pb-stat pb-stat-active">
+            <span class="pb-stat-label">In pipeline</span>
+            <strong class="pb-stat-value">@active</strong>
+        </div>
+        <div class="pb-stat pb-stat-paid">
+            <span class="pb-stat-label">Paid</span>
+            <strong class="pb-stat-value">@paid</strong>
+        </div>
+    </div>
+
+    <div class="pb-board" role="region" aria-label="Pipeline columns">
+        @foreach (var col in columnOrder)
+        {
+            var cards = columns.GetValueOrDefault(col) ?? new List<SoftflipSolutions.ViewModels.PipelineCardVm>();
+            var tone = ColTone(col);
+            <section class="pb-col pb-col-@tone">
+                <header class="pb-col-head">
+                    <div class="pb-col-title">
+                        <i class="bi @LeadPipeline.BadgeIcon(col)"></i>
+                        <span>@LeadPipeline.DisplayName(col)</span>
+                    </div>
+                    <span class="pb-col-count">@cards.Count</span>
+                </header>
+
+                <div class="pb-col-body">
+                    @if (!cards.Any())
+                    {
+                        <div class="pb-empty">
+                            <i class="bi bi-inbox"></i>
+                            <span>No leads</span>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var card in cards.OrderBy(c => c.Name))
+                        {
+                            var initial = string.IsNullOrWhiteSpace(card.Name)
+                                ? "?"
+                                : card.Name.Trim().Substring(0, 1).ToUpperInvariant();
+                            <a href="@card.DetailUrl" class="pb-card">
+                                <div class="pb-card-top">
+                                    <span class="pb-card-avatar" aria-hidden="true">@initial</span>
+                                    <span class="pb-card-type">
+                                        <i class="bi @TypeIcon(card.LeadType)"></i>
+                                        @TypeLabel(card.LeadType)
+                                    </span>
+                                </div>
+                                <div class="pb-card-name">@card.Name</div>
+                                <div class="pb-card-meta">
+                                    <span>#@card.Id</span>
+                                    @if (!string.IsNullOrWhiteSpace(card.Subtitle))
+                                    {
+                                        <span class="pb-card-sep">·</span>
+                                        <span class="pb-card-sub" title="@card.Subtitle">@card.Subtitle</span>
+                                    }
+                                </div>
+                                <span class="pb-card-go" aria-hidden="true"><i class="bi bi-arrow-right"></i></span>
+                            </a>
+                        }
+                    }
+                </div>
+            </section>
+        }
+    </div>
+</div>

@@ -36,6 +36,17 @@ public class ApplicationDbContext : DbContext
     public DbSet<EmployeeDocumentTemplate> EmployeeDocumentTemplates { get; set; }
     public DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
     public DbSet<EmployeeMenuPermission> EmployeeMenuPermissions { get; set; }
+    public DbSet<AdminMenuPermission> AdminMenuPermissions { get; set; }
+    public DbSet<AuditLog> AuditLogs { get; set; }
+    public DbSet<AdminNotification> AdminNotifications { get; set; }
+    public DbSet<EmailLog> EmailLogs { get; set; }
+    public DbSet<LeadTask> LeadTasks { get; set; }
+    public DbSet<LeaveRequest> LeaveRequests { get; set; }
+    public DbSet<CompanyHoliday> CompanyHolidays { get; set; }
+    public DbSet<EmployeeFile> EmployeeFiles { get; set; }
+    public DbSet<SalaryStructure> SalaryStructures { get; set; }
+    public DbSet<Payslip> Payslips { get; set; }
+    public DbSet<RecurringInvoice> RecurringInvoices { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -154,6 +165,66 @@ public class ApplicationDbContext : DbContext
             .HasIndex(p => new { p.EmployeeId, p.MenuKey })
             .IsUnique();
 
+        modelBuilder.Entity<Employee>()
+            .HasOne(e => e.Manager)
+            .WithMany()
+            .HasForeignKey(e => e.ManagerId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<LeaveRequest>()
+            .HasOne(l => l.Employee)
+            .WithMany(e => e.LeaveRequests)
+            .HasForeignKey(l => l.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<EmployeeFile>()
+            .HasOne(f => f.Employee)
+            .WithMany(e => e.Files)
+            .HasForeignKey(f => f.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SalaryStructure>()
+            .HasOne(s => s.Employee)
+            .WithMany()
+            .HasForeignKey(s => s.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SalaryStructure>()
+            .HasIndex(s => s.EmployeeId)
+            .IsUnique();
+
+        modelBuilder.Entity<Payslip>()
+            .HasOne(p => p.Employee)
+            .WithMany()
+            .HasForeignKey(p => p.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Payslip>()
+            .HasIndex(p => new { p.EmployeeId, p.Year, p.Month })
+            .IsUnique();
+
+        modelBuilder.Entity<LeadTask>()
+            .HasIndex(t => new { t.LeadType, t.LeadId, t.IsDone });
+
+        modelBuilder.Entity<Proposal>()
+            .HasOne(p => p.ParentProposal)
+            .WithMany()
+            .HasForeignKey(p => p.ParentProposalId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<CompanyHoliday>()
+            .HasIndex(h => h.Date);
+
+        modelBuilder.Entity<AdminMenuPermission>()
+            .HasOne(p => p.AdminUser)
+            .WithMany(u => u.MenuPermissions)
+            .HasForeignKey(p => p.AdminUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AdminMenuPermission>()
+            .HasIndex(p => new { p.AdminUserId, p.MenuKey })
+            .IsUnique();
+
         modelBuilder.Entity<EmployeeDocumentTemplate>().HasData(
             new EmployeeDocumentTemplate
             {
@@ -211,13 +282,15 @@ public class ApplicationDbContext : DbContext
                 Body = HrmDocumentTemplateBodies.Warning
             });
 
-        // Seed default admin user (password: admin123)
-        // In a real app, use proper password hashing
+        // Seed default admin (password admin123 — upgraded to BCrypt on first login)
         modelBuilder.Entity<AdminUser>().HasData(new AdminUser
         {
             Id = 1,
             Username = "admin",
-            PasswordHash = "admin123"
+            PasswordHash = "admin123",
+            Role = AdminRoles.SuperAdmin,
+            IsActive = true,
+            CreatedAt = new DateTime(2026, 1, 1)
         });
     }
 

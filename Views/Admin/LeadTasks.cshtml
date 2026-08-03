@@ -1,0 +1,59 @@
+@model IEnumerable<SoftflipSolutions.Models.LeadTask>
+@{
+    ViewData["Title"] = "Lead Tasks";
+    Layout = "_AdminLayout";
+    var showDone = ViewBag.ShowDone as bool? ?? false;
+    var leadNames = ViewBag.LeadNames as Dictionary<(string, int), string> ?? new();
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div class="page-toolbar">
+    <h2>Lead Tasks</h2>
+    @if (showDone) { <a asp-action="LeadTasks" class="btn btn-sm btn-crm-outline rounded-pill px-3">Open only</a> }
+    else { <a asp-action="LeadTasks" asp-route-showDone="true" class="btn btn-sm btn-crm-outline rounded-pill px-3">Show done</a> }
+</div>
+
+<div class="glass-card p-4 mb-4">
+    <h6 class="mb-3">Add task</h6>
+    <form asp-action="AddLeadTask" method="post" class="row g-2 align-items-end">
+        @Html.AntiForgeryToken()
+        <div class="col-md-2"><label class="form-label small">Lead type</label><select name="leadType" class="form-select settings-input" required><option value="Enquiry">Enquiry</option><option value="ClientLead">ClientLead</option><option value="DemoRequest">DemoRequest</option></select></div>
+        <div class="col-md-1"><label class="form-label small">Lead ID</label><input name="leadId" type="number" class="form-control settings-input" required /></div>
+        <div class="col-md-3"><label class="form-label small">Title</label><input name="title" class="form-control settings-input" required /></div>
+        <div class="col-md-2"><label class="form-label small">Assigned to</label><input name="assignedTo" class="form-control settings-input" /></div>
+        <div class="col-md-2"><label class="form-label small">Due</label><input name="dueAt" type="date" class="form-control settings-input" /></div>
+        <div class="col-md-2"><button type="submit" class="btn btn-crm-primary w-100">Add</button></div>
+    </form>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead><tr><th>Task</th><th>Lead</th><th>Assigned</th><th>Due</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var t in Model)
+                {
+                    var key = (t.LeadType, t.LeadId);
+                    var name = leadNames.GetValueOrDefault(key, $"{t.LeadType} #{t.LeadId}");
+                    <tr>
+                        <td>@t.Title</td>
+                        <td class="small">@name</td>
+                        <td class="small">@(t.AssignedTo ?? "—")</td>
+                        <td class="small">@(t.DueAt?.ToString("dd MMM yyyy") ?? "—")</td>
+                        <td>@(t.IsDone ? "Done" : "Open")</td>
+                        <td class="text-end">
+                            @if (!t.IsDone)
+                            {
+                                <form asp-action="CompleteLeadTask" method="post" class="d-inline">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@t.Id" /><button type="submit" class="btn btn-sm btn-success">Complete</button></form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

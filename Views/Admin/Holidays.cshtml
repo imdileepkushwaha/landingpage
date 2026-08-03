@@ -1,0 +1,44 @@
+@model IEnumerable<SoftflipSolutions.Models.CompanyHoliday>
+@{
+    ViewData["Title"] = "Company Holidays";
+    Layout = "_AdminLayout";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div class="glass-card p-4 mb-4">
+    <h6 class="mb-3">Add holiday</h6>
+    <form asp-action="AddHoliday" method="post" class="row g-2 align-items-end">
+        @Html.AntiForgeryToken()
+        <div class="col-md-4"><label class="form-label small">Name</label><input name="name" class="form-control settings-input" required /></div>
+        <div class="col-md-3"><label class="form-label small">Date</label><input name="date" type="date" class="form-control settings-input" required /></div>
+        <div class="col-md-3"><label class="form-label small">Type</label><select name="type" class="form-select settings-input"><option>Public</option><option>Optional</option></select></div>
+        <div class="col-md-2"><button type="submit" class="btn btn-crm-primary w-100">Add</button></div>
+    </form>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead><tr><th>Date</th><th>Name</th><th>Type</th><th>Active</th><th class="text-end">Action</th></tr></thead>
+            <tbody>
+                @foreach (var h in Model)
+                {
+                    <tr>
+                        <td>@h.Date.ToString("dd MMM yyyy")</td>
+                        <td>@h.Name</td>
+                        <td>@h.Type</td>
+                        <td>@(h.IsActive ? "Yes" : "No")</td>
+                        <td class="text-end">
+                            <form asp-action="ToggleHoliday" method="post" class="d-inline">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@h.Id" /><button class="btn btn-sm btn-outline-info">Toggle</button></form>
+                            <form asp-action="DeleteHoliday" method="post" class="d-inline" onsubmit="return confirm('Delete holiday?');">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@h.Id" /><button class="btn btn-sm btn-outline-danger">Delete</button></form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

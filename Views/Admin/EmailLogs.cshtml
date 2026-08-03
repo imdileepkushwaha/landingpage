@@ -1,0 +1,26 @@
+@model IEnumerable<SoftflipSolutions.Models.EmailLog>
+@{
+    ViewData["Title"] = "Email Log";
+    Layout = "_AdminLayout";
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead><tr><th>Sent</th><th>To</th><th>Subject</th><th>Category</th><th>Success</th><th>By</th></tr></thead>
+            <tbody>
+                @foreach (var e in Model)
+                {
+                    <tr>
+                        <td class="small">@e.SentAt.ToString("dd MMM yyyy HH:mm")</td>
+                        <td>@e.ToEmail</td>
+                        <td class="small">@e.Subject</td>
+                        <td>@e.Category</td>
+                        <td><span class="badge bg-@(e.Success ? "success" : "danger") bg-opacity-25">@(e.Success ? "OK" : "Fail")</span></td>
+                        <td class="small">@(e.SentBy ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

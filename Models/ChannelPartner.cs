@@ -56,7 +56,7 @@ public class ChannelPartner
     public string? Website { get; set; }
 
     [Required]
-    [StringLength(100)]
+    [StringLength(200)]
     public string PasswordHash { get; set; } = string.Empty;
 
     public bool IsActive { get; set; } = true;

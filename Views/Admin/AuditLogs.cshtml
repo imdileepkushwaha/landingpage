@@ -1,0 +1,25 @@
+@model IEnumerable<SoftflipSolutions.Models.AuditLog>
+@{
+    ViewData["Title"] = "Audit Log";
+    Layout = "_AdminLayout";
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead>
+            <tbody>
+                @foreach (var a in Model)
+                {
+                    <tr>
+                        <td class="small">@a.CreatedAt.ToString("dd MMM yyyy HH:mm")</td>
+                        <td>@a.Actor</td>
+                        <td>@a.Action</td>
+                        <td class="small">@(a.EntityType ?? "—") @(a.EntityId.HasValue ? $"#{a.EntityId}" : "")</td>
+                        <td class="small text-muted">@(a.Details ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

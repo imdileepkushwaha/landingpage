@@ -1,0 +1,41 @@
+@model IEnumerable<SoftflipSolutions.Models.Payslip>
+@{
+    ViewData["Title"] = "Payslips";
+    Layout = "_AdminLayout";
+    var employees = ViewBag.Employees as List<SoftflipSolutions.Models.Employee> ?? new();
+    var employeeId = ViewBag.EmployeeId as int?;
+}
+
+<div class="page-toolbar">
+    <h2>Payslips</h2>
+</div>
+
+<div class="glass-card p-4 mb-4">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-4"><label class="form-label small">Employee</label><select name="employeeId" class="form-select settings-input"><option value="">All</option>@foreach (var e in employees) { <option value="@e.Id" selected="@(employeeId == e.Id)">@e.DisplayLabel</option> }</select></div>
+        <div class="col-md-2"><button type="submit" class="btn btn-crm-primary">Filter</button></div>
+    </form>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead><tr><th>Employee</th><th>Period</th><th>Basic</th><th>HRA</th><th>Allowance</th><th>Deductions</th><th>Net Pay</th><th>Generated</th></tr></thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td>@(p.Employee?.FullName ?? $"#{p.EmployeeId}")</td>
+                        <td>@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(p.Month) @p.Year</td>
+                        <td>₹@p.Basic.ToString("N0")</td>
+                        <td>₹@p.Hra.ToString("N0")</td>
+                        <td>₹@p.Allowance.ToString("N0")</td>
+                        <td>₹@p.Deductions.ToString("N0")</td>
+                        <td class="fw-semibold text-info">₹@p.NetPay.ToString("N0")</td>
+                        <td class="small">@p.GeneratedAt.ToString("dd MMM yyyy")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

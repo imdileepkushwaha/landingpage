@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SoftflipSolutions.Data;
+using SoftflipSolutions.Filters;
 using SoftflipSolutions.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,12 +17,18 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IDealPdfService, DealPdfService>();
 builder.Services.AddScoped<IEmployeeDocumentPdfService, EmployeeDocumentPdfService>();
 builder.Services.AddScoped<IEmployeeAccessService, EmployeeAccessService>();
 builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
 builder.Services.AddScoped<IPartnerVisitingCardService, PartnerVisitingCardService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IEmailLogService, EmailLogService>();
+builder.Services.AddScoped<IAdminAccessService, AdminAccessService>();
+builder.Services.AddScoped<AdminMenuAccessFilter>();
 builder.Services.AddSingleton<ICaptchaService, CaptchaService>();
 builder.Services.AddSingleton<IFormSpamGuard, FormSpamGuardService>();
 builder.Services.AddSingleton<IPhoneValidationService, PhoneValidationService>();

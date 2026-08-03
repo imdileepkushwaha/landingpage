@@ -42,7 +42,6 @@ public class EmployeeController : Controller
         email = (email ?? "").Trim().ToLowerInvariant();
         var employee = await _context.Employees.FirstOrDefaultAsync(e =>
             e.Email == email &&
-            e.PasswordHash == password &&
             e.IsActive &&
             e.CanLogin);
 
@@ -50,6 +49,19 @@ public class EmployeeController : Controller
         {
             ViewBag.Error = "Invalid email or password, or login is disabled for this account.";
             return View();
+        }
+
+        var hash = employee.PasswordHash;
+        if (!PasswordHelper.VerifyAndUpgrade(password, ref hash, out var upgraded))
+        {
+            ViewBag.Error = "Invalid email or password, or login is disabled for this account.";
+            return View();
+        }
+
+        if (upgraded)
+        {
+            employee.PasswordHash = hash!;
+            await _context.SaveChangesAsync();
         }
 
         await _access.EnsureDefaultsIfEmptyAsync(employee.Id);

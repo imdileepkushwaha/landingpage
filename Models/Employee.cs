@@ -43,13 +43,16 @@ public class Employee
     [StringLength(400)]
     public string? Address { get; set; }
 
-    /// <summary>Plain password for employee panel login (same pattern as partners).</summary>
-    [StringLength(100)]
+    /// <summary>BCrypt hash (legacy plaintext auto-upgraded on login).</summary>
+    [StringLength(200)]
     public string? PasswordHash { get; set; }
 
     public bool CanLogin { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    public int? ManagerId { get; set; }
+    public Employee? Manager { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
@@ -60,6 +63,10 @@ public class Employee
     public List<EmployeeDocument> Documents { get; set; } = new();
 
     public List<EmployeeMenuPermission> MenuPermissions { get; set; } = new();
+
+    public List<EmployeeFile> Files { get; set; } = new();
+
+    public List<LeaveRequest> LeaveRequests { get; set; } = new();
 
     [NotMapped]
     public string DisplayLabel => $"{EmployeeCode} — {FullName}";

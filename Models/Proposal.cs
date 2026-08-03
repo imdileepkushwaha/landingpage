@@ -43,5 +43,11 @@ public class Proposal
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+    /// <summary>Revision number within a proposal family (1 = original).</summary>
+    public int Version { get; set; } = 1;
+
+    public int? ParentProposalId { get; set; }
+    public Proposal? ParentProposal { get; set; }
+
     public Invoice? Invoice { get; set; }
 }

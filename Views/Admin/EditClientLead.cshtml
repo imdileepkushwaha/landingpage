@@ -1,0 +1,55 @@
+@model SoftflipSolutions.Models.ClientLead
+@{
+    ViewData["Title"] = "Edit Client Lead";
+    Layout = "_AdminLayout";
+    var statuses = new[] { "Pending", "Confirmed", "ProposalSent", "Invoiced", "Paid", "Rejected" };
+    var sources = ViewBag.LeadSources as List<string> ?? new List<string>();
+}
+
+<div class="lead-detail-toolbar">
+    <a asp-action="ClientLeadDetails" asp-route-id="@Model.Id" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> Back</a>
+</div>
+
+<div class="glass-card p-4" style="max-width:820px;">
+    <h4 class="text-white mb-3">Edit Client Lead #@Model.Id</h4>
+    <form asp-action="EditClientLead" asp-route-id="@Model.Id" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label settings-label">Name</label>
+                <input asp-for="Name" class="form-control settings-input" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label">Mobile / WhatsApp</label>
+                <input asp-for="Mobile" class="form-control settings-input" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label">Email</label>
+                <input asp-for="Email" type="email" class="form-control settings-input" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label">Source</label>
+                <input asp-for="Source" class="form-control settings-input" list="sourceList" required />
+                <datalist id="sourceList">@foreach (var s in sources) { <option value="@s"></option> }</datalist>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label">Status</label>
+                <select asp-for="Status" class="form-select settings-input">
+                    @foreach (var s in statuses) { <option value="@s">@s</option> }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label">Budget</label>
+                <input asp-for="Budget" class="form-control settings-input" />
+            </div>
+            <div class="col-12">
+                <label class="form-label settings-label">Requirement</label>
+                <textarea asp-for="Requirement" class="form-control settings-input" rows="3" required></textarea>
+            </div>
+        </div>
+        <div class="settings-panel-actions mt-4">
+            <a asp-action="ClientLeadDetails" asp-route-id="@Model.Id" class="btn btn-lead-back">Cancel</a>
+            <button type="submit" class="btn btn-crm-primary"><i class="bi bi-check2-circle me-1"></i> Save</button>
+        </div>
+    </form>
+</div>

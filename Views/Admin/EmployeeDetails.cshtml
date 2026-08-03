@@ -49,6 +49,12 @@
         <a asp-action="GenerateEmployeeDocument" asp-route-employeeId="@Model.Id" class="btn cp-link-btn">
             <i class="bi bi-file-earmark-pdf"></i> Generate Document
         </a>
+        <a asp-action="EmployeeFiles" asp-route-employeeId="@Model.Id" class="btn cp-link-btn">
+            <i class="bi bi-folder2-open"></i> File Vault
+        </a>
+        <a asp-action="SalaryStructure" asp-route-employeeId="@Model.Id" class="btn cp-link-btn">
+            <i class="bi bi-cash-stack"></i> Salary
+        </a>
     </div>
 </div>
 

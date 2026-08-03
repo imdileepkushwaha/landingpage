@@ -1,0 +1,51 @@
+@model IEnumerable<SoftflipSolutions.Models.LeaveRequest>
+@{
+    ViewData["Title"] = "Leave Requests";
+    Layout = "_AdminLayout";
+    var employees = ViewBag.Employees as List<SoftflipSolutions.Models.Employee> ?? new();
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div class="glass-card p-4 mb-4">
+    <h6 class="mb-3">New leave request</h6>
+    <form asp-action="LeaveRequests" method="post" class="row g-2 align-items-end">
+        @Html.AntiForgeryToken()
+        <div class="col-md-3"><label class="form-label small">Employee</label><select name="employeeId" class="form-select settings-input" required>@foreach (var e in employees) { <option value="@e.Id">@e.DisplayLabel</option> }</select></div>
+        <div class="col-md-2"><label class="form-label small">Type</label><select name="leaveType" class="form-select settings-input"><option>Casual</option><option>Sick</option><option>Earned</option><option>Unpaid</option></select></div>
+        <div class="col-md-2"><label class="form-label small">From</label><input name="fromDate" type="date" class="form-control settings-input" required /></div>
+        <div class="col-md-2"><label class="form-label small">To</label><input name="toDate" type="date" class="form-control settings-input" required /></div>
+        <div class="col-md-2"><label class="form-label small">Reason</label><input name="reason" class="form-control settings-input" /></div>
+        <div class="col-md-1"><button type="submit" class="btn btn-crm-primary w-100">Add</button></div>
+    </form>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead><tr><th>Employee</th><th>Type</th><th>Period</th><th>Days</th><th>Status</th><th class="text-end">Action</th></tr></thead>
+            <tbody>
+                @foreach (var l in Model)
+                {
+                    <tr>
+                        <td>@(l.Employee?.FullName ?? $"#{l.EmployeeId}")</td>
+                        <td>@l.LeaveType</td>
+                        <td class="small">@l.FromDate.ToString("dd MMM") – @l.ToDate.ToString("dd MMM yyyy")</td>
+                        <td>@l.Days</td>
+                        <td><span class="badge bg-@(l.Status == "Approved" ? "success" : l.Status == "Rejected" ? "danger" : "warning") bg-opacity-25">@l.Status</span></td>
+                        <td class="text-end">
+                            @if (l.Status == "Pending")
+                            {
+                                <form asp-action="ApproveLeave" method="post" class="d-inline">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@l.Id" /><button class="btn btn-sm btn-success">Approve</button></form>
+                                <form asp-action="RejectLeave" method="post" class="d-inline">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@l.Id" /><button class="btn btn-sm btn-outline-danger">Reject</button></form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

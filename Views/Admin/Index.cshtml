@@ -275,3 +275,50 @@
         </div>
     </div>
 </div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="dash-list-card">
+            <div class="dash-list-header">
+                <h5>Invoice totals (last 6 months)</h5>
+            </div>
+            <div class="p-3">
+                <canvas id="invoiceChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    (async function () {
+        try {
+            const res = await fetch('@Url.Action("DashboardChartsJson")');
+            const data = await res.json();
+            const ctx = document.getElementById('invoiceChart');
+            if (!ctx || !data.labels) return;
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Invoice amount (₹)',
+                        data: data.totals,
+                        backgroundColor: 'rgba(0, 180, 220, 0.45)',
+                        borderColor: 'rgba(0, 180, 220, 0.9)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: v => '₹' + v.toLocaleString() } }
+                    }
+                }
+            });
+        } catch (_) {}
+    })();
+</script>
+}

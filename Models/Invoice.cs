@@ -35,6 +35,18 @@ public class Invoice
     [Column(TypeName = "decimal(18,2)")]
     public decimal AmountPaid { get; set; }
 
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal Cgst { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal Sgst { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal Igst { get; set; }
+
+    [StringLength(20)]
+    public string? HsnSac { get; set; }
+
     /// <summary>Unpaid | Partial | Paid</summary>
     [Required]
     [StringLength(20)]
@@ -42,12 +54,19 @@ public class Invoice
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime? PaidAt { get; set; }
+    public DateTime? LastReminderAt { get; set; }
 
     public List<InvoicePayment> Payments { get; set; } = new();
 
     [NotMapped]
-    public decimal Balance => Math.Max(0, Amount - AmountPaid);
+    public decimal TaxTotal => Cgst + Sgst + Igst;
 
     [NotMapped]
-    public decimal PaidPercent => Amount <= 0 ? 0 : Math.Min(100, Math.Round(AmountPaid / Amount * 100, 1));
+    public decimal GrandTotal => Amount + TaxTotal;
+
+    [NotMapped]
+    public decimal Balance => Math.Max(0, GrandTotal - AmountPaid);
+
+    [NotMapped]
+    public decimal PaidPercent => GrandTotal <= 0 ? 0 : Math.Min(100, Math.Round(AmountPaid / GrandTotal * 100, 1));
 }

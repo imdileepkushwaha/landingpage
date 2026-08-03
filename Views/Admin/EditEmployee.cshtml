@@ -71,6 +71,19 @@
                 <label class="form-label settings-label" asp-for="DateOfJoining"></label>
                 <input asp-for="DateOfJoining" type="date" class="form-control settings-input" required />
             </div>
+            <div class="col-md-6">
+                <label class="form-label settings-label" asp-for="ManagerId">Reporting manager</label>
+                @{
+                    var managers = ViewBag.Managers as IEnumerable<SoftflipSolutions.Models.Employee> ?? Enumerable.Empty<SoftflipSolutions.Models.Employee>();
+                }
+                <select asp-for="ManagerId" class="form-select settings-input">
+                    <option value="">— None —</option>
+                    @foreach (var mgr in managers)
+                    {
+                        <option value="@mgr.Id">@mgr.DisplayLabel</option>
+                    }
+                </select>
+            </div>
             <div class="col-md-6 d-flex align-items-end">
                 <div class="form-check form-switch mb-2">
                     <input asp-for="IsActive" class="form-check-input" type="checkbox" />

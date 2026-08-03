@@ -1,0 +1,41 @@
+@model IEnumerable<SoftflipSolutions.Models.AdminNotification>
+@{
+    ViewData["Title"] = "Notifications";
+    Layout = "_AdminLayout";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div class="page-toolbar">
+    <h2>Notifications</h2>
+    <form asp-action="MarkAllNotificationsRead" method="post">@Html.AntiForgeryToken()<button class="btn btn-sm btn-crm-outline rounded-pill px-3">Mark all read</button></form>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead><tr><th>When</th><th>Title</th><th>Message</th><th>Type</th><th>Read</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var n in Model)
+                {
+                    <tr class="@(n.IsRead ? "opacity-75" : "")">
+                        <td class="small">@n.CreatedAt.ToString("dd MMM HH:mm")</td>
+                        <td>@if (!string.IsNullOrEmpty(n.LinkUrl)) { <a href="@n.LinkUrl">@n.Title</a> } else { @n.Title }</td>
+                        <td class="small">@(n.Message ?? "—")</td>
+                        <td><span class="badge bg-secondary">@n.Type</span></td>
+                        <td>@(n.IsRead ? "Yes" : "No")</td>
+                        <td class="text-end">
+                            @if (!n.IsRead)
+                            {
+                                <form asp-action="MarkNotificationRead" method="post" class="d-inline">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@n.Id" /><button class="btn btn-sm btn-outline-info">Mark read</button></form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

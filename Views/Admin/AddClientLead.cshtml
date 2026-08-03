@@ -88,7 +88,8 @@
                     </div>
                 </div>
 
-                <input type="hidden" name="sourceChoice" id="sourceChoice" value="@activeSource" required />
+                <input type="hidden" name="sourceChoice" id="sourceChoice" value="@activeSource" />
+                <input type="hidden" asp-for="Source" id="sourceField" value="@(isOther ? selectedSource : activeSource)" />
 
                 <div class="add-lead-sources" id="sourceChips">
                     @foreach (var src in sources)
@@ -118,7 +119,7 @@
                     </div>
                     <div class="hint-text mt-1">This name will appear in the source list next time.</div>
                 </div>
-                <span asp-validation-for="Source" class="text-danger small"></span>
+                <span asp-validation-for="Source" class="text-danger small" id="sourceValidation"></span>
             </section>
 
             <section class="add-lead-section">
@@ -159,20 +160,28 @@
 <script>
     (function () {
         const hidden = document.getElementById('sourceChoice');
+        const sourceField = document.getElementById('sourceField');
         const wrap = document.getElementById('customSourceWrap');
         const custom = document.getElementById('customSource');
         const chips = document.querySelectorAll('#sourceChips [data-source]');
         const form = document.getElementById('addLeadForm');
+        const sourceValidation = document.getElementById('sourceValidation');
 
         function selectSource(value) {
             hidden.value = value;
+            sourceField.value = value === 'Other' ? (custom.value || '') : value;
             chips.forEach(chip => chip.classList.toggle('active', chip.getAttribute('data-source') === value));
             const other = value === 'Other';
             wrap.style.display = other ? 'block' : 'none';
             custom.required = other;
             if (!other) custom.value = '';
+            if (sourceValidation) sourceValidation.textContent = '';
             if (other) custom.focus();
         }
+
+        custom.addEventListener('input', () => {
+            if (hidden.value === 'Other') sourceField.value = custom.value.trim();
+        });
 
         chips.forEach(chip => {
             chip.addEventListener('click', () => selectSource(chip.getAttribute('data-source')));
@@ -188,7 +197,9 @@
                 e.preventDefault();
                 custom.focus();
                 alert('Please enter a custom source name.');
+                return;
             }
+            sourceField.value = hidden.value === 'Other' ? custom.value.trim() : hidden.value;
         });
 
         const mobile = document.querySelector('input[name="Mobile"]');

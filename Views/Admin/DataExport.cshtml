@@ -1,0 +1,13 @@
+@{
+    ViewData["Title"] = "Data Export";
+    Layout = "_AdminLayout";
+}
+
+<div class="glass-card p-4">
+    <h5 class="mb-3">Export data as CSV</h5>
+    <div class="d-flex flex-wrap gap-3">
+        <a asp-action="ExportEmployeesCsv" class="btn btn-crm-primary"><i class="bi bi-people me-1"></i> Employees</a>
+        <a asp-action="ExportInvoicesCsv" class="btn btn-crm-primary"><i class="bi bi-receipt me-1"></i> Invoices</a>
+        <a asp-action="ExportLeadsCsv" class="btn btn-crm-primary"><i class="bi bi-diagram-3 me-1"></i> Leads</a>
+    </div>
+</div>

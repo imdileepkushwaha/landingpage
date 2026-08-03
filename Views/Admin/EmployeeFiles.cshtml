@@ -1,0 +1,51 @@
+@model IEnumerable<SoftflipSolutions.Models.EmployeeFile>
+@{
+    ViewData["Title"] = "Employee Files";
+    Layout = "_AdminLayout";
+    var employee = ViewBag.Employee as SoftflipSolutions.Models.Employee;
+}
+
+@if (employee == null) { return; }
+
+<div class="lead-detail-toolbar">
+    <a asp-action="EmployeeDetails" asp-route-id="@employee.Id" class="btn btn-lead-back"><i class="bi bi-arrow-left"></i> @employee.FullName</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div class="glass-card p-4 mb-4">
+    <h6 class="mb-3">Upload file</h6>
+    <form asp-action="EmployeeFiles" asp-route-employeeId="@employee.Id" method="post" enctype="multipart/form-data" class="row g-2 align-items-end">
+        @Html.AntiForgeryToken()
+        <div class="col-md-2"><label class="form-label small">Category</label><select name="category" class="form-select settings-input"><option>Aadhaar</option><option>PAN</option><option>Resume</option><option>Photo</option><option>Other</option></select></div>
+        <div class="col-md-3"><label class="form-label small">Title</label><input name="title" class="form-control settings-input" /></div>
+        <div class="col-md-4"><label class="form-label small">File</label><input name="file" type="file" class="form-control settings-input" required /></div>
+        <div class="col-md-2"><button type="submit" class="btn btn-crm-primary w-100">Upload</button></div>
+    </form>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead><tr><th>Title</th><th>Category</th><th>Size</th><th>Uploaded</th><th class="text-end">Action</th></tr></thead>
+            <tbody>
+                @foreach (var f in Model)
+                {
+                    <tr>
+                        <td>@f.Title</td>
+                        <td>@f.Category</td>
+                        <td class="small">@(f.FileSize / 1024) KB</td>
+                        <td class="small">@f.UploadedAt.ToString("dd MMM yyyy")</td>
+                        <td class="text-end">
+                            <a asp-action="DownloadEmployeeFile" asp-route-id="@f.Id" class="btn btn-sm btn-outline-info">Download</a>
+                            <form asp-action="DeleteEmployeeFile" method="post" class="d-inline" onsubmit="return confirm('Delete file?');">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@f.Id" /><button class="btn btn-sm btn-outline-danger">Delete</button></form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

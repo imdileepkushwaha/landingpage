@@ -1,0 +1,51 @@
+@{
+    ViewData["Title"] = "Recurring Invoices";
+    Layout = "_AdminLayout";
+    var recurring = ViewBag.Recurring as List<SoftflipSolutions.Models.RecurringInvoice> ?? new();
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div class="glass-card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h6 class="mb-0">Create recurring invoice</h6>
+        <form asp-action="GenerateDueRecurring" method="post" class="d-inline">@Html.AntiForgeryToken()<button class="btn btn-sm btn-outline-info">Generate due today</button></form>
+    </div>
+    <form asp-action="RecurringInvoices" method="post" class="row g-2 align-items-end">
+        @Html.AntiForgeryToken()
+        <div class="col-md-2"><label class="form-label small">Lead type</label><select name="leadType" class="form-select settings-input" required><option value="Enquiry">Enquiry</option><option value="ClientLead">ClientLead</option><option value="DemoRequest">DemoRequest</option></select></div>
+        <div class="col-md-1"><label class="form-label small">Lead ID</label><input name="leadId" type="number" class="form-control settings-input" required /></div>
+        <div class="col-md-3"><label class="form-label small">Title</label><input name="title" class="form-control settings-input" required /></div>
+        <div class="col-md-2"><label class="form-label small">Amount</label><input name="amount" type="number" step="0.01" class="form-control settings-input" required /></div>
+        <div class="col-md-2"><label class="form-label small">Frequency</label><select name="frequency" class="form-select settings-input"><option>Monthly</option><option>Quarterly</option><option>Yearly</option></select></div>
+        <div class="col-md-1"><label class="form-label small">Next due</label><input name="nextDueDate" type="date" class="form-control settings-input" required /></div>
+        <div class="col-md-1"><button type="submit" class="btn btn-crm-primary w-100">Add</button></div>
+    </form>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead><tr><th>Title</th><th>Lead</th><th>Amount</th><th>Frequency</th><th>Next due</th><th>Active</th><th class="text-end">Action</th></tr></thead>
+            <tbody>
+                @foreach (var r in recurring)
+                {
+                    <tr>
+                        <td>@r.Title</td>
+                        <td class="small">@r.LeadType #@r.LeadId</td>
+                        <td>₹@r.Amount.ToString("N0")</td>
+                        <td>@r.Frequency</td>
+                        <td>@r.NextDueDate.ToString("dd MMM yyyy")</td>
+                        <td>@(r.IsActive ? "Yes" : "No")</td>
+                        <td class="text-end">
+                            <form asp-action="ToggleRecurringInvoice" method="post" class="d-inline">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@r.Id" /><button class="btn btn-sm btn-outline-secondary">Toggle</button></form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,41 @@
+@model IEnumerable<SoftflipSolutions.ViewModels.InvoiceReminderVm>
+@{
+    ViewData["Title"] = "Invoice Reminders";
+    Layout = "_AdminLayout";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+@if (TempData["WhatsAppLink"] != null)
+{
+    <div class="alert alert-info"><a href="@TempData["WhatsAppLink"]" target="_blank" rel="noopener" class="alert-link"><i class="bi bi-whatsapp me-1"></i> Open WhatsApp reminder</a></div>
+}
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom admin-table-header" style="border-color:rgba(255,255,255,0.08)!important;">
+        <h5 class="mb-1">Unpaid / partial invoices</h5>
+        <p class="mb-0 small text-muted">Send reminder creates a notification and logs LastReminderAt</p>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead><tr><th>Invoice</th><th>Lead</th><th>Balance</th><th>Status</th><th>Last reminder</th><th class="text-end">Action</th></tr></thead>
+            <tbody>
+                @foreach (var i in Model)
+                {
+                    <tr>
+                        <td><span class="fw-semibold text-info">@i.InvoiceNumber</span></td>
+                        <td>@i.LeadName@if (!string.IsNullOrEmpty(i.Phone)) { <div class="small text-muted">@i.Phone</div> }</td>
+                        <td>₹@i.Balance.ToString("N0")</td>
+                        <td>@i.Status</td>
+                        <td class="small">@(i.LastReminderAt?.ToString("dd MMM yyyy HH:mm") ?? "Never")</td>
+                        <td class="text-end">
+                            <form asp-action="SendInvoiceReminder" method="post" class="d-inline">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@i.Id" /><button class="btn btn-sm btn-warning">Send reminder</button></form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

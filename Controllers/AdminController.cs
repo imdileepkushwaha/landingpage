@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SoftflipSolutions.Data;
+using SoftflipSolutions.Filters;
 using SoftflipSolutions.Models;
 using SoftflipSolutions.Services;
 using SoftflipSolutions.ViewModels;
@@ -11,7 +12,8 @@ using SoftflipSolutions.ViewModels;
 namespace SoftflipSolutions.Controllers;
 
 [Authorize(AuthenticationSchemes = "AdminCookie")]
-public class AdminController : Controller
+[ServiceFilter(typeof(AdminMenuAccessFilter))]
+public partial class AdminController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly IEmailService _emailService;
@@ -20,6 +22,10 @@ public class AdminController : Controller
     private readonly IEmployeeAccessService _employeeAccess;
     private readonly ICompanyProfileService _companyProfile;
     private readonly IWebHostEnvironment _env;
+    private readonly IAuditService _audit;
+    private readonly INotificationService _notifications;
+    private readonly IEmailLogService _emailLog;
+    private readonly IAdminAccessService _adminAccess;
 
     public AdminController(
         ApplicationDbContext context,
@@ -28,7 +34,11 @@ public class AdminController : Controller
         IEmployeeDocumentPdfService employeeDocPdf,
         IEmployeeAccessService employeeAccess,
         ICompanyProfileService companyProfile,
-        IWebHostEnvironment env)
+        IWebHostEnvironment env,
+        IAuditService audit,
+        INotificationService notifications,
+        IEmailLogService emailLog,
+        IAdminAccessService adminAccess)
     {
         _context = context;
         _emailService = emailService;
@@ -37,6 +47,10 @@ public class AdminController : Controller
         _employeeAccess = employeeAccess;
         _companyProfile = companyProfile;
         _env = env;
+        _audit = audit;
+        _notifications = notifications;
+        _emailLog = emailLog;
+        _adminAccess = adminAccess;
     }
 
     [AllowAnonymous]
@@ -53,24 +67,40 @@ public class AdminController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> Login(string username, string password)
     {
-        var admin = await _context.AdminUsers.FirstOrDefaultAsync(u => u.Username == username && u.PasswordHash == password);
-        
-        if (admin != null)
+        var admin = await _context.AdminUsers.FirstOrDefaultAsync(u => u.Username == username && u.IsActive);
+        if (admin == null)
         {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, admin.Username)
-            };
-
-            var claimsIdentity = new ClaimsIdentity(claims, "AdminCookie");
-
-            await HttpContext.SignInAsync("AdminCookie", new ClaimsPrincipal(claimsIdentity));
-
-            return RedirectToAction(nameof(Index));
+            ViewBag.Error = "Invalid username or password";
+            return View();
         }
 
-        ViewBag.Error = "Invalid username or password";
-        return View();
+        var hash = admin.PasswordHash;
+        if (!PasswordHelper.VerifyAndUpgrade(password, ref hash, out var upgraded))
+        {
+            ViewBag.Error = "Invalid username or password";
+            return View();
+        }
+
+        if (upgraded)
+        {
+            admin.PasswordHash = hash!;
+            await _context.SaveChangesAsync();
+        }
+
+        await _adminAccess.EnsureDefaultsIfEmptyAsync(admin.Id, admin.Role);
+
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, admin.Username),
+            new Claim(ClaimTypes.Role, admin.Role),
+            new Claim("AdminId", admin.Id.ToString())
+        };
+
+        var claimsIdentity = new ClaimsIdentity(claims, "AdminCookie");
+        await HttpContext.SignInAsync("AdminCookie", new ClaimsPrincipal(claimsIdentity));
+        await _audit.LogAsync("AdminLogin", "AdminUser", admin.Id, actor: admin.Username);
+
+        return RedirectToAction(nameof(Index));
     }
 
     public async Task<IActionResult> Logout()
@@ -91,7 +121,7 @@ public class AdminController : Controller
         ViewBag.OpenInvoices = await _context.Invoices.CountAsync(i => i.Status == "Unpaid" || i.Status == "Partial");
         ViewBag.OutstandingBalance = await _context.Invoices
             .Where(i => i.Status == "Unpaid" || i.Status == "Partial")
-            .SumAsync(i => (decimal?)(i.Amount - i.AmountPaid)) ?? 0m;
+            .SumAsync(i => (decimal?)(i.Amount + i.Cgst + i.Sgst + i.Igst - i.AmountPaid)) ?? 0m;
         ViewBag.OverdueFollowUps = await _context.FollowUpReminders
             .CountAsync(f => !f.IsDone && f.DueAt < DateTime.Today);
         ViewBag.ExpiringProposals = await _context.Proposals
@@ -730,6 +760,10 @@ public class AdminController : Controller
 
         var employee = await _context.Employees.FindAsync(id.Value);
         if (employee == null) return NotFound();
+        ViewBag.Managers = await _context.Employees
+            .Where(e => e.IsActive && e.Id != id.Value)
+            .OrderBy(e => e.FullName)
+            .ToListAsync();
         return View(employee);
     }
 
@@ -761,6 +795,9 @@ public class AdminController : Controller
         ModelState.Remove(nameof(Employee.AttendancePunches));
         ModelState.Remove(nameof(Employee.Documents));
         ModelState.Remove(nameof(Employee.MenuPermissions));
+        ModelState.Remove(nameof(Employee.Files));
+        ModelState.Remove(nameof(Employee.LeaveRequests));
+        ModelState.Remove(nameof(Employee.Manager));
         ModelState.Remove(nameof(Employee.PasswordHash));
         ModelState.Remove(nameof(Employee.EmployeeCode));
 
@@ -769,12 +806,19 @@ public class AdminController : Controller
         if (await _context.Employees.AnyAsync(e => e.Email == email && e.Id != id))
             ModelState.AddModelError(nameof(model.Email), "An employee with this email already exists.");
 
+        if (model.ManagerId == id)
+            ModelState.AddModelError(nameof(model.ManagerId), "Employee cannot be their own manager.");
+
         if (!ModelState.IsValid)
         {
             model.Id = id;
             model.EmployeeCode = employee.EmployeeCode;
             model.CreatedAt = employee.CreatedAt;
             model.CanLogin = employee.CanLogin;
+            ViewBag.Managers = await _context.Employees
+                .Where(e => e.IsActive && e.Id != id)
+                .OrderBy(e => e.FullName)
+                .ToListAsync();
             return View(model);
         }
 
@@ -787,6 +831,7 @@ public class AdminController : Controller
         employee.DateOfJoining = model.DateOfJoining;
         employee.Address = string.IsNullOrWhiteSpace(model.Address) ? null : model.Address.Trim();
         employee.IsActive = model.IsActive;
+        employee.ManagerId = model.ManagerId;
         employee.UpdatedAt = DateTime.Now;
 
         await _context.SaveChangesAsync();
@@ -1587,7 +1632,7 @@ public class AdminController : Controller
             return View(model);
 
         model.Email = model.Email.Trim().ToLowerInvariant();
-        model.PasswordHash = password.Trim();
+        model.PasswordHash = PasswordHelper.Hash(password.Trim());
         model.IsActive = true;
         model.CreatedAt = DateTime.Now;
 
@@ -1692,7 +1737,7 @@ public class AdminController : Controller
         partner.Website = string.IsNullOrWhiteSpace(model.Website) ? null : model.Website.Trim();
 
         if (!string.IsNullOrWhiteSpace(password))
-            partner.PasswordHash = password.Trim();
+            partner.PasswordHash = PasswordHelper.Hash(password.Trim());
 
         if (removeLogo && !string.IsNullOrWhiteSpace(partner.LogoPath))
         {
@@ -2385,6 +2430,8 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddClientLead(ClientLead model, string? sourceChoice, string? customSource)
     {
+        // Chips post as sourceChoice — clear binder "Source required" before applying resolved value
+        ModelState.Remove(nameof(model.Source));
         model.Source = ResolveLeadSource(sourceChoice, customSource);
 
         if (string.IsNullOrWhiteSpace(model.Source))
@@ -2660,13 +2707,13 @@ public class AdminController : Controller
         });
 
         invoice.AmountPaid += amount;
-        if (invoice.AmountPaid >= invoice.Amount)
+        if (invoice.AmountPaid >= invoice.GrandTotal)
         {
-            invoice.AmountPaid = invoice.Amount;
+            invoice.AmountPaid = invoice.GrandTotal;
             invoice.Status = "Paid";
             invoice.PaidAt = DateTime.Now;
             await SetLeadStatusAsync(invoice.LeadType, invoice.LeadId, LeadPipeline.Paid);
-            TempData["SuccessMessage"] = $"₹ {amount:N2} confirmed as received. Invoice fully paid (₹ {invoice.Amount:N2}).";
+            TempData["SuccessMessage"] = $"₹ {amount:N2} confirmed as received. Invoice fully paid (₹ {invoice.GrandTotal:N2}).";
         }
         else
         {
@@ -2696,7 +2743,7 @@ public class AdminController : Controller
                 Note = "Marked fully paid",
                 PaidAt = DateTime.Now
             });
-            invoice.AmountPaid = invoice.Amount;
+            invoice.AmountPaid = invoice.GrandTotal;
         }
 
         invoice.Status = "Paid";
@@ -3629,7 +3676,7 @@ public class AdminController : Controller
                 TempData["ErrorMessage"] = "Password must be at least 4 characters.";
                 return RedirectToAction(nameof(Settings), new { employeeId });
             }
-            employee.PasswordHash = password.Trim();
+            employee.PasswordHash = PasswordHelper.Hash(password.Trim());
         }
 
         if (canLogin && string.IsNullOrWhiteSpace(employee.PasswordHash))
@@ -3745,17 +3792,20 @@ public class AdminController : Controller
             return RedirectToAction("Settings");
         }
 
-        var adminUser = await _context.AdminUsers.FirstOrDefaultAsync();
+        var adminUser = await _context.AdminUsers.FirstOrDefaultAsync(u => u.Username == User.Identity!.Name)
+                        ?? await _context.AdminUsers.FirstOrDefaultAsync();
         if (adminUser != null)
         {
-            if (adminUser.PasswordHash != currentPassword)
+            var hash = adminUser.PasswordHash;
+            if (!PasswordHelper.VerifyAndUpgrade(currentPassword, ref hash, out _))
             {
                 TempData["ErrorMessage"] = "Incorrect current password!";
                 return RedirectToAction("Settings");
             }
 
-            adminUser.PasswordHash = newPassword;
+            adminUser.PasswordHash = PasswordHelper.Hash(newPassword);
             await _context.SaveChangesAsync();
+            await _audit.LogAsync("PasswordChanged", "AdminUser", adminUser.Id);
             TempData["SuccessMessage"] = "Security settings updated successfully.";
         }
 

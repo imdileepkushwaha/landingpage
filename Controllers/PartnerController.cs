@@ -47,12 +47,25 @@ public class PartnerController : Controller
     {
         email = (email ?? "").Trim().ToLowerInvariant();
         var partner = await _context.ChannelPartners
-            .FirstOrDefaultAsync(p => p.Email == email && p.PasswordHash == password && p.IsActive);
+            .FirstOrDefaultAsync(p => p.Email == email && p.IsActive);
 
         if (partner == null)
         {
             ViewBag.Error = "Invalid email or password, or account is inactive.";
             return View();
+        }
+
+        var hash = partner.PasswordHash;
+        if (!PasswordHelper.VerifyAndUpgrade(password, ref hash, out var upgraded))
+        {
+            ViewBag.Error = "Invalid email or password, or account is inactive.";
+            return View();
+        }
+
+        if (upgraded)
+        {
+            partner.PasswordHash = hash!;
+            await _context.SaveChangesAsync();
         }
 
         var claims = new List<Claim>
