@@ -25,6 +25,14 @@ public class PartnerProposal
     [Column(TypeName = "decimal(18,2)")]
     public decimal Amount { get; set; }
 
+    /// <summary>Partner-entered new price before discount.</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? OriginalAmount { get; set; }
+
+    /// <summary>Optional discount % on OriginalAmount.</summary>
+    [Column(TypeName = "decimal(5,2)")]
+    public decimal? DiscountPercent { get; set; }
+
     public DateTime ValidUntil { get; set; } = DateTime.Now.AddDays(15);
 
     [StringLength(40)]

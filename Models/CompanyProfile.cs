@@ -26,7 +26,7 @@ public class CompanyProfile
     public string UpiId { get; set; } = string.Empty;
     public string UpiName { get; set; } = string.Empty;
 
-    /// <summary>When true, proposal header shows "An Authorised Channel Partner".</summary>
+    /// <summary>When true, PDF uses a larger partner logo in the header.</summary>
     public bool IsAuthorizedPartner { get; set; }
 
     public bool HasLogo => !string.IsNullOrWhiteSpace(LogoPath);

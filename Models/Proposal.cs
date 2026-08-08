@@ -39,6 +39,14 @@ public class Proposal
     [Column(TypeName = "decimal(18,2)")]
     public decimal Amount { get; set; }
 
+    /// <summary>Partner-quoted new price before discount (null for admin proposals).</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? OriginalAmount { get; set; }
+
+    /// <summary>Optional discount percent applied on OriginalAmount.</summary>
+    [Column(TypeName = "decimal(5,2)")]
+    public decimal? DiscountPercent { get; set; }
+
     public DateTime ValidUntil { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;

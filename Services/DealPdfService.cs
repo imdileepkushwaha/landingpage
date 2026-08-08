@@ -165,16 +165,46 @@ public class DealPdfService : IDealPdfService
                         });
                     }
 
+                    var hasDiscount = proposal.DiscountPercent.HasValue
+                        && proposal.DiscountPercent.Value > 0
+                        && proposal.OriginalAmount.HasValue
+                        && proposal.OriginalAmount.Value > 0;
+
+                    if (hasDiscount)
+                    {
+                        col.Item().Background(Colors.White).Border(1).BorderColor(softBorder).Padding(14).Column(price =>
+                        {
+                            price.Item().Text("PRICING").FontSize(7.5f).FontColor(Colors.Grey.Medium).LetterSpacing(0.08f);
+                            price.Item().PaddingTop(8).Row(r =>
+                            {
+                                r.RelativeItem().Text("New price").FontSize(10).FontColor(navy);
+                                r.ConstantItem(140).AlignRight().Text($"₹ {proposal.OriginalAmount!.Value:N2}").FontSize(10).FontColor(navy);
+                            });
+                            price.Item().PaddingTop(6).Row(r =>
+                            {
+                                r.RelativeItem().Text($"Discount ({proposal.DiscountPercent!.Value:N2}%)").FontSize(10).FontColor(Colors.Grey.Darken2);
+                                var discountAmt = proposal.OriginalAmount!.Value - proposal.Amount;
+                                r.ConstantItem(140).AlignRight().Text($"− ₹ {discountAmt:N2}").FontSize(10).FontColor(Colors.Grey.Darken2);
+                            });
+                        });
+                    }
+
                     col.Item().Background(Color.FromHex("E8F8FE")).Border(1).BorderColor(Color.FromHex("A8E4F8")).Padding(0).Row(row =>
                     {
                         row.RelativeItem().Padding(14).Column(left =>
                         {
                             left.Item().Text("PROJECT COST").FontSize(7.5f).FontColor(Colors.Grey.Medium).LetterSpacing(0.08f);
-                            left.Item().PaddingTop(3).Text("Total project fee (payable in stages)").FontSize(10).SemiBold().FontColor(navy);
+                            left.Item().PaddingTop(3).Text(hasDiscount
+                                    ? "Final amount after discount (payable in stages)"
+                                    : "Total project fee (payable in stages)")
+                                .FontSize(10).SemiBold().FontColor(navy);
+                            if (hasDiscount)
+                                left.Item().PaddingTop(4).Text($"New price ₹ {proposal.OriginalAmount!.Value:N2} − {proposal.DiscountPercent!.Value:N2}% discount")
+                                    .FontSize(8).FontColor(Colors.Grey.Medium);
                         });
                         row.ConstantItem(168).Background(accent).Padding(14).AlignMiddle().AlignRight().Column(amt =>
                         {
-                            amt.Item().AlignRight().Text("TOTAL").FontSize(7).FontColor(Color.FromHex("D6F2FC"));
+                            amt.Item().AlignRight().Text(hasDiscount ? "FINAL" : "TOTAL").FontSize(7).FontColor(Color.FromHex("D6F2FC"));
                             amt.Item().AlignRight().Text($"₹ {proposal.Amount:N2}").SemiBold().FontSize(16).FontColor(Colors.White);
                         });
                     });
@@ -432,27 +462,23 @@ public class DealPdfService : IDealPdfService
         {
             col.Item().Row(row =>
             {
-                // Left — logo, then Authorized Partner under logo (if partner)
+                // Left — logo only (no "Authorised Channel Partner" bar)
                 row.RelativeItem().Column(left =>
                 {
                     var logo = ReadImageBytes(company.LogoPath)
                                ?? ReadImageBytes("~/images/sf-logo.png")
                                ?? ReadImageBytes("~/admin/img/softflip-logo.png");
                     if (logo != null)
-                        left.Item().Width(100).Height(72).Image(logo).FitArea();
-
-                    if (company.IsAuthorizedPartner)
                     {
-                        left.Item().PaddingTop(6)
-                            .Background(accent)
-                            .PaddingVertical(4).PaddingHorizontal(10)
-                            .Text("An Authorised Channel Partner")
-                            .FontSize(8).SemiBold().FontColor(Colors.White);
+                        // Partner logos are often wider wordmarks — give them more room
+                        var logoWidth = company.IsAuthorizedPartner ? 168f : 118f;
+                        var logoHeight = company.IsAuthorizedPartner ? 96f : 78f;
+                        left.Item().Width(logoWidth).Height(logoHeight).Image(logo).FitArea();
                     }
                     else if (!string.IsNullOrWhiteSpace(docType)
                              && !docType.Equals("PROPOSAL", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Keep INVOICE (etc.) label; never show "PROPOSAL" in header
+                        // Keep INVOICE (etc.) label when no logo; never show "PROPOSAL" in header
                         left.Item().PaddingTop(6).Text(docType).FontSize(9).FontColor(accent).SemiBold();
                     }
                 });

@@ -134,7 +134,7 @@
                                 <option value="">— Choose service —</option>
                                 @foreach (var svc in services)
                                 {
-                                    <option value="@svc.Id">@svc.Name — ₹ @svc.Budget.ToString("N0")</option>
+                                    <option value="@svc.Id" data-commission="@svc.Commission.ToString(System.Globalization.CultureInfo.InvariantCulture)">@svc.Name</option>
                                 }
                             </select>
                             @if (!services.Any())
@@ -153,22 +153,35 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label settings-label">Scope / details</label>
-                            <textarea name="scope" class="form-control settings-input" rows="4" required>Project scope based on: @Model.Requirement
-
-• Discovery &amp; requirement finalization
-• Design / UI
-• Development &amp; testing
-• Deployment &amp; handover</textarea>
+                            <div class="sf-quill-wrap">
+                                <div id="proposalScopeEditor"></div>
+                                <textarea name="scope" id="proposalScope" class="d-none" required></textarea>
+                            </div>
+                            <script type="text/template" id="proposalScopeSeed">
+                                <p>Project scope based on: @Model.Requirement</p>
+                                <ul>
+                                    <li>Discovery &amp; requirement finalization</li>
+                                    <li>Design / UI</li>
+                                    <li>Development &amp; testing</li>
+                                    <li>Deployment &amp; handover</li>
+                                </ul>
+                            </script>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label settings-label">Price (₹)</label>
-                            <input type="number" name="amount" id="proposalAmount" class="form-control settings-input" step="0.01" min="1" required readonly />
-                            <!-- <div class="form-text text-muted" id="proposalAmountHint">Service select karne par auto fill hoga</div> -->
+                            <label class="form-label settings-label">New Price (₹)</label>
+                            <input type="number" name="newPrice" id="proposalNewPrice" class="form-control settings-input" step="0.01" min="1" required placeholder="Enter quote price" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label settings-label">Discount % <span class="text-muted fw-normal">(optional)</span></label>
+                            <input type="number" name="discountPercent" id="proposalDiscount" class="form-control settings-input" step="0.01" min="0" max="100" placeholder="e.g. 10" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label settings-label">Price after discount</label>
+                            <input type="text" id="proposalFinalPrice" class="form-control settings-input" readonly value="—" />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label settings-label">Your commission (%)</label>
                             <input type="text" id="proposalCommission" class="form-control settings-input" readonly value="—" />
-                            <!-- <div class="form-text text-muted">Sirf aapke liye — proposal mein nahi dikhega</div> -->
                         </div>
                         <div class="col-md-4">
                             <label class="form-label settings-label">Valid days</label>
@@ -220,11 +233,20 @@
                                         ? $"https://{Context.Request.Host}{p.FilePath}"
                                         : Url.Action("DownloadProposal", "Partner", new { id = p.Id }, "https") ?? "";
                                     var waPhone = new string((whatsapp ?? "").Where(char.IsDigit).ToArray());
+                                    var priceLine = p.DiscountPercent is > 0 && p.OriginalAmount is > 0
+                                        ? $"New price: ₹ {p.OriginalAmount:N2}\nDiscount: {p.DiscountPercent:N2}%\nFinal: ₹ {p.Amount:N2}"
+                                        : $"Amount: ₹ {p.Amount:N2}";
                                     var waText = Uri.EscapeDataString(
-                                        $"Hi {Model.Name},\n\nPlease find our proposal: {p.Title}\nAmount: ₹ {p.Amount:N2}\nValid until: {p.ValidUntil:dd MMM yyyy}\n\nDownload: {pdfUrl}\n\n— {ViewBag.Partner?.CompanyName ?? "Partner"}");
+                                        $"Hi {Model.Name},\n\nPlease find our proposal: {p.Title}\n{priceLine}\nValid until: {p.ValidUntil:dd MMM yyyy}\n\nDownload: {pdfUrl}\n\n— {ViewBag.Partner?.CompanyName ?? "Partner"}");
                                     <tr>
                                         <td><strong>@p.Title</strong></td>
-                                        <td>₹ @p.Amount.ToString("N0")</td>
+                                        <td>
+                                            ₹ @p.Amount.ToString("N0")
+                                            @if (p.DiscountPercent is > 0 && p.OriginalAmount is > 0)
+                                            {
+                                                <div class="small text-muted">New ₹ @p.OriginalAmount.Value.ToString("N0") · @p.DiscountPercent.Value.ToString("N1")% off</div>
+                                            }
+                                        </td>
                                         <td class="small text-muted">@p.CreatedAt.ToString("dd MMM yyyy")</td>
                                         <td class="text-end">
                                             <div class="admin-row-actions justify-content-end">
@@ -268,7 +290,11 @@
 </div>
 
 <script type="application/json" id="proposalServicesData">@Html.Raw(servicesJson)</script>
+@section Styles {
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
+}
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
     <script>
         (function () {
             const servicesEl = document.getElementById('proposalServicesData');
@@ -319,38 +345,162 @@
                 });
             }
 
-            const amountInput = document.getElementById('proposalAmount');
             const commissionInput = document.getElementById('proposalCommission');
-            const amountHint = document.getElementById('proposalAmountHint');
+            const newPriceInput = document.getElementById('proposalNewPrice');
+            const discountInput = document.getElementById('proposalDiscount');
+            const finalPriceInput = document.getElementById('proposalFinalPrice');
 
-            function applyServicePricing(serviceId) {
-                const svc = services.find(s => String(s.id) === String(serviceId));
-                if (!svc) {
-                    if (amountInput) {
-                        amountInput.value = '';
-                        amountInput.readOnly = true;
-                    }
-                    if (commissionInput) commissionInput.value = '—';
-                    if (amountHint) amountHint.textContent = 'Service select karne par auto fill hoga';
+            function formatInr(n) {
+                return '₹ ' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            function recalcPrice() {
+                const price = parseFloat(newPriceInput && newPriceInput.value);
+                const disc = parseFloat(discountInput && discountInput.value);
+                if (!Number.isFinite(price) || price <= 0) {
+                    if (finalPriceInput) finalPriceInput.value = '—';
                     return;
                 }
-                if (amountInput) {
-                    amountInput.value = Number(svc.budget || 0).toFixed(2);
-                    amountInput.readOnly = true;
+                if (Number.isFinite(disc) && disc > 0) {
+                    const clamped = Math.min(100, Math.max(0, disc));
+                    const finalAmt = Math.round(price * (1 - clamped / 100) * 100) / 100;
+                    if (finalPriceInput) finalPriceInput.value = formatInr(finalAmt);
+                } else {
+                    if (finalPriceInput) finalPriceInput.value = formatInr(price);
                 }
-                if (commissionInput) {
-                    commissionInput.value = Number(svc.commission || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }) + '%';
+            }
+
+            function applyServicePricing(serviceId) {
+                if (!commissionInput) return;
+                const opt = serviceSelect.options[serviceSelect.selectedIndex];
+                const fromOption = opt && opt.value ? parseFloat(opt.getAttribute('data-commission')) : NaN;
+                if (Number.isFinite(fromOption)) {
+                    commissionInput.value = fromOption.toLocaleString('en-IN', { maximumFractionDigits: 2 }) + '%';
+                    return;
                 }
-                if (amountHint) amountHint.textContent = 'Admin-set price — edit nahi ho sakta';
+                const svc = services.find(s => String(s.id) === String(serviceId));
+                if (!svc) {
+                    commissionInput.value = '—';
+                    return;
+                }
+                const c = Number(svc.commission != null ? svc.commission : 0);
+                commissionInput.value = (Number.isFinite(c) ? c : 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }) + '%';
             }
 
             serviceSelect.addEventListener('change', function () {
                 renderModules(serviceSelect.value);
                 applyServicePricing(serviceSelect.value);
             });
-
             applyServicePricing(serviceSelect.value);
             renderModules(serviceSelect.value);
+            recalcPrice();
+
+            // Quill rich text editor for Scope
+            const scopeField = document.getElementById('proposalScope');
+            const form = document.getElementById('partnerProposalForm');
+            const seedEl = document.getElementById('proposalScopeSeed');
+            let quill = null;
+
+            function htmlToPlain(root) {
+                const blocks = [];
+                function walk(node, listPrefix) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        const t = node.textContent.replace(/\u00a0/g, ' ');
+                        if (t) blocks.push({ type: 'text', text: t });
+                        return;
+                    }
+                    if (node.nodeType !== Node.ELEMENT_NODE) return;
+                    const tag = node.tagName.toLowerCase();
+                    if (tag === 'br') {
+                        blocks.push({ type: 'br' });
+                        return;
+                    }
+                    if (tag === 'li') {
+                        const parts = [];
+                        node.childNodes.forEach(function (c) {
+                            if (c.nodeType === Node.TEXT_NODE) parts.push(c.textContent);
+                            else if (c.nodeType === Node.ELEMENT_NODE && c.tagName.toLowerCase() !== 'ul' && c.tagName.toLowerCase() !== 'ol')
+                                parts.push(c.textContent);
+                        });
+                        blocks.push({ type: 'li', text: parts.join('').replace(/\s+/g, ' ').trim(), prefix: listPrefix });
+                        Array.from(node.children).forEach(function (c) {
+                            if (c.tagName.toLowerCase() === 'ul') Array.from(c.children).forEach(function (li) { walk(li, '• '); });
+                            if (c.tagName.toLowerCase() === 'ol') Array.from(c.children).forEach(function (li, i) { walk(li, (i + 1) + '. '); });
+                        });
+                        return;
+                    }
+                    if (tag === 'ul') {
+                        Array.from(node.children).forEach(function (li) { walk(li, '• '); });
+                        return;
+                    }
+                    if (tag === 'ol') {
+                        Array.from(node.children).forEach(function (li, i) { walk(li, (i + 1) + '. '); });
+                        return;
+                    }
+                    if (tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'blockquote' || tag === 'div' || tag === 'p') {
+                        if (blocks.length && blocks[blocks.length - 1].type !== 'br' && blocks[blocks.length - 1].type !== 'li')
+                            blocks.push({ type: 'br' });
+                        node.childNodes.forEach(function (c) { walk(c, listPrefix); });
+                        blocks.push({ type: 'br' });
+                        return;
+                    }
+                    node.childNodes.forEach(function (c) { walk(c, listPrefix); });
+                }
+                walk(root, '');
+                let out = '';
+                blocks.forEach(function (b) {
+                    if (b.type === 'br') out += '\n';
+                    else if (b.type === 'li') out += (out && !out.endsWith('\n') ? '\n' : '') + (b.prefix || '• ') + b.text + '\n';
+                    else out += b.text;
+                });
+                return out.replace(/\n{3,}/g, '\n\n').trim();
+            }
+
+            function syncScope() {
+                if (!quill || !scopeField) return;
+                const tmp = document.createElement('div');
+                tmp.innerHTML = quill.root.innerHTML;
+                scopeField.value = htmlToPlain(tmp);
+            }
+
+            if (document.getElementById('proposalScopeEditor') && window.Quill) {
+                quill = new Quill('#proposalScopeEditor', {
+                    theme: 'snow',
+                    placeholder: 'Describe project scope…',
+                    modules: {
+                        toolbar: [
+                            [{ header: [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ color: [] }, { background: [] }],
+                            [{ list: 'ordered' }, { list: 'bullet' }],
+                            [{ indent: '-1' }, { indent: '+1' }],
+                            ['blockquote', 'link'],
+                            ['clean']
+                        ]
+                    }
+                });
+
+                const seedHtml = seedEl ? seedEl.innerHTML.trim() : '';
+                if (seedHtml) {
+                    quill.clipboard.dangerouslyPasteHTML(seedHtml);
+                }
+                quill.on('text-change', syncScope);
+                syncScope();
+            }
+
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    syncScope();
+                    if (!scopeField || !scopeField.value.trim()) {
+                        e.preventDefault();
+                        alert('Please enter Scope / details.');
+                        if (quill) quill.focus();
+                    }
+                });
+            }
+
+            if (newPriceInput) newPriceInput.addEventListener('input', recalcPrice);
+            if (discountInput) discountInput.addEventListener('input', recalcPrice);
         })();
     </script>
 }

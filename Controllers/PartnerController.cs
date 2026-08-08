@@ -210,7 +210,8 @@ public class PartnerController : Controller
         int clientId,
         string title,
         string scope,
-        decimal amount,
+        decimal newPrice,
+        decimal? discountPercent = null,
         int validDays = 15,
         string? templateKey = "classic",
         int? serviceId = null)
@@ -243,11 +244,30 @@ public class PartnerController : Controller
             return RedirectToAction(nameof(ClientDetails), new { id = clientId });
         }
 
-        // Force admin-set budget; ignore any client-tampered amount. Commission is never stored on proposal.
-        amount = catalogService.Budget;
-        if (amount <= 0)
+        if (newPrice <= 0)
         {
-            TempData["ErrorMessage"] = "Selected service has no valid budget. Contact Softflip admin.";
+            TempData["ErrorMessage"] = "Please enter a valid New Price.";
+            return RedirectToAction(nameof(ClientDetails), new { id = clientId });
+        }
+
+        decimal? discount = null;
+        if (discountPercent.HasValue && discountPercent.Value > 0)
+        {
+            if (discountPercent.Value > 100)
+            {
+                TempData["ErrorMessage"] = "Discount cannot be more than 100%.";
+                return RedirectToAction(nameof(ClientDetails), new { id = clientId });
+            }
+            discount = Math.Round(discountPercent.Value, 2);
+        }
+
+        var finalAmount = discount.HasValue
+            ? Math.Round(newPrice * (1 - discount.Value / 100m), 2)
+            : Math.Round(newPrice, 2);
+
+        if (finalAmount <= 0)
+        {
+            TempData["ErrorMessage"] = "Final amount after discount must be greater than zero.";
             return RedirectToAction(nameof(ClientDetails), new { id = clientId });
         }
 
@@ -260,7 +280,9 @@ public class PartnerController : Controller
             PartnerClientId = client.Id,
             Title = title.Trim(),
             Scope = scope.Trim(),
-            Amount = amount,
+            OriginalAmount = Math.Round(newPrice, 2),
+            DiscountPercent = discount,
+            Amount = finalAmount,
             TemplateKey = string.IsNullOrWhiteSpace(templateKey) ? "classic" : templateKey.Trim(),
             ServiceCatalogId = resolvedServiceId,
             SelectedModulesJson = modulesJson,
@@ -281,7 +303,9 @@ public class PartnerController : Controller
         _context.PartnerProposals.Add(proposal);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Proposal created with your company branding.";
+        TempData["SuccessMessage"] = discount.HasValue
+            ? $"Proposal created — New price ₹ {newPrice:N0}, discount {discount:N2}%, final ₹ {finalAmount:N0}."
+            : $"Proposal created — New price ₹ {finalAmount:N0}.";
         return RedirectToAction(nameof(ClientDetails), new { id = clientId });
     }
 
@@ -292,11 +316,13 @@ public class PartnerController : Controller
 
         var proposal = await _context.PartnerProposals
             .Include(p => p.PartnerClient)
+            .Include(p => p.Service)
             .FirstOrDefaultAsync(p => p.Id == id && p.ChannelPartnerId == partner.Id);
         if (proposal == null) return NotFound();
 
         var pdf = await GetOrCreatePartnerProposalPdfAsync(proposal, partner);
-        return File(pdf, "application/pdf", $"Proposal-{proposal.Id}.pdf");
+        var fileName = BuildProposalFileName(proposal.Service?.Name, proposal.PartnerClient?.Name);
+        return File(pdf, "application/pdf", fileName);
     }
 
     [HttpPost]
@@ -308,6 +334,7 @@ public class PartnerController : Controller
 
         var proposal = await _context.PartnerProposals
             .Include(p => p.PartnerClient)
+            .Include(p => p.Service)
             .FirstOrDefaultAsync(p => p.Id == proposalId && p.ChannelPartnerId == partner.Id);
         if (proposal?.PartnerClient == null) return NotFound();
 
@@ -320,6 +347,7 @@ public class PartnerController : Controller
 
         var company = partner.ToCompanyProfile();
         var pdf = await GetOrCreatePartnerProposalPdfAsync(proposal, partner);
+        var attachmentName = BuildProposalFileName(proposal.Service?.Name, client.Name);
         var subject = $"{company.CompanyName} — {proposal.Title}";
         var html = $@"
         <div style='font-family:Segoe UI,Arial,sans-serif;max-width:640px;margin:0 auto;color:#152238'>
@@ -331,7 +359,9 @@ public class PartnerController : Controller
             <p>Hi {System.Net.WebUtility.HtmlEncode(client.Name)},</p>
             <p>Please find attached our proposal: <strong>{System.Net.WebUtility.HtmlEncode(proposal.Title)}</strong>.</p>
             <p style='background:#f8f9fb;padding:12px 14px;border-radius:8px'>
-              Amount: <strong>₹ {proposal.Amount:N2}</strong><br/>
+              {(proposal.DiscountPercent is > 0 && proposal.OriginalAmount is > 0
+                  ? $"New price: <strong>₹ {proposal.OriginalAmount:N2}</strong><br/>Discount: <strong>{proposal.DiscountPercent:N2}%</strong><br/>Final amount: <strong>₹ {proposal.Amount:N2}</strong><br/>"
+                  : $"Amount: <strong>₹ {proposal.Amount:N2}</strong><br/>")}
               Valid until: <strong>{proposal.ValidUntil:dd MMM yyyy}</strong>
             </p>
             <p>Feel free to reply to this email or WhatsApp us if you have questions.</p>
@@ -340,7 +370,7 @@ public class PartnerController : Controller
           </div>
         </div>";
 
-        var ok = await _emailService.SendEmailAsync(client.Email, subject, html, pdf, $"Proposal-{proposal.Id}.pdf");
+        var ok = await _emailService.SendEmailAsync(client.Email, subject, html, pdf, attachmentName);
         TempData[ok ? "SuccessMessage" : "ErrorMessage"] = ok
             ? $"Proposal emailed to {client.Email}."
             : "Email failed. Ask Softflip admin to check SMTP settings.";
@@ -352,12 +382,33 @@ public class PartnerController : Controller
         Title = proposal.Title,
         Scope = proposal.Scope,
         Amount = proposal.Amount,
+        OriginalAmount = proposal.OriginalAmount,
+        DiscountPercent = proposal.DiscountPercent,
         TemplateKey = proposal.TemplateKey,
         ValidUntil = proposal.ValidUntil,
         CreatedAt = proposal.CreatedAt,
         ServiceCatalogId = proposal.ServiceCatalogId,
         SelectedModulesJson = proposal.SelectedModulesJson
     };
+
+    /// <summary>Download/email file name: ServiceName_ClientName_proposal.pdf</summary>
+    private static string BuildProposalFileName(string? serviceName, string? clientName)
+    {
+        static string Slug(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return "Unknown";
+            var cleaned = new string(value.Trim()
+                .Select(c => char.IsLetterOrDigit(c) ? c : '_')
+                .ToArray());
+            while (cleaned.Contains("__", StringComparison.Ordinal))
+                cleaned = cleaned.Replace("__", "_", StringComparison.Ordinal);
+            cleaned = cleaned.Trim('_');
+            if (cleaned.Length > 40) cleaned = cleaned[..40].TrimEnd('_');
+            return string.IsNullOrWhiteSpace(cleaned) ? "Unknown" : cleaned;
+        }
+
+        return $"{Slug(serviceName)}_{Slug(clientName)}_proposal.pdf";
+    }
 
     private async Task<ChannelPartner?> CurrentPartnerAsync()
     {

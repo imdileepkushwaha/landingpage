@@ -253,15 +253,19 @@ public partial class AdminController : Controller
         var proposal = await _context.PartnerProposals
             .Include(p => p.PartnerClient)
             .Include(p => p.ChannelPartner)
+            .Include(p => p.Service)
             .FirstOrDefaultAsync(p => p.Id == id);
         if (proposal?.PartnerClient == null || proposal.ChannelPartner == null)
             return NotFound();
+
+        var downloadName =
+            $"{SanitizeFileName(proposal.Service?.Name ?? "Service")}_{SanitizeFileName(proposal.PartnerClient.Name)}_proposal.pdf";
 
         if (!string.IsNullOrWhiteSpace(proposal.FilePath))
         {
             var physical = MapUploadPath(proposal.FilePath);
             if (physical != null && System.IO.File.Exists(physical))
-                return PhysicalFile(physical, "application/pdf", $"Partner-Proposal-{proposal.Id}.pdf");
+                return PhysicalFile(physical, "application/pdf", downloadName);
         }
 
         var company = proposal.ChannelPartner.ToCompanyProfile();
@@ -272,6 +276,8 @@ public partial class AdminController : Controller
                 Title = proposal.Title,
                 Scope = proposal.Scope,
                 Amount = proposal.Amount,
+                OriginalAmount = proposal.OriginalAmount,
+                DiscountPercent = proposal.DiscountPercent,
                 ValidUntil = proposal.ValidUntil,
                 TemplateKey = proposal.TemplateKey,
                 SelectedModulesJson = proposal.SelectedModulesJson,
@@ -282,7 +288,7 @@ public partial class AdminController : Controller
             proposal.PartnerClient.WhatsApp ?? proposal.PartnerClient.Mobile,
             proposal.PartnerClient.Requirement,
             company);
-        return File(pdf, "application/pdf", $"Partner-Proposal-{proposal.Id}.pdf");
+        return File(pdf, "application/pdf", downloadName);
     }
 
     public async Task<IActionResult> Invoices()

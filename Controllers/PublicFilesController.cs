@@ -64,6 +64,8 @@ public class PublicFilesController : Controller
                 Title = proposal.Title,
                 Scope = proposal.Scope,
                 Amount = proposal.Amount,
+                OriginalAmount = proposal.OriginalAmount,
+                DiscountPercent = proposal.DiscountPercent,
                 TemplateKey = proposal.TemplateKey,
                 ValidUntil = proposal.ValidUntil,
                 CreatedAt = proposal.CreatedAt,
