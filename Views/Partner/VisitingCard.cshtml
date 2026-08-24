@@ -14,6 +14,15 @@
     <p class="text-muted small mb-0">Preview aur downloaded PNG same design — logo, icons, address, website.</p>
 </div>
 
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+@if (ViewBag.CardGenerateError != null)
+{
+    <div class="alert alert-warning">@ViewBag.CardGenerateError</div>
+}
+
 <div class="row g-4 align-items-start">
     <div class="col-lg-7">
         <div class="partner-vcard-preview-wrap">
@@ -29,6 +38,10 @@
             @if (!string.IsNullOrWhiteSpace(cardPath))
             {
                 <img src="@cardPath?v=@DateTime.Now.Ticks" alt="Visiting card" class="partner-vcard-png img-fluid rounded border" id="vcardPngPreview" />
+            }
+            else
+            {
+                <p class="small text-muted mb-0">PNG not generated yet. HTML preview on the left is ready. Use <strong>Download PNG</strong> to create it.</p>
             }
         </div>
 
@@ -85,7 +98,6 @@
                         return;
                     }
 
-                    // Fallback: download PNG, open WhatsApp with text only (no link)
                     var link = document.createElement('a');
                     link.href = URL.createObjectURL(blob);
                     link.download = fileName;

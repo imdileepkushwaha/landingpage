@@ -1,0 +1,67 @@
+@model List<SoftflipSolutions.Controllers.PartnerController.PartnerEarningRow>
+@{
+    ViewData["Title"] = "Earnings";
+    Layout = "_PartnerLayout";
+    var totalQuoted = (decimal)(ViewBag.TotalQuoted ?? 0m);
+    var totalCommission = (decimal)(ViewBag.TotalCommission ?? 0m);
+    var paid = (decimal)(ViewBag.PaidCommission ?? 0m);
+    var pending = (decimal)(ViewBag.PendingCommission ?? 0m);
+}
+
+<div class="glass-card p-4 mb-4">
+    <h4 class="mb-1" style="color:#152238">Commission &amp; Earnings</h4>
+    <p class="text-muted small mb-0">Based on proposal amounts × service commission %. Payout status is updated by Softflip admin.</p>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3"><div class="stat-card accent-blue"><div class="stat-label">Quoted</div><div class="stat-value">₹@totalQuoted.ToString("N0")</div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="stat-card accent-green"><div class="stat-label">Total commission</div><div class="stat-value">₹@totalCommission.ToString("N0")</div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="stat-card accent-yellow"><div class="stat-label">Pending</div><div class="stat-value">₹@pending.ToString("N0")</div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="stat-card accent-green"><div class="stat-label">Paid</div><div class="stat-value">₹@paid.ToString("N0")</div></div></div>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    @if (Model.Count == 0)
+    {
+        <div class="p-4 text-muted">No proposals yet — commission appears after you create proposals.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table admin-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Proposal</th>
+                        <th>Client</th>
+                        <th>Amount</th>
+                        <th>Rate</th>
+                        <th>Commission</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var r in Model)
+                {
+                    <tr>
+                        <td><strong>@r.Title</strong><div class="small text-muted">@r.CreatedAt.ToString("dd MMM yyyy")</div></td>
+                        <td>@r.ClientName</td>
+                        <td>₹@r.Amount.ToString("N0")</td>
+                        <td>@r.RatePercent.ToString("0.##")%</td>
+                        <td>₹@r.Commission.ToString("N0")</td>
+                        <td>
+                            @if (r.IsPaid)
+                            {
+                                <span class="badge bg-success">Paid @(r.PaidAt?.ToString("dd MMM"))</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

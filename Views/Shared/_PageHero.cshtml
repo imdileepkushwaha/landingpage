@@ -15,7 +15,8 @@
             sectionName = action switch
             {
                 "Index" => "Overview",
-                "Clients" or "AddClient" or "ClientDetails" => "Clients",
+                "Clients" or "AddClient" or "ClientDetails" or "FollowUps" => "Clients",
+                "Meetings" => "Meetings",
                 _ => "Partner"
             };
         }
@@ -49,6 +50,8 @@
                 "Clients" => "bi-people",
                 "AddClient" => "bi-person-plus",
                 "ClientDetails" => "bi-person-badge",
+                "FollowUps" => "bi-alarm",
+                "Meetings" => "bi-camera-video",
                 _ => "bi-shop"
             };
         }

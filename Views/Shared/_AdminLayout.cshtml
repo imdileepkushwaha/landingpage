@@ -272,8 +272,20 @@
                     const file = input.files && input.files[0];
                     if (!file) return;
                     if (!file.type.startsWith('image/')) {
-                        reset();
+                        preview.removeAttribute('src');
+                        preview.hidden = true;
+                        root.classList.remove('has-image');
+                        if (empty) {
+                            empty.hidden = false;
+                            empty.innerHTML = '<i class="bi bi-file-earmark-check"></i><span>File selected</span>';
+                        }
+                        if (filename) filename.textContent = file.name;
+                        if (clearBtn) clearBtn.hidden = false;
+                        if (removeCb) removeCb.checked = false;
                         return;
+                    }
+                    if (empty) {
+                        empty.innerHTML = '<i class="bi bi-image"></i><span>No image selected</span>';
                     }
                     const reader = new FileReader();
                     reader.onload = () => showPreview(String(reader.result), file.name);

@@ -1,0 +1,180 @@
+/* Partner ID Card — portrait card */
+.partner-pid-preview-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0 24px;
+}
+
+.pid-card {
+    width: 360px;
+    max-width: 100%;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 12px 32px rgba(16, 24, 40, 0.1);
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.pid-card-top {
+    background: linear-gradient(135deg, #0077a3 0%, #00aeef 55%, #a6ce39 100%);
+    color: #fff;
+    padding: 18px 18px 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.pid-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pid-brand img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 10px;
+    padding: 4px;
+}
+
+.pid-brand strong {
+    display: block;
+    font-size: 16px;
+    line-height: 1.1;
+}
+
+.pid-brand span {
+    display: block;
+    font-size: 11px;
+    opacity: 0.92;
+    margin-top: 2px;
+}
+
+.pid-chip {
+    width: 42px;
+    height: 30px;
+    border-radius: 6px;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.15)),
+        repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.08) 0 2px, transparent 2px 4px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    flex-shrink: 0;
+}
+
+.pid-card-body {
+    display: flex;
+    gap: 16px;
+    padding: 22px 18px 8px;
+    align-items: center;
+}
+
+.pid-photo {
+    width: 88px;
+    height: 88px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #e8f7fc;
+    color: #0077a3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 2px solid #cceef9;
+}
+
+.pid-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pid-meta {
+    min-width: 0;
+}
+
+.pid-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #152238;
+    line-height: 1.2;
+}
+
+.pid-role {
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #00aeef;
+}
+
+.pid-company {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #4b5563;
+    font-weight: 600;
+}
+
+.pid-code {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.pid-code strong {
+    color: #152238;
+    letter-spacing: 0.04em;
+}
+
+.pid-card-foot {
+    padding: 14px 18px 18px;
+}
+
+.pid-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-top: 1px solid #f0f2f5;
+    font-size: 12px;
+}
+
+.pid-row span {
+    color: #9ca3af;
+    flex-shrink: 0;
+}
+
+.pid-row strong {
+    color: #152238;
+    text-align: right;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.pid-issued strong {
+    color: #0077a3;
+}
+
+@media print {
+    body * { visibility: hidden; }
+    .partner-pid-preview-wrap,
+    .partner-pid-preview-wrap * {
+        visibility: visible;
+    }
+    .partner-pid-preview-wrap {
+        position: absolute;
+        left: 50%;
+        top: 24px;
+        transform: translateX(-50%);
+        box-shadow: none;
+    }
+    .pid-card {
+        box-shadow: none;
+    }
+}

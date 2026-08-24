@@ -13,6 +13,11 @@ public class FollowUpReminder
 
     public int LeadId { get; set; }
 
+    /// <summary>Structured step: Requirement, Quotation, Demo, Call, Meeting, Negotiation, Note, Other.</summary>
+    [Required]
+    [StringLength(40)]
+    public string StepType { get; set; } = FollowUpSteps.Note;
+
     public DateTime DueAt { get; set; }
 
     [Required]

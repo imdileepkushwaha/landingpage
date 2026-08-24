@@ -37,5 +37,47 @@ public class ServiceCatalog
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+    /// <summary>Primary / cover image path (first uploaded).</summary>
+    [StringLength(400)]
+    public string? ImagePath { get; set; }
+
+    /// <summary>JSON array of image paths under /uploads/services/…</summary>
+    [Column(TypeName = "nvarchar(max)")]
+    public string? ImagesJson { get; set; }
+
     public ICollection<ServicePanel> Panels { get; set; } = new List<ServicePanel>();
+
+    [NotMapped]
+    public List<string> ImagePaths
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(ImagesJson))
+            {
+                return string.IsNullOrWhiteSpace(ImagePath)
+                    ? new List<string>()
+                    : new List<string> { ImagePath };
+            }
+            try
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<List<string>>(ImagesJson) ?? new List<string>();
+            }
+            catch
+            {
+                return string.IsNullOrWhiteSpace(ImagePath)
+                    ? new List<string>()
+                    : new List<string> { ImagePath };
+            }
+        }
+        set
+        {
+            var list = (value ?? new List<string>())
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Select(p => p.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            ImagesJson = list.Count == 0 ? null : System.Text.Json.JsonSerializer.Serialize(list);
+            ImagePath = list.FirstOrDefault();
+        }
+    }
 }

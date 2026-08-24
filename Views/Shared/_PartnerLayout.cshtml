@@ -15,9 +15,9 @@
     var action = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
     var company = partner?.CompanyName ?? "Partner";
     var owner = partner?.OwnerName ?? company;
-    var avatarUrl = string.IsNullOrWhiteSpace(partner?.LogoPath)
-        ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(company)}&background=cceef9&color=0077a3&bold=true&size=72"
-        : partner!.LogoPath;
+    var avatarUrl = string.IsNullOrWhiteSpace(partner?.AvatarPath)
+        ? $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(owner)}&background=cceef9&color=0077a3&bold=true&size=72"
+        : partner!.AvatarPath;
 }
 <body class="partner-body">
 
@@ -47,6 +47,16 @@
             <a class="nav-link @(action == "Index" ? "active" : "")" asp-action="Index" asp-controller="Partner">
                 <i class="bi bi-grid"></i> Dashboard
             </a>
+            <a class="nav-link @(action == "Notifications" ? "active" : "")" asp-action="Notifications" asp-controller="Partner">
+                <i class="bi bi-bell"></i> Notifications
+                @if ((ViewBag.UnreadPartnerNotifications as int? ?? 0) > 0)
+                {
+                    <span class="badge bg-danger ms-auto">@ViewBag.UnreadPartnerNotifications</span>
+                }
+            </a>
+            <a class="nav-link @(action == "Meetings" ? "active" : "")" asp-action="Meetings" asp-controller="Partner">
+                <i class="bi bi-camera-video"></i> Meetings
+            </a>
 
             <div class="nav-section-title">Clients</div>
             <a class="nav-link @(new[] { "Clients", "ClientDetails" }.Contains(action) ? "active" : "")" asp-action="Clients" asp-controller="Partner">
@@ -55,14 +65,67 @@
             <a class="nav-link @(action == "AddClient" ? "active" : "")" asp-action="AddClient" asp-controller="Partner">
                 <i class="bi bi-person-plus"></i> Add Client
             </a>
+            <a class="nav-link @(action == "Pipeline" ? "active" : "")" asp-action="Pipeline" asp-controller="Partner">
+                <i class="bi bi-columns-gap"></i> Pipeline
+            </a>
+            <a class="nav-link @(action == "FollowUps" ? "active" : "")" asp-action="FollowUps" asp-controller="Partner">
+                <i class="bi bi-alarm"></i> Follow-ups
+            </a>
+
+            <div class="nav-section-title">Sales</div>
+            <a class="nav-link @(action == "Proposals" ? "active" : "")" asp-action="Proposals" asp-controller="Partner">
+                <i class="bi bi-file-earmark-text"></i> My Proposals
+            </a>
+            <a class="nav-link @(new[] { "Invoices", "CreateInvoice" }.Contains(action) ? "active" : "")" asp-action="Invoices" asp-controller="Partner">
+                <i class="bi bi-receipt"></i> Invoices
+            </a>
+            <a class="nav-link @(action == "Earnings" ? "active" : "")" asp-action="Earnings" asp-controller="Partner">
+                <i class="bi bi-percent"></i> Earnings
+            </a>
 
             <div class="nav-section-title">Catalog</div>
             <a class="nav-link @(new[] { "Services" }.Contains(action) ? "active" : "")" asp-action="Services" asp-controller="Partner">
                 <i class="bi bi-box-seam"></i> Services
             </a>
-            <a class="nav-link @(action == "VisitingCard" ? "active" : "")" asp-action="VisitingCard" asp-controller="Partner">
-                <i class="bi bi-person-vcard"></i> Visiting Card
+            <a class="nav-link @(action == "MarketingKit" ? "active" : "")" asp-action="MarketingKit" asp-controller="Partner">
+                <i class="bi bi-images"></i> Marketing Kit
             </a>
+
+            @{
+                var profileActions = new[] { "EditProfile", "VisitingCard", "IdCard", "Certificate", "Referral", "Support" };
+                var profileOpen = profileActions.Contains(action);
+                var profileToggleClass = profileOpen ? "active" : "";
+                var profileExpanded = profileOpen ? "true" : "false";
+                var profileGroupClass = profileOpen ? "open" : "";
+            }
+            <div class="nav-section-title">Account</div>
+            <div class="nav-group @profileGroupClass" data-nav-group>
+                <button type="button" class="nav-link nav-group-toggle @profileToggleClass" data-nav-toggle aria-expanded="@profileExpanded">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Profile</span>
+                    <i class="bi bi-chevron-down nav-group-caret"></i>
+                </button>
+                <div class="nav-submenu">
+                    <a class="nav-link nav-sublink @(action == "EditProfile" ? "active" : "")" asp-action="EditProfile" asp-controller="Partner">
+                        <i class="bi bi-pencil-square"></i> Edit Profile
+                    </a>
+                    <a class="nav-link nav-sublink @(action == "VisitingCard" ? "active" : "")" asp-action="VisitingCard" asp-controller="Partner">
+                        <i class="bi bi-person-vcard"></i> Visiting Card
+                    </a>
+                    <a class="nav-link nav-sublink @(action == "IdCard" ? "active" : "")" asp-action="IdCard" asp-controller="Partner">
+                        <i class="bi bi-card-heading"></i> ID Card
+                    </a>
+                    <a class="nav-link nav-sublink @(action == "Certificate" ? "active" : "")" asp-action="Certificate" asp-controller="Partner">
+                        <i class="bi bi-award"></i> Partner Certificate
+                    </a>
+                    <a class="nav-link nav-sublink @(action == "Referral" ? "active" : "")" asp-action="Referral" asp-controller="Partner">
+                        <i class="bi bi-share"></i> Referral Link
+                    </a>
+                    <a class="nav-link nav-sublink @(action == "Support" ? "active" : "")" asp-action="Support" asp-controller="Partner">
+                        <i class="bi bi-life-preserver"></i> Support
+                    </a>
+                </div>
+            </div>
 
             <div class="nav-section-title">Website</div>
             <a class="nav-link" href="/Home/Partners" target="_blank" rel="noopener">
@@ -92,6 +155,13 @@
             </div>
 
             <div class="header-actions">
+                <a asp-action="Notifications" class="header-icon-btn" title="Notifications" style="position:relative;text-decoration:none;color:inherit">
+                    <i class="bi bi-bell"></i>
+                    @if ((ViewBag.UnreadPartnerNotifications as int? ?? 0) > 0)
+                    {
+                        <span style="position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#ef4444"></span>
+                    }
+                </a>
                 <button type="button" class="header-icon-btn" title="Fullscreen" onclick="toggleFullscreen()">
                     <i class="bi bi-arrows-fullscreen"></i>
                 </button>
@@ -115,11 +185,18 @@
                             <a class="user-menu-item" asp-action="Index" asp-controller="Partner">
                                 <i class="bi bi-grid"></i> Dashboard
                             </a>
-                            <a class="user-menu-item" asp-action="Clients" asp-controller="Partner">
-                                <i class="bi bi-people"></i> My Clients
+                            <div class="user-menu-label">Profile</div>
+                            <a class="user-menu-item" asp-action="EditProfile" asp-controller="Partner">
+                                <i class="bi bi-pencil-square"></i> Edit Profile
                             </a>
-                            <a class="user-menu-item" asp-action="AddClient" asp-controller="Partner">
-                                <i class="bi bi-person-plus"></i> Add Client
+                            <a class="user-menu-item" asp-action="VisitingCard" asp-controller="Partner">
+                                <i class="bi bi-person-vcard"></i> Visiting Card
+                            </a>
+                            <a class="user-menu-item" asp-action="IdCard" asp-controller="Partner">
+                                <i class="bi bi-card-heading"></i> ID Card
+                            </a>
+                            <a class="user-menu-item" asp-action="Certificate" asp-controller="Partner">
+                                <i class="bi bi-award"></i> Partner Certificate
                             </a>
                         </div>
                         <div class="user-menu-foot">
@@ -149,6 +226,24 @@
                 <div class="alert alert-danger deal-alert alert-dismissible fade show" role="alert">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @{
+                var activeMeetings = ViewBag.ActivePartnerMeetings as List<SoftflipSolutions.Models.PartnerMeeting>
+                    ?? new List<SoftflipSolutions.Models.PartnerMeeting>();
+                var nextMeeting = activeMeetings.FirstOrDefault();
+            }
+            @if (nextMeeting != null && action != "Meetings")
+            {
+                <div class="alert alert-info deal-alert d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div>
+                        <strong><i class="bi bi-camera-video me-1"></i>@nextMeeting.Title</strong>
+                        <span class="ms-2 small">@nextMeeting.MeetingAt.ToString("dd MMM yyyy, hh:mm tt")</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="@nextMeeting.MeetingLink" target="_blank" rel="noopener" class="btn btn-sm btn-crm-primary">Join</a>
+                        <a asp-action="Meetings" class="btn btn-sm btn-crm-outline">All meetings</a>
+                    </div>
                 </div>
             }
             @RenderBody()
@@ -207,6 +302,17 @@
             });
         })();
 
+        (function initNavGroups() {
+            document.querySelectorAll('[data-nav-toggle]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const group = btn.closest('[data-nav-group]');
+                    if (!group) return;
+                    group.classList.toggle('open');
+                    btn.setAttribute('aria-expanded', group.classList.contains('open') ? 'true' : 'false');
+                });
+            });
+        })();
+
         (function initPartnerSearch() {
             const input = document.getElementById('headerSearch');
             if (!input) return;
@@ -217,6 +323,90 @@
                     row.style.display = !q || hay.includes(q) ? '' : 'none';
                 });
             });
+        })();
+
+        (function initImageUploads() {
+            function bindUpload(root) {
+                if (!root || root.dataset.bound === '1') return;
+                root.dataset.bound = '1';
+                const input = root.querySelector('.sf-upload-input');
+                const box = root.querySelector('.sf-upload-box');
+                const preview = root.querySelector('[data-sf-preview]');
+                const empty = root.querySelector('[data-sf-empty]');
+                const filename = root.querySelector('[data-sf-filename]');
+                const clearBtn = root.querySelector('[data-sf-clear]');
+                const removeCb = root.querySelector('[data-sf-remove]');
+                if (!input || !box || !preview) return;
+                const originalSrc = preview.getAttribute('src') || '';
+                const setHasImage = (on) => {
+                    root.classList.toggle('has-image', !!on);
+                    preview.hidden = !on;
+                    if (empty) empty.hidden = !!on;
+                };
+                const showPreview = (src, name) => {
+                    preview.src = src;
+                    setHasImage(true);
+                    if (filename) filename.textContent = name || '';
+                    if (clearBtn) clearBtn.hidden = false;
+                    if (removeCb) removeCb.checked = false;
+                };
+                const reset = () => {
+                    input.value = '';
+                    if (originalSrc) {
+                        preview.src = originalSrc;
+                        setHasImage(true);
+                        if (filename) filename.textContent = 'Current image';
+                        if (clearBtn) clearBtn.hidden = false;
+                    } else {
+                        preview.removeAttribute('src');
+                        setHasImage(false);
+                        if (filename) filename.textContent = '';
+                        if (clearBtn) clearBtn.hidden = true;
+                    }
+                    if (removeCb) removeCb.checked = false;
+                };
+                if (originalSrc) setHasImage(true);
+                input.addEventListener('change', () => {
+                    const file = input.files && input.files[0];
+                    if (!file) return;
+                    if (!file.type.startsWith('image/')) { reset(); return; }
+                    const reader = new FileReader();
+                    reader.onload = () => showPreview(String(reader.result), file.name);
+                    reader.readAsDataURL(file);
+                });
+                ['dragenter', 'dragover'].forEach(evt => {
+                    box.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); box.classList.add('is-dragover'); });
+                });
+                ['dragleave', 'drop'].forEach(evt => {
+                    box.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); box.classList.remove('is-dragover'); });
+                });
+                box.addEventListener('drop', e => {
+                    const files = e.dataTransfer && e.dataTransfer.files;
+                    if (!files || !files.length) return;
+                    try {
+                        const dt = new DataTransfer();
+                        dt.items.add(files[0]);
+                        input.files = dt.files;
+                    } catch (_) { return; }
+                    input.dispatchEvent(new Event('change'));
+                });
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', e => {
+                        e.preventDefault();
+                        if (originalSrc && removeCb) {
+                            input.value = '';
+                            preview.src = originalSrc;
+                            setHasImage(true);
+                            if (filename) filename.textContent = 'Marked for removal';
+                            removeCb.checked = true;
+                            clearBtn.hidden = true;
+                        } else {
+                            reset();
+                        }
+                    });
+                }
+            }
+            document.querySelectorAll('[data-sf-upload]').forEach(bindUpload);
         })();
     </script>
     @await RenderSectionAsync("Scripts", required: false)

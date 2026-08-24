@@ -1,0 +1,142 @@
+@model IEnumerable<SoftflipSolutions.ViewModels.PartnerAssignedLeadRow>
+@using SoftflipSolutions.Models
+@{
+    ViewData["Title"] = "Partner Lead Tracking";
+    Layout = "_AdminLayout";
+    var overdue = Model.Sum(x => x.OverdueFollowUps);
+    var open = Model.Sum(x => x.OpenFollowUps);
+}
+
+<div class="page-toolbar">
+    <h2>Partner Lead Tracking</h2>
+    <div class="toolbar-actions">
+        <a asp-action="FollowUps" class="btn btn-sm btn-crm-outline rounded-pill px-3">All follow-ups</a>
+        <a asp-action="PartnerClients" class="btn btn-sm btn-crm-outline rounded-pill px-3">Partner clients</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="stat-card accent-blue">
+            <div class="stat-card-top">
+                <div class="stat-label">Assigned leads</div>
+                <div class="stat-icon info"><i class="bi bi-handshake"></i></div>
+            </div>
+            <div class="stat-value">@Model.Count()</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card accent-yellow">
+            <div class="stat-card-top">
+                <div class="stat-label">Overdue partner FUs</div>
+                <div class="stat-icon warning"><i class="bi bi-alarm"></i></div>
+            </div>
+            <div class="stat-value">@overdue</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card accent-green">
+            <div class="stat-card-top">
+                <div class="stat-label">Open partner FUs</div>
+                <div class="stat-icon success"><i class="bi bi-list-check"></i></div>
+            </div>
+            <div class="stat-value">@open</div>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <h5 class="mb-1">Leads assigned to partners</h5>
+        <p class="mb-0 small text-muted">See which partner owns the lead and what follow-ups they logged</p>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Partner</th>
+                    <th>Source lead</th>
+                    <th>Assigned</th>
+                    <th>Follow-ups</th>
+                    <th>Latest note</th>
+                    <th class="text-end">Open</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model)
+                {
+                    <tr>
+                        <td>
+                            <a asp-action="PartnerClientDetails" asp-route-id="@row.PartnerClientId" class="fw-semibold text-decoration-none">@row.ClientName</a>
+                            <div class="small text-muted">@row.Mobile</div>
+                        </td>
+                        <td>
+                            <a asp-action="ChannelPartnerDetails" asp-route-id="@row.ChannelPartnerId" class="text-decoration-none">@row.PartnerCompany</a>
+                        </td>
+                        <td>
+                            <a href="@SourceUrl(row.SourceLeadType, row.SourceLeadId)" class="text-decoration-none">@row.SourceLeadName</a>
+                            <div class="small text-muted">@DisplayType(row.SourceLeadType)</div>
+                        </td>
+                        <td>
+                            <div>@row.AssignedAt.ToString("dd MMM yyyy")</div>
+                            @if (!string.IsNullOrWhiteSpace(row.AssignNote))
+                            {
+                                <div class="small text-muted text-truncate" style="max-width:160px" title="@row.AssignNote">@row.AssignNote</div>
+                            }
+                        </td>
+                        <td>
+                            @if (row.OverdueFollowUps > 0)
+                            {
+                                <span class="badge bg-warning text-dark">@row.OverdueFollowUps overdue</span>
+                            }
+                            else if (row.OpenFollowUps > 0)
+                            {
+                                <span class="badge bg-info bg-opacity-25 text-info">@row.OpenFollowUps open</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary bg-opacity-25 text-muted">None</span>
+                            }
+                            @if (row.NextDueAt.HasValue)
+                            {
+                                <div class="small text-muted mt-1">Next @row.NextDueAt.Value.ToString("dd MMM")</div>
+                            }
+                        </td>
+                        <td class="small text-muted text-truncate" style="max-width:200px">@(row.LatestFollowUpNote ?? "—")</td>
+                        <td class="text-end">
+                            <a asp-action="PartnerClientDetails" asp-route-id="@row.PartnerClientId" class="btn btn-icon-action" title="Track"><i class="bi bi-eye"></i></a>
+                            <a href="@SourceUrl(row.SourceLeadType, row.SourceLeadId)" class="btn btn-icon-action" title="Source lead"><i class="bi bi-box-arrow-up-right"></i></a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-handshake fs-1 d-block mb-2"></i>
+                            No leads assigned to partners yet. Open any lead and use <strong>Assign to partner</strong>.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@functions {
+    string SourceUrl(string leadType, int leadId) => leadType switch
+    {
+        LeadPipeline.LeadClient => Url.Action("ClientLeadDetails", "Admin", new { id = leadId })!,
+        LeadPipeline.LeadDemo => Url.Action("DemoRequestDetails", "Admin", new { id = leadId })!,
+        _ => Url.Action("EnquiryDetails", "Admin", new { id = leadId })!
+    };
+
+    string DisplayType(string leadType) => leadType switch
+    {
+        LeadPipeline.LeadClient => "External client",
+        LeadPipeline.LeadDemo => "Demo request",
+        LeadPipeline.LeadEnquiry => "Enquiry",
+        _ => leadType
+    };
+}

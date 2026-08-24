@@ -1,0 +1,54 @@
+@model List<SoftflipSolutions.Models.PartnerTicket>
+@{
+    ViewData["Title"] = "Support";
+    Layout = "_PartnerLayout";
+}
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <form asp-action="RaiseTicket" method="post" class="glass-card p-4">
+            @Html.AntiForgeryToken()
+            <h5 class="mb-3" style="color:#152238"><i class="bi bi-life-preserver me-2 text-info"></i>Raise a ticket</h5>
+            <div class="mb-3">
+                <label class="form-label small text-muted">Subject</label>
+                <input type="text" name="subject" class="form-control" required maxlength="200" placeholder="e.g. Proposal PDF issue" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label small text-muted">Message</label>
+                <textarea name="message" class="form-control" rows="5" required maxlength="4000" placeholder="Describe your issue…"></textarea>
+            </div>
+            <button type="submit" class="btn btn-crm-primary w-100"><i class="bi bi-send me-1"></i> Submit</button>
+        </form>
+    </div>
+    <div class="col-lg-7">
+        <div class="glass-card p-0 overflow-hidden">
+            <div class="p-3 border-bottom"><strong>Your tickets</strong></div>
+            @if (Model.Count == 0)
+            {
+                <div class="p-4 text-muted">No tickets yet.</div>
+            }
+            else
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var t in Model)
+                    {
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between gap-2">
+                                <strong>@t.Subject</strong>
+                                <span class="badge @(t.Status == "Resolved" || t.Status == "Closed" ? "bg-success" : t.Status == "InProgress" ? "bg-info" : "bg-warning text-dark")">@t.Status</span>
+                            </div>
+                            <div class="small text-muted mt-1">@t.CreatedAt.ToString("dd MMM yyyy")</div>
+                            <p class="small mb-0 mt-2">@t.Message</p>
+                            @if (!string.IsNullOrWhiteSpace(t.AdminReply))
+                            {
+                                <div class="alert alert-light border small mt-2 mb-0">
+                                    <strong>Softflip reply:</strong> @t.AdminReply
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

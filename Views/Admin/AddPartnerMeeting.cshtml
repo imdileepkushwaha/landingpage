@@ -1,0 +1,207 @@
+@model SoftflipSolutions.Models.PartnerMeeting
+@using SoftflipSolutions.ViewModels
+@{
+    ViewData["Title"] = "Add Partner Meeting";
+    Layout = "_AdminLayout";
+    var partners = ViewBag.Partners as List<PartnerOption> ?? new List<PartnerOption>();
+}
+
+<div class="page-toolbar">
+    <h2>Add meeting</h2>
+    <div class="toolbar-actions">
+        <a asp-action="PartnerMeetings" class="btn btn-sm btn-crm-outline">Back</a>
+    </div>
+</div>
+
+@if (!ViewData.ModelState.IsValid && ViewData.ModelState[string.Empty]?.Errors.Count > 0)
+{
+    <div class="alert alert-danger deal-alert">
+        @foreach (var err in ViewData.ModelState[string.Empty]!.Errors)
+        {
+            <div>@err.ErrorMessage</div>
+        }
+    </div>
+}
+
+<form asp-action="AddPartnerMeeting" method="post" id="addPartnerMeetingForm">
+    @Html.AntiForgeryToken()
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="glass-card p-4 h-100">
+                <h5 class="mb-1">Meeting details</h5>
+                <p class="small text-muted mb-4">Link stays visible only until the meeting date &amp; time.</p>
+
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label settings-label"></label>
+                    <input asp-for="Title" class="form-control settings-input" placeholder="e.g. Softflip Partner Weekly Sync" required />
+                    <span asp-validation-for="Title" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="MeetingAt" class="form-label settings-label"></label>
+                    <input asp-for="MeetingAt" type="datetime-local" class="form-control settings-input" required />
+                    <span asp-validation-for="MeetingAt" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="MeetingLink" class="form-label settings-label"></label>
+                    <input asp-for="MeetingLink" class="form-control settings-input" type="url" placeholder="https://meet.google.com/…" required />
+                    <span asp-validation-for="MeetingLink" class="text-danger small"></span>
+                </div>
+                <div class="mb-0">
+                    <label asp-for="Notes" class="form-label settings-label">Notes (optional)</label>
+                    <textarea asp-for="Notes" class="form-control settings-input" rows="4" maxlength="1000" placeholder="Agenda / dial-in info…"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="glass-card p-0 overflow-hidden h-100">
+                <div class="pm-assign-head">
+                    <div>
+                        <h5 class="mb-1">Assign to partners</h5>
+                        <p class="mb-0 small text-muted">Choose who can see and join this meeting</p>
+                    </div>
+                    <span class="pm-assign-count" id="partnerSelectedCount">0 selected</span>
+                </div>
+
+                <div class="pm-assign-body">
+                    <label class="pm-all-toggle" for="assignToAll">
+                        <span class="pm-all-toggle-copy">
+                            <strong>All active partners</strong>
+                            <small>Everyone with an active partner login</small>
+                        </span>
+                        <input class="form-check-input" type="checkbox" name="assignToAllPartners" value="true" id="assignToAll" />
+                    </label>
+
+                    @if (!partners.Any())
+                    {
+                        <div class="pm-assign-empty">
+                            <i class="bi bi-building"></i>
+                            <p class="mb-2">No active partners found.</p>
+                            <a asp-action="ChannelPartners" class="btn btn-sm btn-crm-outline">Add a partner</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="pm-assign-toolbar">
+                            <div class="pm-assign-search">
+                                <i class="bi bi-search"></i>
+                                <input type="search" id="partnerSearch" placeholder="Search company, owner, email…" autocomplete="off" />
+                            </div>
+                            <div class="pm-assign-actions">
+                                <button type="button" class="btn btn-sm btn-crm-outline" id="btnSelectAllPartners">Select all</button>
+                                <button type="button" class="btn btn-sm btn-crm-outline" id="btnClearPartners">Clear</button>
+                            </div>
+                        </div>
+
+                        <div class="pm-assign-list" id="partnerAssignList">
+                            @foreach (var p in partners)
+                            {
+                                var initial = string.IsNullOrWhiteSpace(p.CompanyName) ? "?" : p.CompanyName.Trim()[0].ToString().ToUpperInvariant();
+                                <label class="pm-assign-row" data-partner-search="@p.Label">
+                                    <input class="form-check-input partner-assign-cb" type="checkbox" name="partnerIds" value="@p.Id" />
+                                    <span class="pm-assign-avatar">@initial</span>
+                                    <span class="pm-assign-meta">
+                                        <strong>@p.CompanyName</strong>
+                                        <small>@p.OwnerName · @p.Email</small>
+                                    </span>
+                                </label>
+                            }
+                        </div>
+                        <div class="pm-assign-empty d-none" id="partnerSearchEmpty">
+                            <i class="bi bi-search"></i>
+                            <p class="mb-0">No partners match your search.</p>
+                        </div>
+                    }
+                </div>
+
+                <div class="pm-assign-foot">
+                    <button type="submit" class="btn btn-crm-primary">
+                        <i class="bi bi-camera-video me-1"></i> Publish meeting
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+(function () {
+    var all = document.getElementById('assignToAll');
+    var list = document.getElementById('partnerAssignList');
+    var countEl = document.getElementById('partnerSelectedCount');
+    var search = document.getElementById('partnerSearch');
+    var empty = document.getElementById('partnerSearchEmpty');
+    var rows = function () { return Array.from(document.querySelectorAll('.pm-assign-row')); };
+    var cbs = function () { return Array.from(document.querySelectorAll('.partner-assign-cb')); };
+
+    function updateCount() {
+        if (!countEl) return;
+        if (all && all.checked) {
+            countEl.textContent = 'All partners';
+            countEl.classList.add('is-all');
+            return;
+        }
+        countEl.classList.remove('is-all');
+        var n = cbs().filter(function (cb) { return cb.checked && !cb.disabled; }).length;
+        countEl.textContent = n + ' selected';
+    }
+
+    function syncAll() {
+        var on = !!(all && all.checked);
+        document.querySelector('.pm-assign-body')?.classList.toggle('is-all-mode', on);
+        cbs().forEach(function (cb) {
+            cb.disabled = on;
+            if (on) cb.checked = false;
+            cb.closest('.pm-assign-row')?.classList.toggle('is-disabled', on);
+            cb.closest('.pm-assign-row')?.classList.toggle('is-checked', cb.checked);
+        });
+        if (search) search.disabled = on;
+        updateCount();
+    }
+
+    function syncRowState(cb) {
+        cb.closest('.pm-assign-row')?.classList.toggle('is-checked', cb.checked);
+        updateCount();
+    }
+
+    if (all) all.addEventListener('change', syncAll);
+    cbs().forEach(function (cb) {
+        cb.addEventListener('change', function () { syncRowState(cb); });
+    });
+
+    document.getElementById('btnSelectAllPartners')?.addEventListener('click', function () {
+        if (all) { all.checked = false; }
+        syncAll();
+        rows().forEach(function (row) {
+            if (row.style.display === 'none') return;
+            var cb = row.querySelector('.partner-assign-cb');
+            if (cb) { cb.checked = true; syncRowState(cb); }
+        });
+        updateCount();
+    });
+
+    document.getElementById('btnClearPartners')?.addEventListener('click', function () {
+        cbs().forEach(function (cb) { cb.checked = false; syncRowState(cb); });
+        updateCount();
+    });
+
+    if (search) {
+        search.addEventListener('input', function () {
+            var q = (search.value || '').trim().toLowerCase();
+            var visible = 0;
+            rows().forEach(function (row) {
+                var hay = (row.getAttribute('data-partner-search') || '').toLowerCase();
+                var show = !q || hay.indexOf(q) >= 0;
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+            if (empty) empty.classList.toggle('d-none', visible > 0);
+            if (list) list.classList.toggle('d-none', visible === 0);
+        });
+    }
+
+    syncAll();
+})();
+</script>
+}

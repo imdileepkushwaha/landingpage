@@ -204,9 +204,16 @@
                         </a>
                         @if (!string.IsNullOrWhiteSpace(Model.ClientEmail))
                         {
-                            <form asp-action="SendProposalEmail" method="post">
+                            <form asp-action="SendProposalEmail" method="post" class="d-inline-flex flex-column gap-1">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="proposalId" value="@Model.LatestProposal.Id" />
+                                @if (Model.ProposalServiceImagePaths.Any())
+                                {
+                                    <label class="small text-muted mb-0 d-flex align-items-center gap-1">
+                                        <input type="checkbox" name="attachServiceImages" value="true" checked />
+                                        Attach service images (@Model.ProposalServiceImagePaths.Count)
+                                    </label>
+                                }
                                 <button type="submit" class="btn lead-deal-btn">
                                     <i class="bi bi-envelope"></i> Email
                                 </button>

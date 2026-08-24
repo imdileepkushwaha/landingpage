@@ -118,6 +118,37 @@ a {
   box-shadow: 0 12px 25px rgba(4, 142, 231, 0.5);
 }
 
+.btn-partner-login {
+  font-weight: 650;
+  font-size: 0.9rem;
+  border: 1.5px solid rgba(4, 142, 231, 0.45);
+  color: var(--primary-color, #048ee7) !important;
+  background: rgba(4, 142, 231, 0.06);
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.btn-partner-login:hover {
+  background: rgba(4, 142, 231, 0.14);
+  border-color: var(--primary-color, #048ee7);
+  color: var(--primary-color, #048ee7) !important;
+  transform: translateY(-1px);
+}
+
+body:has(.hero-wrapper) .main-header:not(.scrolled) .btn-partner-login,
+body:has(.pf-hero) .main-header:not(.scrolled) .btn-partner-login {
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+body:has(.hero-wrapper) .main-header:not(.scrolled) .btn-partner-login:hover,
+body:has(.pf-hero) .main-header:not(.scrolled) .btn-partner-login:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: #fff;
+  color: #fff !important;
+}
+
 /* Hero Section Modern */
 .hero-wrapper {
   position: relative;

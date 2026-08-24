@@ -25,6 +25,12 @@ public class ApplicationDbContext : DbContext
     public DbSet<ChannelPartner> ChannelPartners { get; set; }
     public DbSet<PartnerClient> PartnerClients { get; set; }
     public DbSet<PartnerProposal> PartnerProposals { get; set; }
+    public DbSet<PartnerMeeting> PartnerMeetings { get; set; }
+    public DbSet<PartnerMeetingAssignment> PartnerMeetingAssignments { get; set; }
+    public DbSet<PartnerInvoice> PartnerInvoices { get; set; }
+    public DbSet<PartnerTicket> PartnerTickets { get; set; }
+    public DbSet<PartnerNotification> PartnerNotifications { get; set; }
+    public DbSet<MarketingKitItem> MarketingKitItems { get; set; }
     public DbSet<ServiceCatalog> ServiceCatalogs { get; set; }
     public DbSet<ServicePanel> ServicePanels { get; set; }
     public DbSet<ServiceModule> ServiceModules { get; set; }
@@ -84,6 +90,28 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(c => c.ChannelPartnerId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<PartnerClient>()
+            .HasIndex(c => new { c.SourceLeadType, c.SourceLeadId });
+
+        modelBuilder.Entity<PartnerMeeting>()
+            .HasIndex(m => new { m.IsActive, m.MeetingAt });
+
+        modelBuilder.Entity<PartnerMeetingAssignment>()
+            .HasOne(a => a.PartnerMeeting)
+            .WithMany(m => m.Assignments)
+            .HasForeignKey(a => a.PartnerMeetingId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PartnerMeetingAssignment>()
+            .HasOne(a => a.ChannelPartner)
+            .WithMany()
+            .HasForeignKey(a => a.ChannelPartnerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PartnerMeetingAssignment>()
+            .HasIndex(a => new { a.PartnerMeetingId, a.ChannelPartnerId })
+            .IsUnique();
+
         modelBuilder.Entity<PartnerProposal>()
             .HasOne(p => p.ChannelPartner)
             .WithMany(c => c.Proposals)
@@ -101,6 +129,52 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(p => p.ServiceCatalogId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<PartnerClient>()
+            .HasIndex(c => new { c.ChannelPartnerId, c.Stage });
+
+        modelBuilder.Entity<ChannelPartner>()
+            .HasIndex(p => p.ReferralCode);
+
+        modelBuilder.Entity<PartnerInvoice>()
+            .HasOne(i => i.ChannelPartner)
+            .WithMany(p => p.Invoices)
+            .HasForeignKey(i => i.ChannelPartnerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PartnerInvoice>()
+            .HasOne(i => i.PartnerClient)
+            .WithMany()
+            .HasForeignKey(i => i.PartnerClientId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PartnerInvoice>()
+            .HasOne(i => i.PartnerProposal)
+            .WithMany()
+            .HasForeignKey(i => i.PartnerProposalId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<PartnerInvoice>()
+            .HasIndex(i => i.InvoiceNumber)
+            .IsUnique();
+
+        modelBuilder.Entity<PartnerTicket>()
+            .HasOne(t => t.ChannelPartner)
+            .WithMany(p => p.Tickets)
+            .HasForeignKey(t => t.ChannelPartnerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PartnerNotification>()
+            .HasOne(n => n.ChannelPartner)
+            .WithMany(p => p.Notifications)
+            .HasForeignKey(n => n.ChannelPartnerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PartnerNotification>()
+            .HasIndex(n => new { n.ChannelPartnerId, n.IsRead, n.CreatedAt });
+
+        modelBuilder.Entity<MarketingKitItem>()
+            .HasIndex(m => new { m.IsActive, m.SortOrder });
 
         modelBuilder.Entity<ServicePanel>()
             .HasOne(p => p.Service)

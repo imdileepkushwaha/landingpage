@@ -16,4 +16,5 @@ public class LeadDealPanelViewModel
     public Invoice? LatestInvoice { get; set; }
     public string ProposalPublicUrl { get; set; } = string.Empty;
     public List<ServiceCatalog> Services { get; set; } = new();
+    public List<string> ProposalServiceImagePaths { get; set; } = new();
 }

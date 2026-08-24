@@ -20,6 +20,10 @@ public static class AdminMenuCatalog
     public const string Services = "services";
     public const string ChannelPartners = "partners";
     public const string PartnerClients = "partner_clients";
+    public const string PartnerLeadTracking = "partner_lead_tracking";
+    public const string PartnerMeetings = "partner_meetings";
+    public const string PartnerTickets = "partner_tickets";
+    public const string MarketingKit = "marketing_kit";
 
     // Sales
     public const string PipelineBoard = "pipeline_board";
@@ -72,6 +76,10 @@ public static class AdminMenuCatalog
         new(Services, "Services", "bi-box-seam", "CRM", "Service catalog & modules"),
         new(ChannelPartners, "Channel Partners", "bi-building", "CRM", "Partner companies"),
         new(PartnerClients, "Partner Clients", "bi-people-fill", "CRM", "Clients from partners"),
+        new(PartnerLeadTracking, "Partner Lead Tracking", "bi-signpost-2", "CRM", "Assigned leads & partner follow-ups"),
+        new(PartnerMeetings, "Partner Meetings", "bi-camera-video", "CRM", "Meeting links for partners"),
+        new(PartnerTickets, "Partner Tickets", "bi-life-preserver", "CRM", "Partner support tickets"),
+        new(MarketingKit, "Marketing Kit", "bi-images", "CRM", "Assets for partner download"),
 
         new(PipelineBoard, "Pipeline Board", "bi-columns-gap", "Sales", "Kanban board"),
         new(ActiveDeals, "Active Deals", "bi-briefcase", "Sales", "Confirmed deals"),
@@ -126,8 +134,12 @@ public static class AdminMenuCatalog
         "ClientLeads" or "AddClientLead" or "ClientLeadDetails" or "EditClientLead" or "AddClientLeadNote" or "UpdateClientLeadStatus" or "CheckDuplicateLead" => ClientLeads,
         "MergeLeads" => MergeLeads,
         "Services" or "AddService" or "EditService" or "ServiceDetails" or "AddServicePanel" or "DeleteServicePanel" or "UploadPanelModules" or "DownloadServiceModulesTemplate" or "GetServiceModules" or "ToggleService" or "DeleteService" => Services,
-        "ChannelPartners" or "AddChannelPartner" or "EditChannelPartner" or "ChannelPartnerDetails" or "ToggleChannelPartner" or "DeleteChannelPartner" => ChannelPartners,
+        "ChannelPartners" or "AddChannelPartner" or "EditChannelPartner" or "ChannelPartnerDetails" or "ToggleChannelPartner" or "DeleteChannelPartner" or "SendPartnerCredentials" => ChannelPartners,
         "PartnerClients" or "PartnerClientDetails" => PartnerClients,
+        "PartnerLeadTracking" or "AssignLeadToPartner" or "UnassignLeadFromPartner" => PartnerLeadTracking,
+        "PartnerMeetings" or "AddPartnerMeeting" or "TogglePartnerMeeting" or "DeletePartnerMeeting" => PartnerMeetings,
+        "PartnerTickets" or "ReplyPartnerTicket" => PartnerTickets,
+        "MarketingKitAdmin" or "AddMarketingKitItem" or "ToggleMarketingKitItem" or "DeleteMarketingKitItem" => MarketingKit,
 
         "PipelineBoard" => PipelineBoard,
         "ConfirmedClients" => ActiveDeals,

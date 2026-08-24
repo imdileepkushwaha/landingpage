@@ -146,7 +146,7 @@ public class HomeController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    public async Task<IActionResult> Partners()
+    public async Task<IActionResult> Partners(string? refCode = null)
     {
         ViewData["Title"] = "Channel Partners";
         ViewData["MetaDescription"] = "Meet Softflip Solutions authorized channel partners across India.";
@@ -154,6 +154,15 @@ public class HomeController : Controller
             .Where(p => p.IsActive)
             .OrderBy(p => p.CompanyName)
             .ToListAsync();
+
+        if (!string.IsNullOrWhiteSpace(refCode))
+        {
+            var referred = partners.FirstOrDefault(p =>
+                string.Equals(p.ReferralCode, refCode.Trim(), StringComparison.OrdinalIgnoreCase));
+            ViewBag.ReferredPartner = referred;
+            ViewBag.RefCode = refCode.Trim();
+        }
+
         return View(partners);
     }
 

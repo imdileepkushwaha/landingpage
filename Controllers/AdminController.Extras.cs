@@ -742,7 +742,7 @@ public partial class AdminController
     public async Task<IActionResult> FollowUpAutomation()
     {
         var overdue = await _context.FollowUpReminders
-            .Where(f => !f.IsDone && f.DueAt < DateTime.Today)
+            .Where(f => !f.IsDone && f.DueAt < DateTime.Now)
             .OrderBy(f => f.DueAt)
             .ToListAsync();
 

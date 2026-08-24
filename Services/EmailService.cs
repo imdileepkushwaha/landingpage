@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Mail;
+using System.Net.Mime;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using SoftflipSolutions.Data;
 
@@ -8,6 +10,7 @@ namespace SoftflipSolutions.Services;
 public interface IEmailService
 {
     Task<bool> SendEmailAsync(string toEmail, string subject, string htmlMessage, byte[]? attachment = null, string? attachmentName = null, string category = "General");
+    Task<bool> SendEmailAsync(string toEmail, string subject, string htmlMessage, IEnumerable<(byte[] Content, string FileName, string ContentType)>? attachments, string category = "General");
 }
 
 public class EmailService : IEmailService
@@ -24,6 +27,23 @@ public class EmailService : IEmailService
     }
 
     public async Task<bool> SendEmailAsync(string toEmail, string subject, string htmlMessage, byte[]? attachment = null, string? attachmentName = null, string category = "General")
+    {
+        var attachments = new List<(byte[] Content, string FileName, string ContentType)>();
+        if (attachment != null && attachment.Length > 0)
+        {
+            var name = attachmentName ?? "proposal.pdf";
+            var contentType = name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? "application/pdf" : "application/octet-stream";
+            attachments.Add((attachment, name, contentType));
+        }
+        return await SendEmailAsync(toEmail, subject, htmlMessage, attachments, category);
+    }
+
+    public async Task<bool> SendEmailAsync(
+        string toEmail,
+        string subject,
+        string htmlMessage,
+        IEnumerable<(byte[] Content, string FileName, string ContentType)>? attachments,
+        string category = "General")
     {
         try
         {
@@ -51,19 +71,42 @@ public class EmailService : IEmailService
 
             var mailMessage = new MailMessage
             {
-                From = new MailAddress(email, fromName),
+                From = new MailAddress(email, fromName, Encoding.UTF8),
                 Subject = subject,
-                Body = htmlMessage,
-                IsBodyHtml = true
+                SubjectEncoding = Encoding.UTF8,
+                HeadersEncoding = Encoding.UTF8,
+                BodyEncoding = Encoding.UTF8
             };
             mailMessage.To.Add(toEmail);
 
-            if (attachment != null && attachment.Length > 0)
+            // AlternateView + explicit charset so emoji / Unicode survive SMTP transfer.
+            var htmlView = AlternateView.CreateAlternateViewFromString(
+                htmlMessage, Encoding.UTF8, MediaTypeNames.Text.Html);
+            htmlView.ContentType.CharSet = "utf-8";
+            mailMessage.AlternateViews.Add(htmlView);
+
+            var streams = new List<MemoryStream>();
+            try
             {
-                mailMessage.Attachments.Add(new Attachment(new MemoryStream(attachment), attachmentName ?? "proposal.pdf", "application/pdf"));
+                if (attachments != null)
+                {
+                    foreach (var (content, fileName, contentType) in attachments)
+                    {
+                        if (content == null || content.Length == 0) continue;
+                        var ms = new MemoryStream(content);
+                        streams.Add(ms);
+                        mailMessage.Attachments.Add(new Attachment(ms, fileName, contentType));
+                    }
+                }
+
+                await client.SendMailAsync(mailMessage);
+            }
+            finally
+            {
+                htmlView.Dispose();
+                foreach (var s in streams) s.Dispose();
             }
 
-            await client.SendMailAsync(mailMessage);
             await _emailLog.LogAsync(toEmail, subject, category, true);
             return true;
         }

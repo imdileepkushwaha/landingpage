@@ -81,9 +81,59 @@ public class FollowUpReminderItem
     public string LeadType { get; set; } = string.Empty;
     public int LeadId { get; set; }
     public string LeadName { get; set; } = string.Empty;
+    public string StepType { get; set; } = SoftflipSolutions.Models.FollowUpSteps.Note;
     public DateTime DueAt { get; set; }
     public string Note { get; set; } = string.Empty;
     public bool IsDone { get; set; }
     public DateTime CreatedAt { get; set; }
-    public bool IsOverdue => !IsDone && DueAt.Date < DateTime.Today;
+    public DateTime? CompletedAt { get; set; }
+    public bool IsOverdue => !IsDone && DueAt < DateTime.Now;
 }
+
+public class LeadPartnerAssignPanelViewModel
+{
+    public string LeadType { get; set; } = string.Empty;
+    public int LeadId { get; set; }
+    public string LeadName { get; set; } = string.Empty;
+    public bool IsAssigned { get; set; }
+    public int? PartnerClientId { get; set; }
+    public int? ChannelPartnerId { get; set; }
+    public string? PartnerCompanyName { get; set; }
+    public string? PartnerOwnerName { get; set; }
+    public DateTime? AssignedAt { get; set; }
+    public string? AssignedBy { get; set; }
+    public string? AssignNote { get; set; }
+    public List<PartnerOption> Partners { get; set; } = new();
+    public List<FollowUpReminderItem> PartnerFollowUps { get; set; } = new();
+    public int OpenFollowUps => PartnerFollowUps.Count(x => !x.IsDone);
+    public int OverdueFollowUps => PartnerFollowUps.Count(x => x.IsOverdue);
+}
+
+public class PartnerOption
+{
+    public int Id { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public string CompanyName { get; set; } = string.Empty;
+    public string OwnerName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+}
+
+public class PartnerAssignedLeadRow
+{
+    public int PartnerClientId { get; set; }
+    public string ClientName { get; set; } = string.Empty;
+    public string Mobile { get; set; } = string.Empty;
+    public string Requirement { get; set; } = string.Empty;
+    public int ChannelPartnerId { get; set; }
+    public string PartnerCompany { get; set; } = string.Empty;
+    public string SourceLeadType { get; set; } = string.Empty;
+    public int SourceLeadId { get; set; }
+    public string SourceLeadName { get; set; } = string.Empty;
+    public DateTime AssignedAt { get; set; }
+    public string? AssignNote { get; set; }
+    public int OpenFollowUps { get; set; }
+    public int OverdueFollowUps { get; set; }
+    public DateTime? NextDueAt { get; set; }
+    public string? LatestFollowUpNote { get; set; }
+}
+

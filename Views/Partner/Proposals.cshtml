@@ -1,0 +1,77 @@
+@model List<SoftflipSolutions.Models.PartnerProposal>
+@{
+    ViewData["Title"] = "My Proposals";
+    Layout = "_PartnerLayout";
+}
+
+<div class="glass-card p-4 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+        <h4 class="mb-1" style="color:#152238">My Proposals</h4>
+        <p class="text-muted small mb-0">All proposals created for your clients.</p>
+    </div>
+    <a asp-action="Clients" class="btn btn-crm-outline btn-sm"><i class="bi bi-people me-1"></i> Clients</a>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    @if (Model.Count == 0)
+    {
+        <div class="p-4 text-muted">No proposals yet. Open a client and create one.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table admin-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Client</th>
+                        <th>Amount</th>
+                        <th>Valid until</th>
+                        <th>Created</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var p in Model)
+                {
+                    var waMobile = (p.PartnerClient?.WhatsApp ?? p.PartnerClient?.Mobile ?? "").Replace("+", "").Replace(" ", "").Replace("-", "");
+                    if (!string.IsNullOrWhiteSpace(waMobile) && !waMobile.StartsWith("91") && waMobile.Length == 10)
+                        waMobile = "91" + waMobile;
+                    var shareText = $"Proposal: {p.Title}\nAmount: ₹{p.Amount:N0}\nValid until: {p.ValidUntil:dd MMM yyyy}\n— Softflip via {ViewBag.Partner?.CompanyName}";
+                    var waUrl = string.IsNullOrWhiteSpace(waMobile)
+                        ? $"https://api.whatsapp.com/send?text={Uri.EscapeDataString(shareText)}"
+                        : $"https://api.whatsapp.com/send?phone={waMobile}&text={Uri.EscapeDataString(shareText)}";
+                    <tr data-partner-search-row data-partner-search="@(p.Title) @(p.PartnerClient?.Name)">
+                        <td>
+                            <strong>@p.Title</strong>
+                            @if (!string.IsNullOrWhiteSpace(p.Service?.Name))
+                            {
+                                <div class="small text-muted">@p.Service.Name</div>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="ClientDetails" asp-route-id="@p.PartnerClientId">@(p.PartnerClient?.Name ?? "—")</a>
+                        </td>
+                        <td>₹@p.Amount.ToString("N0")</td>
+                        <td>@p.ValidUntil.ToString("dd MMM yyyy")</td>
+                        <td>@p.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td class="text-end">
+                            <div class="admin-row-actions justify-content-end">
+                                <a asp-action="DownloadProposal" asp-route-id="@p.Id" class="btn btn-icon-action" title="Download PDF" target="_blank">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </a>
+                                <a href="@waUrl" target="_blank" rel="noopener" class="btn btn-icon-action whatsapp" title="WhatsApp">
+                                    <i class="bi bi-whatsapp"></i>
+                                </a>
+                                <a asp-action="CreateInvoice" asp-route-proposalId="@p.Id" class="btn btn-icon-action edit" title="Create invoice">
+                                    <i class="bi bi-receipt"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -1,0 +1,67 @@
+@model List<SoftflipSolutions.Models.PartnerInvoice>
+@{
+    ViewData["Title"] = "Invoices";
+    Layout = "_PartnerLayout";
+}
+
+<div class="glass-card p-4 mb-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+        <h4 class="mb-1" style="color:#152238">Invoices</h4>
+        <p class="text-muted small mb-0">Create invoices for clients — bank/UPI from your profile appear on PDF.</p>
+    </div>
+    <a asp-action="CreateInvoice" class="btn btn-crm-primary btn-sm"><i class="bi bi-plus-lg me-1"></i> New invoice</a>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    @if (Model.Count == 0)
+    {
+        <div class="p-4 text-muted">No invoices yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table admin-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Invoice</th>
+                        <th>Client</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var i in Model)
+                {
+                    <tr>
+                        <td><strong>@i.InvoiceNumber</strong><div class="small text-muted">@i.Title</div></td>
+                        <td>@(i.PartnerClient?.Name ?? "—")</td>
+                        <td>₹@i.GrandTotal.ToString("N0")</td>
+                        <td>
+                            @if (i.Status == "Paid")
+                            { <span class="badge bg-success">Paid</span> }
+                            else if (i.Status == "Partial")
+                            { <span class="badge bg-warning text-dark">Partial</span> }
+                            else
+                            { <span class="badge bg-secondary">Unpaid</span> }
+                        </td>
+                        <td>@i.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td class="text-nowrap">
+                            <a asp-action="DownloadPartnerInvoice" asp-route-id="@i.Id" class="btn btn-sm btn-crm-outline"><i class="bi bi-download"></i></a>
+                            @if (i.Status != "Paid")
+                            {
+                                <form asp-action="MarkPartnerInvoicePaid" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@i.Id" />
+                                    <button type="submit" class="btn btn-sm btn-success" title="Mark paid"><i class="bi bi-check2"></i></button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -1,0 +1,98 @@
+@model SoftflipSolutions.ViewModels.LeadPartnerAssignPanelViewModel
+
+<div class="glass-card p-0 overflow-hidden mb-4">
+    <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <div>
+            <h5 class="mb-0"><i class="bi bi-handshake me-2"></i>Assign to partner</h5>
+            <p class="mb-0 small text-muted">Partner handles follow-ups; you track progress here</p>
+        </div>
+        @if (Model.IsAssigned)
+        {
+            <span class="badge bg-warning text-dark">Assigned · @Model.OpenFollowUps open · @Model.OverdueFollowUps overdue</span>
+        }
+    </div>
+    <div class="p-3">
+        @if (!Model.IsAssigned)
+        {
+            @if (!Model.Partners.Any())
+            {
+                <p class="text-muted small mb-0">No active channel partners. <a asp-action="ChannelPartners">Add a partner</a> first.</p>
+            }
+            else
+            {
+                <form asp-action="AssignLeadToPartner" method="post" class="row g-2 align-items-end">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="leadType" value="@Model.LeadType" />
+                    <input type="hidden" name="leadId" value="@Model.LeadId" />
+                    <div class="col-md-5">
+                        <label class="form-label small text-muted mb-1">Channel partner</label>
+                        <select name="channelPartnerId" class="form-select" required>
+                            <option value="">— Select partner —</option>
+                            @foreach (var p in Model.Partners)
+                            {
+                                <option value="@p.Id">@p.Label</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small text-muted mb-1">Note for partner (optional)</label>
+                        <input type="text" name="assignNote" class="form-control" maxlength="500" placeholder="Call about demo / budget…" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-warning w-100 text-dark">
+                            <i class="bi bi-person-check me-1"></i> Assign
+                        </button>
+                    </div>
+                </form>
+            }
+        }
+        else
+        {
+            <div class="d-flex flex-wrap justify-content-between gap-3 mb-3">
+                <div>
+                    <div class="fw-semibold">@(Model.PartnerCompanyName ?? "Partner")</div>
+                    <div class="small text-muted">
+                        @(Model.PartnerOwnerName)
+                        @if (Model.AssignedAt.HasValue)
+                        {
+                            <span>· Assigned @Model.AssignedAt.Value.ToString("dd MMM yyyy")</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.AssignedBy))
+                        {
+                            <span>· by @Model.AssignedBy</span>
+                        }
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.AssignNote))
+                    {
+                        <div class="small mt-1"><span class="text-muted">Note:</span> @Model.AssignNote</div>
+                    }
+                </div>
+                <div class="d-flex flex-wrap gap-2 align-items-start">
+                    @if (Model.PartnerClientId.HasValue)
+                    {
+                        <a asp-action="PartnerClientDetails" asp-route-id="@Model.PartnerClientId" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-eye me-1"></i> Partner client
+                        </a>
+                    }
+                    @if (Model.ChannelPartnerId.HasValue)
+                    {
+                        <a asp-action="ChannelPartnerDetails" asp-route-id="@Model.ChannelPartnerId" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-building me-1"></i> Partner
+                        </a>
+                    }
+                    <form asp-action="UnassignLeadFromPartner" method="post" class="d-inline"
+                          onsubmit="return confirm('Remove partner assignment? The partner keeps the client record.');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="leadType" value="@Model.LeadType" />
+                        <input type="hidden" name="leadId" value="@Model.LeadId" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Unassign</button>
+                    </form>
+                </div>
+            </div>
+
+            <h6 class="small text-uppercase text-muted mb-2">Partner follow-up timeline</h6>
+            ViewData["FollowUpShowActions"] = false;
+            <partial name="_FollowUpTimeline" model="Model.PartnerFollowUps" />
+        }
+    </div>
+</div>

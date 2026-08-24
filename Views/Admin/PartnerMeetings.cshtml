@@ -1,0 +1,113 @@
+@model IEnumerable<SoftflipSolutions.Models.PartnerMeeting>
+@{
+    ViewData["Title"] = "Partner Meetings";
+    Layout = "_AdminLayout";
+    var now = DateTime.Now;
+}
+
+<div class="page-toolbar">
+    <h2>Partner Meetings</h2>
+    <div class="toolbar-actions">
+        <a asp-action="AddPartnerMeeting" class="btn btn-crm-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Add meeting
+        </a>
+    </div>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <h5 class="mb-1">Meetings for partners</h5>
+        <p class="mb-0 small text-muted">Partners see the link only until the meeting date &amp; time — after that it auto-hides</p>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Date &amp; time</th>
+                    <th>Assigned to</th>
+                    <th>Link</th>
+                    <th>Status</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in Model)
+                {
+                    var visible = m.IsActive && m.MeetingAt >= now;
+                    <tr>
+                        <td>
+                            <strong>@m.Title</strong>
+                            @if (!string.IsNullOrWhiteSpace(m.Notes))
+                            {
+                                <div class="small text-muted text-truncate" style="max-width:280px">@m.Notes</div>
+                            }
+                        </td>
+                        <td>@m.MeetingAt.ToString("dd MMM yyyy, hh:mm tt")</td>
+                        <td>
+                            @if (m.AssignToAllPartners)
+                            {
+                                <span class="badge bg-info bg-opacity-25 text-info">All partners</span>
+                            }
+                            else if (m.Assignments?.Any() == true)
+                            {
+                                <div class="small">
+                                    @foreach (var a in m.Assignments.Take(4))
+                                    {
+                                        <div>@(a.ChannelPartner?.CompanyName ?? $"#{a.ChannelPartnerId}")</div>
+                                    }
+                                    @if (m.Assignments.Count > 4)
+                                    {
+                                        <div class="text-muted">+@(m.Assignments.Count - 4) more</div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">—</span>
+                            }
+                        </td>
+                        <td>
+                            <a href="@m.MeetingLink" target="_blank" rel="noopener" class="small text-break">@m.MeetingLink</a>
+                        </td>
+                        <td>
+                            @if (visible)
+                            {
+                                <span class="badge bg-success bg-opacity-25 text-success">Visible</span>
+                            }
+                            else if (!m.IsActive)
+                            {
+                                <span class="badge bg-secondary bg-opacity-25 text-muted">Inactive</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Expired</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <form asp-action="TogglePartnerMeeting" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@m.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">@(m.IsActive ? "Deactivate" : "Activate")</button>
+                            </form>
+                            <form asp-action="DeletePartnerMeeting" method="post" class="d-inline" onsubmit="return confirm('Delete this meeting?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@m.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-camera-video fs-1 d-block mb-2"></i>
+                            No meetings yet. <a asp-action="AddPartnerMeeting">Add one</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

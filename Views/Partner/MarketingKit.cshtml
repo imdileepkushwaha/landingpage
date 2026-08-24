@@ -1,0 +1,40 @@
+@model List<SoftflipSolutions.Models.MarketingKitItem>
+@{
+    ViewData["Title"] = "Marketing Kit";
+    Layout = "_PartnerLayout";
+}
+
+<div class="glass-card p-4 mb-4">
+    <h4 class="mb-1" style="color:#152238">Marketing Kit</h4>
+    <p class="text-muted small mb-0">Brochures, posters and WhatsApp creatives from Softflip — download and share.</p>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="glass-card p-4 text-muted">No marketing assets uploaded yet. Softflip admin will add them soon.</div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var m in Model)
+        {
+            <div class="col-md-6 col-xl-4">
+                <div class="glass-card p-4 h-100 d-flex flex-column">
+                    <span class="badge bg-secondary align-self-start mb-2">@m.Category</span>
+                    <h6 style="color:#152238">@m.Title</h6>
+                    @if (!string.IsNullOrWhiteSpace(m.Description))
+                    {
+                        <p class="small text-muted flex-grow-1">@m.Description</p>
+                    }
+                    else
+                    {
+                        <div class="flex-grow-1"></div>
+                    }
+                    <a asp-action="DownloadMarketingKit" asp-route-id="@m.Id" class="btn btn-crm-primary btn-sm mt-2">
+                        <i class="bi bi-download me-1"></i> Download
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+}

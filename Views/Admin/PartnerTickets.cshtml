@@ -1,0 +1,66 @@
+@model List<SoftflipSolutions.Models.PartnerTicket>
+@{
+    ViewData["Title"] = "Partner Tickets";
+    Layout = "_AdminLayout";
+    var status = ViewBag.Status as string;
+}
+
+<div class="page-toolbar">
+    <h2>Partner support tickets</h2>
+    <div class="toolbar-actions">
+        <a asp-action="PartnerTickets" class="btn btn-sm @(string.IsNullOrEmpty(status) ? "btn-crm-primary" : "btn-crm-outline")">All</a>
+        <a asp-action="PartnerTickets" asp-route-status="Open" class="btn btn-sm @(status=="Open" ? "btn-crm-primary" : "btn-crm-outline")">Open</a>
+        <a asp-action="PartnerTickets" asp-route-status="InProgress" class="btn btn-sm @(status=="InProgress" ? "btn-crm-primary" : "btn-crm-outline")">In progress</a>
+        <a asp-action="PartnerTickets" asp-route-status="Resolved" class="btn btn-sm @(status=="Resolved" ? "btn-crm-primary" : "btn-crm-outline")">Resolved</a>
+    </div>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    @if (Model.Count == 0)
+    {
+        <div class="p-4 text-muted">No tickets.</div>
+    }
+    else
+    {
+        @foreach (var t in Model)
+        {
+            <div class="p-4 border-bottom">
+                <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+                    <div>
+                        <strong>@t.Subject</strong>
+                        <div class="small text-muted">@(t.ChannelPartner?.CompanyName) · @t.CreatedAt.ToString("dd MMM yyyy HH:mm")</div>
+                    </div>
+                    <span class="badge bg-secondary">@t.Status</span>
+                </div>
+                <p class="small">@t.Message</p>
+                <form asp-action="ReplyPartnerTicket" method="post" class="row g-2 align-items-end">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@t.Id" />
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted">Reply</label>
+                        <textarea name="adminReply" class="form-control form-control-sm" rows="2">@t.AdminReply</textarea>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Status</label>
+                        <select name="status" class="form-select form-select-sm">
+                            @foreach (var s in new[] { "Open", "InProgress", "Resolved", "Closed" })
+                            {
+                                if (s == t.Status)
+                                {
+                                    <option value="@s" selected>@s</option>
+                                }
+                                else
+                                {
+                                    <option value="@s">@s</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-crm-primary btn-sm w-100">Save</button>
+                    </div>
+                </form>
+            </div>
+        }
+    }
+</div>

@@ -52,13 +52,14 @@
 <div class="glass-card p-0 overflow-hidden">
     <div class="p-4 border-bottom admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
         <h5 class="mb-1">Reminders</h5>
-        <p class="mb-0 small text-muted">Add follow-ups from any lead detail page</p>
+        <p class="mb-0 small text-muted">Step-based reminders with date &amp; time — add from any lead detail page</p>
     </div>
     <div class="table-responsive">
         <table class="table table-borderless mb-0 align-middle">
             <thead>
                 <tr>
                     <th>Due</th>
+                    <th>Step</th>
                     <th>Lead</th>
                     <th>Note</th>
                     <th>Status</th>
@@ -68,13 +69,19 @@
             <tbody>
                 @foreach (var item in Model)
                 {
+                    var step = SoftflipSolutions.Models.FollowUpSteps.Get(item.StepType);
                     <tr>
                         <td class="@(item.IsOverdue ? "text-warning fw-semibold" : "")">
-                            @item.DueAt.ToString("dd MMM yyyy")
+                            @item.DueAt.ToString("dd MMM yyyy, hh:mm tt")
                             @if (item.IsOverdue)
                             {
                                 <span class="badge bg-warning text-dark ms-1">Overdue</span>
                             }
+                        </td>
+                        <td>
+                            <span class="badge bg-@step.Badge @(step.Badge is "warning" ? "text-dark" : "")">
+                                <i class="bi @step.Icon me-1"></i>@step.Label
+                            </span>
                         </td>
                         <td>
                             <a href="@LeadDetailUrl(item.LeadType, item.LeadId)" class="text-decoration-none fw-semibold">@item.LeadName</a>
@@ -85,6 +92,10 @@
                             @if (item.IsDone)
                             {
                                 <span class="badge bg-success bg-opacity-25 text-success">Done</span>
+                                @if (item.CompletedAt.HasValue)
+                                {
+                                    <div class="small text-muted">@item.CompletedAt.Value.ToString("dd MMM, hh:mm tt")</div>
+                                }
                             }
                             else
                             {
@@ -107,7 +118,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">
+                        <td colspan="6" class="text-center py-5 text-muted">
                             <i class="bi bi-alarm fs-1 d-block mb-2"></i>
                             No follow-ups@(showDone ? "" : " open").
                         </td>
@@ -123,6 +134,7 @@
     {
         SoftflipSolutions.Models.LeadPipeline.LeadClient => Url.Action("ClientLeadDetails", "Admin", new { id = leadId })!,
         SoftflipSolutions.Models.LeadPipeline.LeadDemo => Url.Action("DemoRequestDetails", "Admin", new { id = leadId })!,
+        SoftflipSolutions.Models.LeadPipeline.LeadPartnerClient => Url.Action("PartnerClientDetails", "Admin", new { id = leadId })!,
         _ => Url.Action("EnquiryDetails", "Admin", new { id = leadId })!
     };
 }

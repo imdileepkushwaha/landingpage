@@ -1,0 +1,58 @@
+@model SoftflipSolutions.Models.ChannelPartner
+@{
+    var owner = string.IsNullOrWhiteSpace(Model.OwnerName) ? Model.CompanyName : Model.OwnerName;
+    var initial = string.IsNullOrEmpty(owner) ? "?" : owner.Trim()[0].ToString().ToUpperInvariant();
+    var partnerCode = $"SF-CP-{Model.Id:D4}";
+    var issued = Model.CreatedAt.ToString("dd MMM yyyy");
+}
+
+<div class="pid-card">
+    <div class="pid-card-top">
+        <div class="pid-brand">
+            <img src="~/admin/img/softflip-logo.png" alt="Softflip" />
+            <div>
+                <strong>Softflip</strong>
+                <span>Technology Support Partner</span>
+            </div>
+        </div>
+        <div class="pid-chip" aria-hidden="true"></div>
+    </div>
+
+    <div class="pid-card-body">
+        <div class="pid-photo">
+            @if (!string.IsNullOrWhiteSpace(Model.PhotoPath))
+            {
+                <img src="@Model.PhotoPath" alt="@owner" />
+            }
+            else
+            {
+                <span>@initial</span>
+            }
+        </div>
+        <div class="pid-meta">
+            <div class="pid-name">@owner</div>
+            <div class="pid-role">Authorised Technology Support Partner</div>
+            <div class="pid-company">@Model.CompanyName</div>
+            <div class="pid-code">ID: <strong>@partnerCode</strong></div>
+        </div>
+    </div>
+
+    <div class="pid-card-foot">
+        <div class="pid-row">
+            <span>Mobile</span>
+            <strong>@Model.Mobile</strong>
+        </div>
+        <div class="pid-row">
+            <span>Email</span>
+            <strong>@Model.Email</strong>
+        </div>
+        <div class="pid-row">
+            <span>Location</span>
+            <strong>@Model.LocationLabel</strong>
+        </div>
+        <div class="pid-row pid-issued">
+            <span>Partner since</span>
+            <strong>@issued</strong>
+        </div>
+    </div>
+</div>

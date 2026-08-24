@@ -1,0 +1,121 @@
+@model IEnumerable<SoftflipSolutions.ViewModels.FollowUpReminderItem>
+@{
+    ViewData["Title"] = "Follow-ups";
+    Layout = "_PartnerLayout";
+    var showDone = string.Equals(Context.Request.Query["show"], "done", StringComparison.OrdinalIgnoreCase);
+    var overdue = Model.Count(x => x.IsOverdue);
+}
+
+<div class="page-toolbar">
+    <h2>Follow-ups</h2>
+    <div class="toolbar-actions">
+        @if (showDone)
+        {
+            <a asp-action="FollowUps" class="btn btn-sm btn-crm-outline rounded-pill px-3">Open only</a>
+        }
+        else
+        {
+            <a asp-action="FollowUps" asp-route-show="done" class="btn btn-sm btn-crm-outline rounded-pill px-3">Include done</a>
+        }
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6">
+        <div class="stat-card accent-yellow">
+            <div class="stat-card-top">
+                <div class="stat-label">Overdue</div>
+                <div class="stat-icon warning"><i class="bi bi-alarm"></i></div>
+            </div>
+            <div class="stat-value">@overdue</div>
+        </div>
+    </div>
+    <div class="col-sm-6">
+        <div class="stat-card accent-blue">
+            <div class="stat-card-top">
+                <div class="stat-label">Listed</div>
+                <div class="stat-icon info"><i class="bi bi-list-check"></i></div>
+            </div>
+            <div class="stat-value">@Model.Count()</div>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card p-0 overflow-hidden">
+    <div class="p-4 border-bottom admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
+        <h5 class="mb-1">Reminders</h5>
+        <p class="mb-0 small text-muted">Step-based reminders with date &amp; time — add from any client detail page</p>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Due</th>
+                    <th>Step</th>
+                    <th>Client</th>
+                    <th>Note</th>
+                    <th>Status</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var step = SoftflipSolutions.Models.FollowUpSteps.Get(item.StepType);
+                    <tr>
+                        <td class="@(item.IsOverdue ? "text-warning fw-semibold" : "")">
+                            @item.DueAt.ToString("dd MMM yyyy, hh:mm tt")
+                            @if (item.IsOverdue)
+                            {
+                                <span class="badge bg-warning text-dark ms-1">Overdue</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge bg-@step.Badge @(step.Badge is "warning" ? "text-dark" : "")">
+                                <i class="bi @step.Icon me-1"></i>@step.Label
+                            </span>
+                        </td>
+                        <td>
+                            <a asp-action="ClientDetails" asp-route-id="@item.LeadId" class="text-decoration-none fw-semibold">@item.LeadName</a>
+                        </td>
+                        <td>@item.Note</td>
+                        <td>
+                            @if (item.IsDone)
+                            {
+                                <span class="badge bg-success bg-opacity-25 text-success">Done</span>
+                                @if (item.CompletedAt.HasValue)
+                                {
+                                    <div class="small text-muted">@item.CompletedAt.Value.ToString("dd MMM, hh:mm tt")</div>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge bg-info bg-opacity-25 text-info">Open</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="ClientDetails" asp-route-id="@item.LeadId" class="btn btn-icon-action" title="Open"><i class="bi bi-eye"></i></a>
+                            @if (!item.IsDone)
+                            {
+                                <form asp-action="CompleteFollowUp" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Done</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-alarm fs-1 d-block mb-2"></i>
+                            No follow-ups@(showDone ? "" : " open").
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -33,7 +33,12 @@ public class ChannelPartner
     public string Email { get; set; } = string.Empty;
 
     [StringLength(300)]
+    [Display(Name = "Company Logo")]
     public string? LogoPath { get; set; }
+
+    [StringLength(300)]
+    [Display(Name = "Profile Photo")]
+    public string? PhotoPath { get; set; }
 
     [Required]
     [StringLength(400)]
@@ -59,12 +64,57 @@ public class ChannelPartner
     [StringLength(200)]
     public string PasswordHash { get; set; } = string.Empty;
 
+    /// <summary>Admin-visible partner panel password (for resend). Login still verifies PasswordHash.</summary>
+    [StringLength(100)]
+    [Display(Name = "Login Password")]
+    public string? LoginPassword { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+    // Partner-managed payment details (Edit Profile)
+    [StringLength(120)]
+    [Display(Name = "Bank Name")]
+    public string? BankName { get; set; }
+
+    [StringLength(120)]
+    [Display(Name = "Account Holder Name")]
+    public string? BankAccountName { get; set; }
+
+    [StringLength(40)]
+    [Display(Name = "Account Number")]
+    public string? BankAccountNumber { get; set; }
+
+    [StringLength(20)]
+    [Display(Name = "IFSC")]
+    public string? BankIfsc { get; set; }
+
+    [StringLength(120)]
+    [Display(Name = "Branch")]
+    public string? BankBranch { get; set; }
+
+    [StringLength(100)]
+    [Display(Name = "UPI ID")]
+    public string? UpiId { get; set; }
+
+    [StringLength(120)]
+    [Display(Name = "UPI Display Name")]
+    public string? UpiName { get; set; }
+
+    [StringLength(300)]
+    [Display(Name = "UPI QR")]
+    public string? UpiQrPath { get; set; }
+
+    /// <summary>Public referral code for share links (?ref=CODE).</summary>
+    [StringLength(40)]
+    public string? ReferralCode { get; set; }
+
     public List<PartnerClient> Clients { get; set; } = new();
     public List<PartnerProposal> Proposals { get; set; } = new();
+    public List<PartnerInvoice> Invoices { get; set; } = new();
+    public List<PartnerTicket> Tickets { get; set; } = new();
+    public List<PartnerNotification> Notifications { get; set; } = new();
 
     [NotMapped]
     public string LocationLabel => $"{City}, {State}";
@@ -88,6 +138,19 @@ public class ChannelPartner
         }
     }
 
+    [NotMapped]
+    public string? AvatarPath =>
+        !string.IsNullOrWhiteSpace(PhotoPath) ? PhotoPath :
+        !string.IsNullOrWhiteSpace(LogoPath) ? LogoPath : null;
+
+    [NotMapped]
+    public bool HasBankDetails =>
+        !string.IsNullOrWhiteSpace(BankName) ||
+        !string.IsNullOrWhiteSpace(BankAccountNumber) ||
+        !string.IsNullOrWhiteSpace(BankIfsc) ||
+        !string.IsNullOrWhiteSpace(UpiId) ||
+        !string.IsNullOrWhiteSpace(UpiQrPath);
+
     public CompanyProfile ToCompanyProfile() => new()
     {
         CompanyName = CompanyName,
@@ -102,6 +165,13 @@ public class ChannelPartner
         ContactPerson = OwnerName,
         SignatoryName = OwnerName,
         SignatoryTitle = "Channel Partner",
-        IsAuthorizedPartner = true
+        IsAuthorizedPartner = true,
+        BankName = BankName ?? "",
+        BankAccountName = BankAccountName ?? "",
+        BankAccountNumber = BankAccountNumber ?? "",
+        BankIfsc = BankIfsc ?? "",
+        BankBranch = BankBranch ?? "",
+        UpiId = UpiId ?? "",
+        UpiName = UpiName ?? ""
     };
 }

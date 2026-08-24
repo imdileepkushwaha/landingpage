@@ -1,0 +1,83 @@
+@model SoftflipSolutions.Models.ChannelPartner
+@{
+    ViewData["Title"] = "Certificate";
+    Layout = "_PartnerLayout";
+    var safeFileName = string.Join("_", (Model.OwnerName ?? Model.CompanyName).Split(System.IO.Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries)).Trim();
+    if (string.IsNullOrWhiteSpace(safeFileName)) { safeFileName = "partner-certificate"; }
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/partner-certificate.css" asp-append-version="true" />
+}
+
+<div class="glass-card p-4 mb-4">
+    <h4 class="mb-1" style="color:#152238">Authorised Technology Support Partner</h4>
+    <p class="text-muted small mb-0">A4 certificate — download PNG or PDF.</p>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+@if (ViewBag.CertGenerateError != null)
+{
+    <div class="alert alert-warning">@ViewBag.CertGenerateError</div>
+}
+
+<div class="row g-4 align-items-start">
+    <div class="col-lg-8">
+        <div class="partner-pcert-preview-wrap">
+            <div class="pcert-preview-frame" id="pcertPreviewFrame">
+                <partial name="_PartnerCertificateCanvas" model="Model" />
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="glass-card p-4">
+            <h6 class="mb-3" style="color:#152238">Download (A4)</h6>
+            <div class="d-grid gap-2">
+                <a asp-action="DownloadCertificate" class="btn btn-crm-primary">
+                    <i class="bi bi-download me-1"></i> Download PNG
+                </a>
+                <a asp-action="DownloadCertificatePdf" class="btn btn-outline-primary">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF
+                </a>
+                @{
+                    var certWa = $"https://api.whatsapp.com/send?text={Uri.EscapeDataString($"I am an Authorised Technology Support Partner of Softflip Solutions.\n{Model.OwnerName} · {Model.CompanyName}\n{Model.Mobile}")}";
+                }
+                <a href="@certWa" target="_blank" rel="noopener" class="btn btn-success">
+                    <i class="bi bi-whatsapp me-1"></i> Share on WhatsApp
+                </a>
+            </div>
+            <p class="small text-muted mt-3 mb-0">
+                Files: <strong>@(safeFileName)-certificate.png</strong> / <strong>.pdf</strong>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function fitPartnerCertificatePreview() {
+            var frame = document.getElementById('pcertPreviewFrame');
+            if (!frame) return;
+            var canvasW = 794;
+            var canvasH = 1123;
+
+            function fit() {
+                var w = frame.clientWidth || frame.offsetWidth;
+                if (!w) return;
+                var scale = w / canvasW;
+                frame.style.setProperty('--pcert-scale', String(scale));
+                frame.style.height = Math.round(canvasH * scale) + 'px';
+            }
+
+            fit();
+            window.addEventListener('resize', fit);
+            if (window.ResizeObserver) {
+                new ResizeObserver(fit).observe(frame.parentElement || frame);
+            }
+        })();
+    </script>
+}

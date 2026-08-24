@@ -28,6 +28,14 @@
 }
 
 @{
+    var partnerAssignPanel = ViewBag.PartnerAssignPanel as SoftflipSolutions.ViewModels.LeadPartnerAssignPanelViewModel;
+}
+@if (partnerAssignPanel != null)
+{
+    <partial name="_LeadPartnerAssignPanel" model="partnerAssignPanel" />
+}
+
+@{
     var duplicates = ViewBag.DuplicateLeads as IEnumerable<SoftflipSolutions.ViewModels.DuplicateLeadMatch>;
 }
 @if (duplicates != null)

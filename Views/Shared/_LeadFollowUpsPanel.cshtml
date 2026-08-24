@@ -1,83 +1,56 @@
 @model SoftflipSolutions.ViewModels.LeadFollowUpsPanelViewModel
+@using SoftflipSolutions.Models
+@{
+    var defaultDue = DateTime.Today.AddDays(1).AddHours(10);
+}
 
 <div class="glass-card p-0 overflow-hidden mb-4">
     <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 admin-table-header" style="border-color: rgba(255,255,255,0.08) !important;">
         <div>
-            <h5 class="mb-0">Follow-ups</h5>
-            <p class="mb-0 small text-muted">Schedule the next call or reminder</p>
+            <h5 class="mb-0">Follow-up timeline</h5>
+            <p class="mb-0 small text-muted">Requirement → Quotation → Demo → Notes — with date &amp; time</p>
         </div>
     </div>
     <div class="p-3">
-        <form asp-action="AddFollowUp" method="post" class="row g-2 align-items-end mb-3">
+        <form asp-action="AddFollowUp" method="post" class="row g-2 align-items-end mb-4">
             @Html.AntiForgeryToken()
             <input type="hidden" name="leadType" value="@Model.LeadType" />
             <input type="hidden" name="leadId" value="@Model.LeadId" />
             <div class="col-md-3">
-                <label class="form-label small text-muted mb-1">Due date</label>
-                <input type="date" name="dueAt" class="form-control" value="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" required />
+                <label class="form-label small text-muted mb-1">Step</label>
+                <select name="stepType" class="form-select" required>
+                    @foreach (var s in FollowUpSteps.All)
+                    {
+                        <option value="@s.Key" title="@s.Hint">@s.Label</option>
+                    }
+                </select>
             </div>
-            <div class="col-md-7">
-                <label class="form-label small text-muted mb-1">Note</label>
-                <input type="text" name="note" class="form-control" maxlength="500" placeholder="Call about proposal / payment…" required />
+            <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Due date &amp; time</label>
+                <input type="datetime-local" name="dueAt" class="form-control" value="@defaultDue.ToString("yyyy-MM-ddTHH:mm")" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-muted mb-1">Details / notes</label>
+                <input type="text" name="note" class="form-control" maxlength="500" placeholder="e.g. Send CRM quotation as discussed…" required />
             </div>
             <div class="col-md-2">
                 <button type="submit" class="btn btn-info w-100"><i class="bi bi-alarm me-1"></i> Add</button>
             </div>
         </form>
 
-        @if (!Model.Items.Any())
-        {
-            <p class="text-muted small mb-0">No follow-ups yet.</p>
+        <div class="fu-step-hints mb-3">
+            @foreach (var s in FollowUpSteps.All.Take(4))
+            {
+                <span class="fu-step-hint"><i class="bi @s.Icon"></i> @s.Label</span>
+            }
+            <span class="fu-step-hint text-muted">+ notes &amp; more</span>
+        </div>
+
+        @{
+            ViewData["FollowUpShowActions"] = true;
+            ViewData["FollowUpCompleteAction"] = "CompleteFollowUp";
+            ViewData["FollowUpCompleteController"] = "Admin";
         }
-        else
-        {
-            <div class="table-responsive">
-                <table class="table table-borderless mb-0 align-middle">
-                    <thead>
-                        <tr>
-                            <th>Due</th>
-                            <th>Note</th>
-                            <th>Status</th>
-                            <th class="text-end"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model.Items)
-                        {
-                            <tr>
-                                <td class="@(item.IsOverdue ? "text-warning fw-semibold" : "")">
-                                    @item.DueAt.ToString("dd MMM yyyy")
-                                    @if (item.IsOverdue)
-                                    {
-                                        <span class="badge bg-warning text-dark ms-1">Overdue</span>
-                                    }
-                                </td>
-                                <td>@item.Note</td>
-                                <td>
-                                    @if (item.IsDone)
-                                    {
-                                        <span class="badge bg-success bg-opacity-25 text-success">Done</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-info bg-opacity-25 text-info">Open</span>
-                                    }
-                                </td>
-                                <td class="text-end">
-                                    @if (!item.IsDone)
-                                    {
-                                        <form asp-action="CompleteFollowUp" method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@item.Id" />
-                                            <button type="submit" class="btn btn-sm btn-outline-success">Done</button>
-                                        </form>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
+        <partial name="_FollowUpTimeline" model="Model.Items" />
     </div>
 </div>

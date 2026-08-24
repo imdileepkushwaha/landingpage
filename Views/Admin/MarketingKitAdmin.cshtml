@@ -1,0 +1,144 @@
+@model List<SoftflipSolutions.Models.MarketingKitItem>
+@{
+    ViewData["Title"] = "Marketing Kit";
+    Layout = "_AdminLayout";
+}
+
+<div class="page-toolbar">
+    <div>
+        <h2>Marketing Kit</h2>
+        <p class="text-muted small mb-0">Upload brochures, posters and WhatsApp creatives for partners.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <form asp-action="AddMarketingKitItem" method="post" enctype="multipart/form-data" class="glass-card p-4">
+            @Html.AntiForgeryToken()
+            <div class="settings-section-label mb-3"><i class="bi bi-cloud-arrow-up me-1"></i> Add asset</div>
+
+            <div class="mb-3">
+                <label class="form-label settings-label">Title</label>
+                <input type="text" name="title" class="form-control settings-input" required maxlength="200" placeholder="e.g. Softflip brochure 2026" />
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-sm-7">
+                    <label class="form-label settings-label">Category</label>
+                    <select name="category" class="form-select settings-input">
+                        <option>Brochure</option>
+                        <option>Poster</option>
+                        <option>WhatsApp</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div class="col-sm-5">
+                    <label class="form-label settings-label">Sort order</label>
+                    <input type="number" name="sortOrder" class="form-control settings-input" value="0" />
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label settings-label">Description</label>
+                <textarea name="description" class="form-control settings-input" rows="2" maxlength="500" placeholder="Optional short note for partners"></textarea>
+            </div>
+
+            @{
+                ViewData["UploadInputName"] = "file";
+                ViewData["UploadLabel"] = "Image / file";
+                ViewData["UploadHint"] = "PNG, JPG, WEBP, PDF or ZIP · max 15 MB";
+                ViewData["UploadAccept"] = ".png,.jpg,.jpeg,.webp,.pdf,.zip";
+                ViewData["UploadCurrentUrl"] = null;
+                ViewData["UploadRemoveName"] = null;
+                ViewData["UploadRemoveId"] = null;
+                ViewData["UploadVariant"] = "logo";
+                ViewData["UploadRequired"] = true;
+            }
+            <partial name="_ImageUpload" />
+
+            <button type="submit" class="btn btn-crm-primary w-100 mt-4">
+                <i class="bi bi-upload me-1"></i> Upload asset
+            </button>
+        </form>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="glass-card p-0 overflow-hidden">
+            @if (Model.Count == 0)
+            {
+                <div class="p-4 text-muted">No assets yet — upload the first brochure or poster.</div>
+            }
+            else
+            {
+                <table class="table admin-table mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width:72px"></th>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var m in Model)
+                    {
+                        var isImage = !string.IsNullOrWhiteSpace(m.FilePath)
+                            && (m.FilePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+                                || m.FilePath.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                                || m.FilePath.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
+                                || m.FilePath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase));
+                        <tr>
+                            <td>
+                                @if (isImage)
+                                {
+                                    <img src="@m.FilePath" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:10px;border:1px solid #e5e7eb;background:#fff;" />
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center justify-content-center" style="width:48px;height:48px;border-radius:10px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;">
+                                        <i class="bi bi-file-earmark"></i>
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                <strong>@m.Title</strong>
+                                <div class="small text-muted">@m.FileName</div>
+                            </td>
+                            <td><span class="badge bg-secondary">@m.Category</span></td>
+                            <td>
+                                @if (m.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Hidden</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="admin-row-actions justify-content-end">
+                                    <form asp-action="ToggleMarketingKitItem" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@m.Id" />
+                                        <button type="submit"
+                                                class="btn btn-icon-action @(m.IsActive ? "" : "edit")"
+                                                title="@(m.IsActive ? "Hide from partners" : "Show to partners")">
+                                            <i class="bi @(m.IsActive ? "bi-eye-slash" : "bi-eye")"></i>
+                                        </button>
+                                    </form>
+                                    <form asp-action="DeleteMarketingKitItem" method="post" class="d-inline" onsubmit="return confirm('Delete this asset?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@m.Id" />
+                                        <button type="submit" class="btn btn-icon-action danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>

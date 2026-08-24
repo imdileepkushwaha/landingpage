@@ -24,8 +24,15 @@
                 {
                     var panels = svc.Panels?.OrderBy(p => p.SortOrder).ToList() ?? new();
                     var featureCount = panels.Sum(p => p.Modules?.Count ?? 0);
+                    var images = svc.ImagePaths;
                     <div class="col-lg-6">
                         <div class="glass-card p-4 h-100">
+                            @if (images.Any())
+                            {
+                                <div class="mb-3">
+                                    <img src="@images[0]" alt="@svc.Name" class="img-fluid rounded border w-100" style="max-height:180px;object-fit:cover;" />
+                                </div>
+                            }
                             <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                 <h6 class="mb-0" style="color:#152238">@svc.Name</h6>
                                 <span class="badge bg-info bg-opacity-25 text-info">@panels.Count panels</span>
@@ -37,6 +44,22 @@
                             @if (!string.IsNullOrWhiteSpace(svc.Description))
                             {
                                 <p class="small text-muted mb-2">@svc.Description</p>
+                            }
+                            @if (images.Any())
+                            {
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    @foreach (var img in images)
+                                    {
+                                        var absUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{img}";
+                                        var waText = Uri.EscapeDataString($"Hi,\n\nSharing {svc.Name}:\n{absUrl}");
+                                        <a class="btn btn-sm btn-outline-success" href="https://wa.me/?text=@waText" target="_blank" rel="noopener" title="Share image">
+                                            <i class="bi bi-whatsapp"></i>
+                                        </a>
+                                        <a class="btn btn-sm btn-outline-secondary" href="@img" download target="_blank" title="Download">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                    }
+                                </div>
                             }
                             @if (!string.IsNullOrWhiteSpace(svc.DemoLink))
                             {

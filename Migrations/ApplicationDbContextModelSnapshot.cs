@@ -262,6 +262,10 @@ namespace SoftflipSolutions.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<string>("LoginPassword")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Mobile")
                         .IsRequired()
                         .HasMaxLength(25)
@@ -946,6 +950,11 @@ namespace SoftflipSolutions.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("StepType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LeadType", "LeadId", "IsDone", "DueAt");
@@ -1283,6 +1292,24 @@ namespace SoftflipSolutions.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("SourceLeadType")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int?>("SourceLeadId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("AssignedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("AssignNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("WhatsApp")
                         .HasMaxLength(25)
                         .HasColumnType("nvarchar(25)");
@@ -1290,6 +1317,8 @@ namespace SoftflipSolutions.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ChannelPartnerId");
+
+                    b.HasIndex("SourceLeadType", "SourceLeadId");
 
                     b.ToTable("PartnerClients");
                 });
@@ -1594,6 +1623,13 @@ namespace SoftflipSolutions.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ImagePath")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("ImagesJson")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");

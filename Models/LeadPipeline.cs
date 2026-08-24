@@ -12,6 +12,7 @@ public static class LeadPipeline
     public const string LeadEnquiry = "Enquiry";
     public const string LeadClient = "ClientLead";
     public const string LeadDemo = "DemoRequest";
+    public const string LeadPartnerClient = "PartnerClient";
 
     public static readonly string[] ActiveDealStages =
     [

@@ -14,7 +14,7 @@
 
     <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-    <form asp-action="EditService" method="post">
+    <form asp-action="EditService" method="post" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
         <input type="hidden" name="id" value="@Model.Id" />
         <div class="row g-3">
@@ -41,7 +41,6 @@
             <div class="col-md-4">
                 <label class="lead-info-label" asp-for="Commission"></label>
                 <input asp-for="Commission" type="number" class="form-control settings-input" step="0.01" min="0" max="100" required />
-                <!-- <div class="form-text text-muted">% of budget — proposal PDF mein nahi.</div> -->
             </div>
             <div class="col-12">
                 <label class="lead-info-label" asp-for="Description"></label>
@@ -51,6 +50,26 @@
                 <label class="lead-info-label" asp-for="DemoLink"></label>
                 <textarea asp-for="DemoLink" class="form-control settings-input" rows="4" maxlength="2000" placeholder="https://demo.example.com/product"></textarea>
                 <div class="form-text text-muted">Optional demo URL / login details — sent to matching enquiries via WhatsApp.</div>
+            </div>
+            <div class="col-12">
+                <label class="lead-info-label">Service images</label>
+                @if (Model.ImagePaths.Any())
+                {
+                    <div class="d-flex flex-wrap gap-3 mb-3">
+                        @foreach (var img in Model.ImagePaths)
+                        {
+                            <div class="border rounded p-2 text-center" style="width:140px;">
+                                <img src="@img" alt="Service" class="img-fluid rounded mb-2" style="max-height:90px;object-fit:cover;" />
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="removeImages" value="@img" id="rm_@img.GetHashCode()" />
+                                    <label class="form-check-label small" for="rm_@img.GetHashCode()">Remove</label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                <input type="file" name="imageFiles" class="form-control settings-input" accept=".png,.jpg,.jpeg,.webp,.gif" multiple />
+                <div class="form-text text-muted">Add more images (PNG/JPG/WEBP/GIF, max 5 MB each).</div>
             </div>
         </div>
         <div class="mt-4">

@@ -56,6 +56,45 @@
         </div>
     </div>
     <div class="col-lg-8">
+        @{
+            var partnerFollowUps = ViewBag.PartnerFollowUps as List<SoftflipSolutions.ViewModels.FollowUpReminderItem>
+                ?? new List<SoftflipSolutions.ViewModels.FollowUpReminderItem>();
+        }
+        <div class="lead-notes-card mb-4">
+            <div class="lead-notes-header">
+                <div>
+                    <h5><i class="bi bi-alarm me-2"></i>Partner follow-up timeline</h5>
+                    <p>Requirement, quotation, demo &amp; notes with date &amp; time.</p>
+                </div>
+            </div>
+            <div class="lead-notes-body">
+                @{
+                    ViewData["FollowUpShowActions"] = false;
+                }
+                <partial name="_FollowUpTimeline" model="partnerFollowUps" />
+            </div>
+        </div>
+
+        @if (Model.IsAssignedFromAdmin)
+        {
+            <div class="alert alert-warning d-flex flex-wrap justify-content-between gap-2 align-items-center mb-4">
+                <div>
+                    <strong>Assigned Softflip lead</strong>
+                    <div class="small">Source: @Model.SourceLeadType #@Model.SourceLeadId
+                        @if (Model.AssignedAt.HasValue)
+                        {
+                            <span>· @Model.AssignedAt.Value.ToString("dd MMM yyyy")</span>
+                        }
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.AssignNote))
+                    {
+                        <div class="small mt-1">@Model.AssignNote</div>
+                    }
+                </div>
+                <a href="@SourceLeadUrl(Model.SourceLeadType!, Model.SourceLeadId!.Value)" class="btn btn-sm btn-outline-dark">Open source lead</a>
+            </div>
+        }
+
         <div class="lead-notes-card">
             <div class="lead-notes-header">
                 <div>
@@ -92,3 +131,12 @@
         </div>
     </div>
 </div>
+
+@functions {
+    string SourceLeadUrl(string leadType, int leadId) => leadType switch
+    {
+        SoftflipSolutions.Models.LeadPipeline.LeadClient => Url.Action("ClientLeadDetails", "Admin", new { id = leadId })!,
+        SoftflipSolutions.Models.LeadPipeline.LeadDemo => Url.Action("DemoRequestDetails", "Admin", new { id = leadId })!,
+        _ => Url.Action("EnquiryDetails", "Admin", new { id = leadId })!
+    };
+}

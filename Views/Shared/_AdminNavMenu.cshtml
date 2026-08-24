@@ -18,7 +18,8 @@
                 var partnerActions = new[]
                 {
                     "ChannelPartners", "AddChannelPartner", "EditChannelPartner", "ChannelPartnerDetails",
-                    "PartnerClients", "PartnerClientDetails"
+                    "PartnerClients", "PartnerClientDetails", "PartnerLeadTracking",
+                    "PartnerMeetings", "AddPartnerMeeting", "PartnerTickets", "MarketingKitAdmin"
                 };
                 var salesActions = new[]
                 {
@@ -72,7 +73,9 @@
                 SoftflipSolutions.Services.AdminMenuCatalog.MergeLeads,
                 SoftflipSolutions.Services.AdminMenuCatalog.Services,
                 SoftflipSolutions.Services.AdminMenuCatalog.ChannelPartners,
-                SoftflipSolutions.Services.AdminMenuCatalog.PartnerClients))
+                SoftflipSolutions.Services.AdminMenuCatalog.PartnerClients,
+                SoftflipSolutions.Services.AdminMenuCatalog.PartnerLeadTracking,
+                SoftflipSolutions.Services.AdminMenuCatalog.PartnerMeetings))
             {
                 <div class="nav-section-title">CRM</div>
                 @if (CanAny(
@@ -124,7 +127,11 @@
                 }
                 @if (CanAny(
                     SoftflipSolutions.Services.AdminMenuCatalog.ChannelPartners,
-                    SoftflipSolutions.Services.AdminMenuCatalog.PartnerClients))
+                    SoftflipSolutions.Services.AdminMenuCatalog.PartnerClients,
+                    SoftflipSolutions.Services.AdminMenuCatalog.PartnerLeadTracking,
+                    SoftflipSolutions.Services.AdminMenuCatalog.PartnerMeetings,
+                    SoftflipSolutions.Services.AdminMenuCatalog.PartnerTickets,
+                    SoftflipSolutions.Services.AdminMenuCatalog.MarketingKit))
                 {
                     <div class="nav-group @(partnerOpen ? "open" : "")" data-nav-group>
                         <button type="button" class="nav-link nav-group-toggle @(partnerOpen ? "active" : "")" data-nav-toggle aria-expanded="@(partnerOpen ? "true" : "false")">
@@ -143,6 +150,30 @@
                             {
                                 <a class="nav-link nav-sublink @(Is("PartnerClients", "PartnerClientDetails") ? "active" : "")" asp-action="PartnerClients" asp-controller="Admin">
                                     <i class="bi bi-people-fill"></i> Partner Clients
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.PartnerLeadTracking))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "PartnerLeadTracking" ? "active" : "")" asp-action="PartnerLeadTracking" asp-controller="Admin">
+                                    <i class="bi bi-signpost-2"></i> Lead Tracking
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.PartnerMeetings))
+                            {
+                                <a class="nav-link nav-sublink @(Is("PartnerMeetings", "AddPartnerMeeting") ? "active" : "")" asp-action="PartnerMeetings" asp-controller="Admin">
+                                    <i class="bi bi-camera-video"></i> Meetings
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.PartnerTickets))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "PartnerTickets" ? "active" : "")" asp-action="PartnerTickets" asp-controller="Admin">
+                                    <i class="bi bi-life-preserver"></i> Support Tickets
+                                </a>
+                            }
+                            @if (Can(SoftflipSolutions.Services.AdminMenuCatalog.MarketingKit))
+                            {
+                                <a class="nav-link nav-sublink @(currentAction == "MarketingKitAdmin" ? "active" : "")" asp-action="MarketingKitAdmin" asp-controller="Admin">
+                                    <i class="bi bi-images"></i> Marketing Kit
                                 </a>
                             }
                         </div>

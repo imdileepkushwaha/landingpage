@@ -1,0 +1,47 @@
+@model List<SoftflipSolutions.Models.PartnerClient>
+@{
+    ViewData["Title"] = "Pipeline";
+    Layout = "_PartnerLayout";
+    var stages = ViewBag.Stages as (string Key, string Label, string Color)[] ?? SoftflipSolutions.Models.PartnerClientStages.All;
+}
+
+<div class="glass-card p-4 mb-4">
+    <h4 class="mb-1" style="color:#152238">Client Pipeline</h4>
+    <p class="text-muted small mb-0">Drag stages with the dropdown — move clients from New → Won.</p>
+</div>
+
+<div class="row g-3 partner-pipeline">
+@foreach (var stage in stages)
+{
+    var col = Model.Where(c => string.Equals(c.Stage, stage.Key, StringComparison.OrdinalIgnoreCase)).ToList();
+    <div class="col-md-6 col-xl-4 col-xxl-2">
+        <div class="glass-card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <strong style="color:@stage.Color">@stage.Label</strong>
+                <span class="badge" style="background:@stage.Color">@col.Count</span>
+            </div>
+            @if (col.Count == 0)
+            {
+                <div class="small text-muted">Empty</div>
+            }
+            @foreach (var c in col)
+            {
+                <div class="border rounded p-2 mb-2 bg-white">
+                    <a asp-action="ClientDetails" asp-route-id="@c.Id" class="fw-semibold text-decoration-none" style="color:#152238">@c.Name</a>
+                    <div class="small text-muted">@c.Mobile</div>
+                    <form asp-action="UpdateClientStage" method="post" class="mt-2">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@c.Id" />
+                        <select name="stage" class="form-select form-select-sm" onchange="this.form.submit()">
+                            @foreach (var s in stages)
+                            {
+                                <option value="@s.Key" selected="@(s.Key == c.Stage)">@s.Label</option>
+                            }
+                        </select>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+}
+</div>

@@ -45,6 +45,10 @@
                                 <span class="partner-avatar-sm">@initial</span>
                                 <div>
                                     <strong>@c.Name</strong>
+                                    @if (c.IsAssignedFromAdmin)
+                                    {
+                                        <span class="badge bg-warning text-dark ms-1">Assigned</span>
+                                    }
                                     @if (!string.IsNullOrWhiteSpace(c.Email))
                                     {
                                         <div class="small text-muted">@c.Email</div>

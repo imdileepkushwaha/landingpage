@@ -200,6 +200,47 @@ a {
     opacity: 1;
 }
 
+.nav-group { margin: 0; }
+.nav-group-toggle {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+}
+.nav-group-toggle .nav-group-caret {
+    margin-left: auto;
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
+    opacity: 0.7;
+}
+.nav-group.open .nav-group-caret { transform: rotate(180deg); }
+.nav-submenu {
+    display: none;
+    padding: 0.15rem 0 0.35rem 0.35rem;
+}
+.nav-group.open .nav-submenu { display: block; }
+.sidebar .nav-sublink {
+    font-size: 13px !important;
+    padding: 8px 14px 8px 18px !important;
+    opacity: 0.92;
+}
+.sidebar .nav-sublink.active::before { display: none; }
+body.sidebar-collapsed .nav-submenu { display: none !important; }
+body.sidebar-collapsed .nav-group-caret { display: none; }
+
+.user-menu-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #9ca3af;
+    font-weight: 600;
+    padding: 10px 14px 4px;
+}
+
 .sidebar-footer {
     padding: 12px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -2516,6 +2557,7 @@ body.admin-login-body::after {
     font-weight: 600;
     font-size: 0.875rem;
     border: none;
+    width: auto !important;
 }
 
 .btn-lead-success {
@@ -4689,6 +4731,11 @@ body.admin-login-body::after {
     color: #7dd3fc;
 }
 
+.cp-badge.warning {
+    background: rgba(245, 158, 11, 0.22);
+    color: #fcd34d;
+}
+
 .cp-badge.success {
     background: rgba(18, 183, 106, 0.2);
     color: #86efac;
@@ -5171,6 +5218,19 @@ body.admin-login-body::after {
     color: #fff !important;
 }
 
+.btn-icon-action.whatsapp {
+    border-color: #a7f3d0;
+    background: #d1fae5;
+    color: #047857;
+}
+
+.btn-icon-action.whatsapp:hover,
+.btn-icon-action.whatsapp:focus {
+    background: #059669;
+    border-color: #059669;
+    color: #fff !important;
+}
+
 .glass-card .btn-icon-action {
     border-color: #bae6fd;
     background: #e0f2fe;
@@ -5207,6 +5267,19 @@ body.admin-login-body::after {
 .glass-card .btn-icon-action.danger:focus {
     background: #dc2626;
     border-color: #dc2626;
+    color: #fff !important;
+}
+
+.glass-card .btn-icon-action.whatsapp {
+    border-color: #a7f3d0;
+    background: #d1fae5;
+    color: #047857;
+}
+
+.glass-card .btn-icon-action.whatsapp:hover,
+.glass-card .btn-icon-action.whatsapp:focus {
+    background: #059669;
+    border-color: #059669;
     color: #fff !important;
 }
 
@@ -5516,3 +5589,40 @@ body.admin-login-body::after {
 .sf-quill-wrap .ql-snow .ql-picker {
     color: #475569;
 }
+
+/* Follow-up timeline */
+.fu-step-hints { display: flex; flex-wrap: wrap; gap: 8px; }
+.fu-step-hint {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.75rem; padding: 4px 10px; border-radius: 999px;
+  background: #f3f4f6; color: #6b7280;
+}
+.fu-timeline { position: relative; padding-left: 4px; }
+.fu-timeline-item {
+  position: relative; display: grid; grid-template-columns: 36px 1fr; gap: 12px;
+  padding-bottom: 18px;
+}
+.fu-timeline-item:not(:last-child)::before {
+  content: ''; position: absolute; left: 17px; top: 36px; bottom: 0; width: 2px;
+  background: #e5e7eb;
+}
+.fu-timeline-dot {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,174,239,0.12); color: #0284c7; font-size: 0.95rem;
+  border: 1px solid rgba(0,174,239,0.25);
+}
+.fu-timeline-item.is-done .fu-timeline-dot {
+  background: rgba(18,183,106,0.12); color: #059669; border-color: rgba(18,183,106,0.3);
+}
+.fu-timeline-item.is-overdue .fu-timeline-dot {
+  background: rgba(245,158,11,0.15); color: #b45309; border-color: rgba(245,158,11,0.35);
+}
+.fu-timeline-card {
+  background: #f9fafb; border: 1px solid #e5e7eb;
+  border-radius: 12px; padding: 12px 14px;
+}
+.fu-timeline-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+.fu-timeline-note { font-weight: 500; margin-bottom: 8px; color: #111827; }
+.fu-timeline-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.78rem; color: #6b7280; }
+.fu-timeline-meta i { margin-right: 4px; }

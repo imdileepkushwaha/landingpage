@@ -123,7 +123,7 @@ public partial class AdminController : Controller
             .Where(i => i.Status == "Unpaid" || i.Status == "Partial")
             .SumAsync(i => (decimal?)(i.Amount + i.Cgst + i.Sgst + i.Igst - i.AmountPaid)) ?? 0m;
         ViewBag.OverdueFollowUps = await _context.FollowUpReminders
-            .CountAsync(f => !f.IsDone && f.DueAt < DateTime.Today);
+            .CountAsync(f => !f.IsDone && f.DueAt < DateTime.Now);
         ViewBag.ExpiringProposals = await _context.Proposals
             .CountAsync(p => p.ValidUntil >= DateTime.Today && p.ValidUntil <= DateTime.Today.AddDays(3));
         ViewBag.PendingCommission = await (
@@ -410,10 +410,12 @@ public partial class AdminController : Controller
             LeadType = f.LeadType,
             LeadId = f.LeadId,
             LeadName = names.GetValueOrDefault((f.LeadType, f.LeadId), $"#{f.LeadId}"),
+            StepType = f.StepType,
             DueAt = f.DueAt,
             Note = f.Note,
             IsDone = f.IsDone,
-            CreatedAt = f.CreatedAt
+            CreatedAt = f.CreatedAt,
+            CompletedAt = f.CompletedAt
         }).ToList();
 
         return View(rows);
@@ -421,22 +423,25 @@ public partial class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddFollowUp(string leadType, int leadId, DateTime dueAt, string note)
+    public async Task<IActionResult> AddFollowUp(string leadType, int leadId, string stepType, DateTime dueAt, string note)
     {
         if (!IsKnownLeadType(leadType) || string.IsNullOrWhiteSpace(note))
             return RedirectToLeadDetails(leadType, leadId);
+
+        var step = FollowUpSteps.IsKnown(stepType) ? stepType.Trim() : FollowUpSteps.Note;
 
         _context.FollowUpReminders.Add(new FollowUpReminder
         {
             LeadType = leadType,
             LeadId = leadId,
-            DueAt = dueAt.Date,
+            StepType = step,
+            DueAt = dueAt == default ? DateTime.Now.AddDays(1) : dueAt,
             Note = note.Trim(),
             IsDone = false,
             CreatedAt = DateTime.Now
         });
         await _context.SaveChangesAsync();
-        TempData["SuccessMessage"] = "Follow-up scheduled.";
+        TempData["SuccessMessage"] = $"{FollowUpSteps.Get(step).Label} follow-up scheduled.";
         return RedirectToLeadDetails(leadType, leadId);
     }
 
@@ -1639,6 +1644,7 @@ public partial class AdminController : Controller
 
         model.Email = model.Email.Trim().ToLowerInvariant();
         model.PasswordHash = PasswordHelper.Hash(password.Trim());
+        model.LoginPassword = password.Trim();
         model.IsActive = true;
         model.CreatedAt = DateTime.Now;
 
@@ -1671,6 +1677,42 @@ public partial class AdminController : Controller
         return RedirectToAction(nameof(ChannelPartners));
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendPartnerCredentials(int id, string? newPassword = null)
+    {
+        var partner = await _context.ChannelPartners.FindAsync(id);
+        if (partner == null) return NotFound();
+
+        var password = (newPassword ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(password))
+            password = (partner.LoginPassword ?? "").Trim();
+
+        if (string.IsNullOrWhiteSpace(password) && !PasswordHelper.LooksHashed(partner.PasswordHash))
+            password = partner.PasswordHash.Trim();
+
+        if (string.IsNullOrWhiteSpace(password) || password.Length < 4)
+        {
+            TempData["ErrorMessage"] = "Set a password (min 4 characters) before sending credentials.";
+            return RedirectToAction(nameof(ChannelPartnerDetails), new { id });
+        }
+
+        partner.PasswordHash = PasswordHelper.Hash(password);
+        partner.LoginPassword = password;
+        await _context.SaveChangesAsync();
+
+        var company = await _companyProfile.GetAsync();
+        var loginUrl = Url.Action("Login", "Partner", null, Request.Scheme) ?? $"{Request.Scheme}://{Request.Host}/Partner/Login";
+        var subject = "Welcome to Softflip Solutions — Partner Login Credentials";
+        var html = BuildPartnerCredentialsEmail(partner, password, loginUrl, company);
+        var mailed = await _emailService.SendEmailAsync(partner.Email, subject, html);
+
+        TempData["SuccessMessage"] = mailed
+            ? $"Login credentials emailed to {partner.Email}."
+            : "Credentials saved, but email could not be sent — check SMTP in Settings.";
+        return RedirectToAction(nameof(ChannelPartnerDetails), new { id });
+    }
+
     public async Task<IActionResult> ChannelPartnerDetails(int id)
     {
         var partner = await _context.ChannelPartners
@@ -1678,6 +1720,17 @@ public partial class AdminController : Controller
             .Include(p => p.Proposals.OrderByDescending(pr => pr.CreatedAt))
             .FirstOrDefaultAsync(p => p.Id == id);
         if (partner == null) return NotFound();
+
+        // Recover display password from legacy plaintext hashes.
+        if (string.IsNullOrWhiteSpace(partner.LoginPassword)
+            && !PasswordHelper.LooksHashed(partner.PasswordHash)
+            && !string.IsNullOrWhiteSpace(partner.PasswordHash)
+            && partner.PasswordHash.Length <= 100)
+        {
+            partner.LoginPassword = partner.PasswordHash;
+            await _context.SaveChangesAsync();
+        }
+
         return View(partner);
     }
 
@@ -1743,7 +1796,10 @@ public partial class AdminController : Controller
         partner.Website = string.IsNullOrWhiteSpace(model.Website) ? null : model.Website.Trim();
 
         if (!string.IsNullOrWhiteSpace(password))
+        {
             partner.PasswordHash = PasswordHelper.Hash(password.Trim());
+            partner.LoginPassword = password.Trim();
+        }
 
         if (removeLogo && !string.IsNullOrWhiteSpace(partner.LogoPath))
         {
@@ -1785,6 +1841,8 @@ public partial class AdminController : Controller
 
         var name = partner.CompanyName;
         var logo = partner.LogoPath;
+        var photo = partner.PhotoPath;
+        var qr = partner.UpiQrPath;
 
         if (partner.Proposals.Any())
             _context.PartnerProposals.RemoveRange(partner.Proposals);
@@ -1794,6 +1852,10 @@ public partial class AdminController : Controller
 
         if (!string.IsNullOrWhiteSpace(logo))
             TryDeletePartnerUpload(logo);
+        if (!string.IsNullOrWhiteSpace(photo))
+            TryDeletePartnerUpload(photo);
+        if (!string.IsNullOrWhiteSpace(qr))
+            TryDeletePartnerUpload(qr);
 
         TempData["SuccessMessage"] = $"Partner \"{name}\" deleted.";
         return RedirectToAction(nameof(ChannelPartners));
@@ -1831,6 +1893,28 @@ public partial class AdminController : Controller
             .Include(c => c.Proposals.OrderByDescending(p => p.CreatedAt))
             .FirstOrDefaultAsync(c => c.Id == id);
         if (client == null) return NotFound();
+
+        var followUps = await _context.FollowUpReminders
+            .AsNoTracking()
+            .Where(f => f.LeadType == LeadPipeline.LeadPartnerClient && f.LeadId == id)
+            .OrderBy(f => f.IsDone)
+            .ThenBy(f => f.DueAt)
+            .ToListAsync();
+
+        ViewBag.PartnerFollowUps = followUps.Select(f => new SoftflipSolutions.ViewModels.FollowUpReminderItem
+        {
+            Id = f.Id,
+            LeadType = f.LeadType,
+            LeadId = f.LeadId,
+            LeadName = client.Name,
+            StepType = f.StepType,
+            DueAt = f.DueAt,
+            Note = f.Note,
+            IsDone = f.IsDone,
+            CreatedAt = f.CreatedAt,
+            CompletedAt = f.CompletedAt
+        }).ToList();
+
         return View(client);
     }
 
@@ -1855,11 +1939,14 @@ public partial class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [RequestSizeLimit(10 * 1024 * 1024)]
-    public async Task<IActionResult> AddService(ServiceCatalog model)
+    [RequestSizeLimit(25 * 1024 * 1024)]
+    public async Task<IActionResult> AddService(ServiceCatalog model, List<IFormFile>? imageFiles)
     {
         ViewBag.ServiceNameOptions = EnquiryRequirements.All;
         ModelState.Remove(nameof(ServiceCatalog.Panels));
+        ModelState.Remove(nameof(ServiceCatalog.ImagePath));
+        ModelState.Remove(nameof(ServiceCatalog.ImagesJson));
+        ModelState.Remove(nameof(ServiceCatalog.ImagePaths));
         if (!EnquiryRequirements.IsValid(model.Name))
             ModelState.AddModelError(nameof(model.Name), "Please select a valid service from the list.");
         if (!ModelState.IsValid)
@@ -1871,6 +1958,17 @@ public partial class AdminController : Controller
         model.CreatedAt = DateTime.Now;
         model.IsActive = true;
         ProposalModuleSelectionHelper.EnsureDefaultPanels(model);
+
+        try
+        {
+            var paths = await SaveServiceImagesAsync(imageFiles);
+            model.ImagePaths = paths;
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(model);
+        }
 
         _context.ServiceCatalogs.Add(model);
         await _context.SaveChangesAsync();
@@ -1899,13 +1997,17 @@ public partial class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditService(int id, ServiceCatalog model)
+    [RequestSizeLimit(25 * 1024 * 1024)]
+    public async Task<IActionResult> EditService(int id, ServiceCatalog model, List<IFormFile>? imageFiles, string[]? removeImages)
     {
         var service = await _context.ServiceCatalogs.FindAsync(id);
         if (service == null) return NotFound();
 
         ViewBag.ServiceNameOptions = EnquiryRequirements.All;
         ModelState.Remove(nameof(ServiceCatalog.Panels));
+        ModelState.Remove(nameof(ServiceCatalog.ImagePath));
+        ModelState.Remove(nameof(ServiceCatalog.ImagesJson));
+        ModelState.Remove(nameof(ServiceCatalog.ImagePaths));
         if (!EnquiryRequirements.IsValid(model.Name))
             ModelState.AddModelError(nameof(model.Name), "Please select a valid service from the list.");
         if (!ModelState.IsValid)
@@ -1917,6 +2019,28 @@ public partial class AdminController : Controller
         service.Budget = model.Budget;
         service.Commission = model.Commission;
         service.IsActive = model.IsActive;
+
+        var paths = service.ImagePaths;
+        if (removeImages != null && removeImages.Length > 0)
+        {
+            var removeSet = removeImages.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var p in paths.Where(x => removeSet.Contains(x)).ToList())
+                TryDeletePartnerUpload(p);
+            paths = paths.Where(x => !removeSet.Contains(x)).ToList();
+        }
+
+        try
+        {
+            var added = await SaveServiceImagesAsync(imageFiles);
+            paths.AddRange(added);
+            service.ImagePaths = paths;
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(service);
+        }
+
         await _context.SaveChangesAsync();
         TempData["SuccessMessage"] = "Service updated.";
         return RedirectToAction(nameof(ServiceDetails), new { id });
@@ -2100,6 +2224,32 @@ public partial class AdminController : Controller
         return $"/uploads/partners/{name}";
     }
 
+    private async Task<List<string>> SaveServiceImagesAsync(List<IFormFile>? files)
+    {
+        var saved = new List<string>();
+        if (files == null || files.Count == 0) return saved;
+
+        var dir = Path.Combine(_env.WebRootPath, "uploads", "services");
+        Directory.CreateDirectory(dir);
+
+        foreach (var file in files.Where(f => f != null && f.Length > 0))
+        {
+            if (file.Length > 5 * 1024 * 1024)
+                throw new InvalidOperationException("Each service image must be under 5 MB.");
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (ext is not (".png" or ".jpg" or ".jpeg" or ".webp" or ".gif"))
+                throw new InvalidOperationException("Service images must be PNG, JPG, WEBP, or GIF.");
+
+            var name = $"svc-{DateTime.Now:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}{ext}";
+            var full = Path.Combine(dir, name);
+            await using (var stream = System.IO.File.Create(full))
+                await file.CopyToAsync(stream);
+            saved.Add($"/uploads/services/{name}");
+        }
+
+        return saved;
+    }
+
     private static string BuildPartnerWelcomeEmail(
         ChannelPartner partner,
         string password,
@@ -2190,6 +2340,93 @@ public partial class AdminController : Controller
 </html>";
     }
 
+    private static string BuildPartnerCredentialsEmail(
+        ChannelPartner partner,
+        string password,
+        string loginUrl,
+        CompanyProfile company)
+    {
+        var brand = System.Net.WebUtility.HtmlEncode(
+            string.IsNullOrWhiteSpace(company.CompanyName) ? "Softflip Solutions" : company.CompanyName);
+        var owner = System.Net.WebUtility.HtmlEncode(partner.OwnerName);
+        var companyName = System.Net.WebUtility.HtmlEncode(partner.CompanyName);
+        var email = System.Net.WebUtility.HtmlEncode(partner.Email);
+        var safeLogin = System.Net.WebUtility.HtmlEncode(loginUrl);
+        var safePassword = System.Net.WebUtility.HtmlEncode(password);
+        var contactPhone = System.Net.WebUtility.HtmlEncode(company.ContactPhone ?? "");
+        var contactEmail = System.Net.WebUtility.HtmlEncode(
+            string.IsNullOrWhiteSpace(company.ContactEmail) ? "" : company.ContactEmail);
+        var contactLine = string.IsNullOrWhiteSpace(contactPhone) && string.IsNullOrWhiteSpace(contactEmail)
+            ? ""
+            : $"<br/><span style='color:#6b7280;font-size:13px'>{contactPhone}{(string.IsNullOrWhiteSpace(contactPhone) || string.IsNullOrWhiteSpace(contactEmail) ? "" : " · ")}{contactEmail}</span>";
+
+        // HTML numeric entities — render as emoji without relying on SMTP charset
+        var party = SoftflipSolutions.Services.PartnerCredentialsMessage.PartyPopHtml;
+        var handshake = SoftflipSolutions.Services.PartnerCredentialsMessage.HandshakeHtml;
+        var link = SoftflipSolutions.Services.PartnerCredentialsMessage.LinkHtml;
+        var person = SoftflipSolutions.Services.PartnerCredentialsMessage.PersonHtml;
+        var lockEmoji = SoftflipSolutions.Services.PartnerCredentialsMessage.LockHtml;
+        var rocket = SoftflipSolutions.Services.PartnerCredentialsMessage.RocketHtml;
+
+        return
+            "<!DOCTYPE html>\n" +
+            "<html>\n" +
+            "<head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head>\n" +
+            "<body style=\"margin:0;padding:0;background:#eef3f8;font-family:'Segoe UI Emoji','Segoe UI',Arial,sans-serif;color:#152238\">\n" +
+            "  <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#eef3f8;padding:28px 12px\">\n" +
+            "    <tr><td align=\"center\">\n" +
+            "      <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 28px rgba(16,24,40,.08)\">\n" +
+            "        <tr>\n" +
+            "          <td style=\"background:linear-gradient(135deg,#12263a 0%,#0b3d5c 55%,#00aeef 140%);padding:28px 28px 24px;color:#fff\">\n" +
+            "            <div style=\"font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.8;margin-bottom:8px\">Authorized Technology Support Partner</div>\n" +
+            "            <h1 style=\"margin:0;font-size:24px;line-height:1.3;font-weight:700\">Welcome to Softflip Solutions! " + party + "</h1>\n" +
+            "            <p style=\"margin:10px 0 0;opacity:.9;font-size:14px\">" + brand + " · " + companyName + "</p>\n" +
+            "          </td>\n" +
+            "        </tr>\n" +
+            "        <tr>\n" +
+            "          <td style=\"padding:28px\">\n" +
+            "            <p style=\"margin:0 0 14px;font-size:15px\">Dear Partner, Mr./Ms. <strong>" + owner + "</strong>,</p>\n" +
+            "            <p style=\"margin:0 0 16px;font-size:15px;line-height:1.55;color:#374151\">\n" +
+            "              We are happy to welcome you as an Authorized Technology Support Partner. " + handshake + "\n" +
+            "            </p>\n" +
+            "            <p style=\"margin:0 0 10px;font-size:15px;font-weight:600\">Your Partner Login Credentials are:</p>\n" +
+            "            <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f8f9fb;border:1px solid #e8eaef;border-radius:12px;margin:0 0 18px\">\n" +
+            "              <tr>\n" +
+            "                <td style=\"padding:16px 18px;font-size:14px;line-height:1.9\">\n" +
+            "                  <div>" + link + " <span style=\"color:#6b7280\">Login URL:</span> <a href=\"" + safeLogin + "\" style=\"color:#00aeef;text-decoration:none\">" + safeLogin + "</a></div>\n" +
+            "                  <div>" + person + " <span style=\"color:#6b7280\">Login ID:</span> <strong>" + email + "</strong></div>\n" +
+            "                  <div>" + lockEmoji + " <span style=\"color:#6b7280\">Password:</span> <strong>" + safePassword + "</strong></div>\n" +
+            "                </td>\n" +
+            "              </tr>\n" +
+            "            </table>\n" +
+            "            <p style=\"margin:0 0 12px;font-size:14px;line-height:1.55;color:#4b5563\">\n" +
+            "              Please keep your login credentials safe and do not share your password with anyone.\n" +
+            "            </p>\n" +
+            "            <p style=\"margin:0 0 18px;font-size:14px;line-height:1.55;color:#4b5563\">\n" +
+            "              For any support or assistance, feel free to contact us.\n" +
+            "            </p>\n" +
+            "            <a href=\"" + safeLogin + "\" style=\"display:inline-block;background:#00aeef;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 22px;border-radius:999px\">Open Partner Panel</a>\n" +
+            "            <p style=\"margin:22px 0 0;font-size:15px;line-height:1.55;color:#374151\">\n" +
+            "              Welcome aboard, and we look forward to a successful journey together! " + rocket + "\n" +
+            "            </p>\n" +
+            "            <p style=\"margin:22px 0 0;font-size:14px;color:#374151\">\n" +
+            "              Regards,<br/>\n" +
+            "              <strong>" + brand + "</strong>\n" +
+            "              " + contactLine + "\n" +
+            "            </p>\n" +
+            "          </td>\n" +
+            "        </tr>\n" +
+            "        <tr>\n" +
+            "          <td style=\"background:#f8f9fb;padding:14px 28px;font-size:12px;color:#9ca3af;border-top:1px solid #eef0f4\">\n" +
+            "            This email was sent with your Softflip Partner Panel login credentials.\n" +
+            "          </td>\n" +
+            "        </tr>\n" +
+            "      </table>\n" +
+            "    </td></tr>\n" +
+            "  </table>\n" +
+            "</body>\n" +
+            "</html>";
+    }
     public async Task<IActionResult> Enquiries()
     {
         var enquiries = await _context.Enquiries.Where(e => e.Status == "Pending" || e.Status == "").OrderByDescending(e => e.CreatedAt).ToListAsync();
@@ -2299,6 +2536,7 @@ public partial class AdminController : Controller
         await PopulateDealPanelAsync(LeadPipeline.LeadEnquiry, id, enquiry.Name, enquiry.Requirement, null);
         await PopulateDocumentsPanelAsync(LeadPipeline.LeadEnquiry, id, enquiry.Status);
         await PopulateFollowUpsPanelAsync(LeadPipeline.LeadEnquiry, id);
+        await PopulatePartnerAssignPanelAsync(LeadPipeline.LeadEnquiry, id, enquiry.Name);
         ViewBag.DuplicateLeads = await FindDuplicateLeadsAsync(enquiry.Phone, enquiry.Email, LeadPipeline.LeadEnquiry, id);
         ViewBag.MessageTemplates = await _context.MessageTemplates.AsNoTracking()
             .Where(t => t.IsActive).OrderBy(t => t.Name).ToListAsync();
@@ -2365,6 +2603,7 @@ public partial class AdminController : Controller
         await PopulateDealPanelAsync(LeadPipeline.LeadDemo, id, request.Name, request.Requirement, null);
         await PopulateDocumentsPanelAsync(LeadPipeline.LeadDemo, id, request.Status);
         await PopulateFollowUpsPanelAsync(LeadPipeline.LeadDemo, id);
+        await PopulatePartnerAssignPanelAsync(LeadPipeline.LeadDemo, id, request.Name);
         ViewBag.DuplicateLeads = await FindDuplicateLeadsAsync(request.Phone, request.Email, LeadPipeline.LeadDemo, id);
         ViewBag.MessageTemplates = await _context.MessageTemplates.AsNoTracking()
             .Where(t => t.IsActive).OrderBy(t => t.Name).ToListAsync();
@@ -2482,6 +2721,7 @@ public partial class AdminController : Controller
         await PopulateDealPanelAsync(LeadPipeline.LeadClient, id, lead.Name, lead.Requirement, lead.Budget);
         await PopulateDocumentsPanelAsync(LeadPipeline.LeadClient, id, lead.Status);
         await PopulateFollowUpsPanelAsync(LeadPipeline.LeadClient, id);
+        await PopulatePartnerAssignPanelAsync(LeadPipeline.LeadClient, id, lead.Name);
         ViewBag.DuplicateLeads = await FindDuplicateLeadsAsync(lead.Mobile, lead.Email, LeadPipeline.LeadClient, id);
         ViewBag.MessageTemplates = await _context.MessageTemplates.AsNoTracking()
             .Where(t => t.IsActive).OrderBy(t => t.Name).ToListAsync();
@@ -2586,9 +2826,11 @@ public partial class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SendProposalEmail(int proposalId)
+    public async Task<IActionResult> SendProposalEmail(int proposalId, bool attachServiceImages = false)
     {
-        var proposal = await _context.Proposals.FindAsync(proposalId);
+        var proposal = await _context.Proposals
+            .Include(p => p.Service)
+            .FirstOrDefaultAsync(p => p.Id == proposalId);
         if (proposal == null) return NotFound();
         var lead = await GetLeadContactAsync(proposal.LeadType, proposal.LeadId);
         if (lead == null) return NotFound();
@@ -2620,9 +2862,43 @@ public partial class AdminController : Controller
           </div>
         </div>";
 
-        var ok = await _emailService.SendEmailAsync(lead.Email, subject, html, pdf, $"Proposal-{proposal.Id}.pdf");
+        var attachments = new List<(byte[] Content, string FileName, string ContentType)>
+        {
+            (pdf, $"Proposal-{proposal.Id}.pdf", "application/pdf")
+        };
+
+        if (attachServiceImages)
+        {
+            var service = proposal.Service;
+            if (service == null && proposal.ServiceCatalogId.HasValue)
+                service = await _context.ServiceCatalogs.AsNoTracking().FirstOrDefaultAsync(s => s.Id == proposal.ServiceCatalogId.Value);
+
+            if (service != null)
+            {
+                var idx = 1;
+                foreach (var path in service.ImagePaths)
+                {
+                    var physical = MapUploadPath(path);
+                    if (physical == null || !System.IO.File.Exists(physical)) continue;
+                    var bytes = await System.IO.File.ReadAllBytesAsync(physical);
+                    var ext = Path.GetExtension(physical).ToLowerInvariant();
+                    var contentType = ext switch
+                    {
+                        ".jpg" or ".jpeg" => "image/jpeg",
+                        ".webp" => "image/webp",
+                        ".gif" => "image/gif",
+                        _ => "image/png"
+                    };
+                    var safeService = SanitizeFileName(service.Name);
+                    attachments.Add((bytes, $"{safeService}-image-{idx}{ext}", contentType));
+                    idx++;
+                }
+            }
+        }
+
+        var ok = await _emailService.SendEmailAsync(lead.Email, subject, html, attachments, "Proposal");
         TempData[ok ? "SuccessMessage" : "ErrorMessage"] = ok
-            ? $"Proposal emailed to {lead.Email}."
+            ? $"Proposal emailed to {lead.Email}" + (attachServiceImages && attachments.Count > 1 ? " (with service images)." : ".")
             : "Email failed. Check SMTP settings under Settings → Email.";
         return RedirectToLeadDetails(proposal.LeadType, proposal.LeadId);
     }
@@ -2904,6 +3180,7 @@ public partial class AdminController : Controller
     private async Task PopulateDealPanelAsync(string leadType, int leadId, string name, string requirement, string? suggestedAmount)
     {
         var proposal = await _context.Proposals
+            .Include(p => p.Service)
             .Include(p => p.Invoice!)
                 .ThenInclude(i => i.Payments.OrderByDescending(pay => pay.PaidAt))
             .Where(p => p.LeadType == leadType && p.LeadId == leadId)
@@ -2939,6 +3216,12 @@ public partial class AdminController : Controller
             publicUrl = Url.Action(nameof(DownloadProposal), "Admin", new { id = proposal.Id }, "https") ?? "";
         }
 
+        var proposalImages = proposal?.Service?.ImagePaths
+            ?? (proposal?.ServiceCatalogId is int sid
+                ? services.FirstOrDefault(s => s.Id == sid)?.ImagePaths
+                : null)
+            ?? new List<string>();
+
         ViewBag.DealPanel = new LeadDealPanelViewModel
         {
             LeadType = leadType,
@@ -2952,7 +3235,8 @@ public partial class AdminController : Controller
             LatestProposal = proposal,
             LatestInvoice = invoice,
             ProposalPublicUrl = publicUrl,
-            Services = services
+            Services = services,
+            ProposalServiceImagePaths = proposalImages
         };
     }
 
@@ -3002,10 +3286,12 @@ public partial class AdminController : Controller
                 Id = f.Id,
                 LeadType = f.LeadType,
                 LeadId = f.LeadId,
+                StepType = f.StepType,
                 DueAt = f.DueAt,
                 Note = f.Note,
                 IsDone = f.IsDone,
-                CreatedAt = f.CreatedAt
+                CreatedAt = f.CreatedAt,
+                CompletedAt = f.CompletedAt
             }).ToList()
         };
     }
@@ -3019,6 +3305,7 @@ public partial class AdminController : Controller
         var enquiryIds = keys.Where(k => k.LeadType == LeadPipeline.LeadEnquiry).Select(k => k.LeadId).Distinct().ToList();
         var clientIds = keys.Where(k => k.LeadType == LeadPipeline.LeadClient).Select(k => k.LeadId).Distinct().ToList();
         var demoIds = keys.Where(k => k.LeadType == LeadPipeline.LeadDemo).Select(k => k.LeadId).Distinct().ToList();
+        var partnerClientIds = keys.Where(k => k.LeadType == LeadPipeline.LeadPartnerClient).Select(k => k.LeadId).Distinct().ToList();
 
         if (enquiryIds.Count > 0)
         {
@@ -3035,6 +3322,11 @@ public partial class AdminController : Controller
             foreach (var d in await _context.DemoRequests.AsNoTracking().Where(x => demoIds.Contains(x.Id)).Select(x => new { x.Id, x.Name }).ToListAsync())
                 map[(LeadPipeline.LeadDemo, d.Id)] = d.Name;
         }
+        if (partnerClientIds.Count > 0)
+        {
+            foreach (var p in await _context.PartnerClients.AsNoTracking().Where(x => partnerClientIds.Contains(x.Id)).Select(x => new { x.Id, x.Name }).ToListAsync())
+                map[(LeadPipeline.LeadPartnerClient, p.Id)] = p.Name;
+        }
 
         return map;
     }
@@ -3043,6 +3335,7 @@ public partial class AdminController : Controller
     {
         LeadPipeline.LeadClient => Url.Action(nameof(ClientLeadDetails), new { id = leadId })!,
         LeadPipeline.LeadDemo => Url.Action(nameof(DemoRequestDetails), new { id = leadId })!,
+        LeadPipeline.LeadPartnerClient => Url.Action(nameof(PartnerClientDetails), new { id = leadId })!,
         _ => Url.Action(nameof(EnquiryDetails), new { id = leadId })!
     };
 

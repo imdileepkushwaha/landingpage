@@ -29,6 +29,7 @@
         <table class="table table-borderless mb-0 align-middle">
             <thead>
                 <tr>
+                    <th style="width:72px;"></th>
                     <th>Service</th>
                     <th>Budget</th>
                     <th>Commission %</th>
@@ -43,6 +44,18 @@
                     var panelCount = s.Panels?.Count ?? 0;
                     var featureCount = s.Panels?.Sum(p => p.Modules?.Count ?? 0) ?? 0;
                     <tr>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(s.ImagePath))
+                            {
+                                <img src="@s.ImagePath" alt="@s.Name" class="rounded border" style="width:56px;height:56px;object-fit:cover;" />
+                            }
+                            else
+                            {
+                                <div class="rounded border d-flex align-items-center justify-content-center text-muted" style="width:56px;height:56px;background:#f8fafc;">
+                                    <i class="bi bi-image"></i>
+                                </div>
+                            }
+                        </td>
                         <td>
                             <div class="fw-bold">@s.Name</div>
                             <div class="small text-muted">@s.CreatedAt.ToString("dd MMM yyyy")</div>
@@ -90,7 +103,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
+                        <td colspan="7" class="text-center py-5 text-muted">
                             <i class="bi bi-box-seam fs-1 d-block mb-2"></i>
                             No services yet. Add your first service and upload modules Excel.
                         </td>

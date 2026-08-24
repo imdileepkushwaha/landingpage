@@ -57,6 +57,10 @@
         <div class="cp-hero-copy">
             <div class="cp-hero-badges">
                 <span class="cp-badge partner"><i class="bi bi-person-badge me-1"></i> Partner client</span>
+                @if (Model.IsAssignedFromAdmin)
+                {
+                    <span class="cp-badge warning"><i class="bi bi-handshake me-1"></i> Assigned by Softflip</span>
+                }
                 <span class="cp-badge success"><i class="bi bi-file-earmark-pdf me-1"></i> @proposals.Count proposals</span>
             </div>
             <h1>@Model.Name</h1>
@@ -65,6 +69,10 @@
                 <span class="cp-dot">·</span>
                 Added @Model.CreatedAt.ToString("dd MMM yyyy")
             </p>
+            @if (!string.IsNullOrWhiteSpace(Model.AssignNote))
+            {
+                <p class="small text-muted mb-0 mt-1"><i class="bi bi-info-circle me-1"></i>@Model.AssignNote</p>
+            }
         </div>
     </div>
 </div>
@@ -116,6 +124,14 @@
     </div>
 
     <div class="col-lg-8">
+        @{
+            var followUpsPanel = ViewBag.FollowUpsPanel as SoftflipSolutions.ViewModels.LeadFollowUpsPanelViewModel;
+        }
+        @if (followUpsPanel != null)
+        {
+            <partial name="_PartnerFollowUpsPanel" model="followUpsPanel" />
+        }
+
         <div class="cp-card mb-4">
             <div class="cp-card-head">
                 <div>

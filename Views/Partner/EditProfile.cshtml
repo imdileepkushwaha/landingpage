@@ -1,0 +1,185 @@
+@model SoftflipSolutions.Models.ChannelPartner
+@{
+    ViewData["Title"] = "Edit Profile";
+    Layout = "_PartnerLayout";
+    var initial = string.IsNullOrWhiteSpace(Model.OwnerName)
+        ? (string.IsNullOrWhiteSpace(Model.CompanyName) ? "?" : Model.CompanyName[..1].ToUpperInvariant())
+        : Model.OwnerName.Trim()[..1].ToUpperInvariant();
+}
+
+<div class="glass-card p-4 mb-4">
+    <h4 class="mb-1" style="color:#152238">Edit Profile</h4>
+    <p class="text-muted small mb-0">
+        Update your photo and payment details. Company information set by Softflip is locked.
+    </p>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="rounded-circle overflow-hidden d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:64px;height:64px;background:#e8eef5;color:#0b5ea8;font-weight:700;font-size:1.25rem;">
+                    @if (!string.IsNullOrWhiteSpace(Model.AvatarPath))
+                    {
+                        <img src="@Model.AvatarPath" alt="" style="width:100%;height:100%;object-fit:cover;" />
+                    }
+                    else
+                    {
+                        @initial
+                    }
+                </div>
+                <div>
+                    <h6 class="mb-0" style="color:#152238">@Model.CompanyName</h6>
+                    <small class="text-muted">@Model.OwnerName</small>
+                </div>
+            </div>
+
+            <div class="alert alert-light border small mb-3 py-2">
+                <i class="bi bi-lock-fill me-1 text-muted"></i>
+                These details were added by Softflip admin and cannot be changed here.
+            </div>
+
+            <dl class="row mb-0 small partner-profile-readonly">
+                <dt class="col-4 text-muted">Company</dt>
+                <dd class="col-8">@Model.CompanyName</dd>
+                <dt class="col-4 text-muted">Owner</dt>
+                <dd class="col-8">@Model.OwnerName</dd>
+                <dt class="col-4 text-muted">Email / Login</dt>
+                <dd class="col-8">@Model.Email</dd>
+                <dt class="col-4 text-muted">Mobile</dt>
+                <dd class="col-8">@Model.Mobile</dd>
+                @if (!string.IsNullOrWhiteSpace(Model.Gstin))
+                {
+                    <dt class="col-4 text-muted">GSTIN</dt>
+                    <dd class="col-8">@Model.Gstin</dd>
+                }
+                <dt class="col-4 text-muted">Address</dt>
+                <dd class="col-8">@Model.FullAddress</dd>
+                @if (!string.IsNullOrWhiteSpace(Model.Website))
+                {
+                    <dt class="col-4 text-muted">Website</dt>
+                    <dd class="col-8">@Model.DisplayWebsite</dd>
+                }
+            </dl>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <form asp-action="EditProfile" method="post" enctype="multipart/form-data" class="glass-card p-4">
+            @Html.AntiForgeryToken()
+
+            <h6 class="mb-1" style="color:#152238"><i class="bi bi-person-bounding-box me-2 text-info"></i>Profile photo</h6>
+            <p class="text-muted small mb-3">Your face photo — used on ID card, certificate and panel avatar.</p>
+            @{
+                ViewData["UploadInputName"] = "photoFile";
+                ViewData["UploadLabel"] = null;
+                ViewData["UploadHint"] = "PNG, JPG or WEBP · max 2 MB · portrait preferred";
+                ViewData["UploadCurrentUrl"] = Model.PhotoPath;
+                ViewData["UploadRemoveName"] = string.IsNullOrWhiteSpace(Model.PhotoPath) ? null : "removePhoto";
+                ViewData["UploadRemoveId"] = "removePhoto";
+                ViewData["UploadVariant"] = "logo";
+            }
+            <partial name="_ImageUpload" />
+
+            <hr class="my-4" />
+
+            <h6 class="mb-1" style="color:#152238"><i class="bi bi-image me-2 text-info"></i>Company logo</h6>
+            <p class="text-muted small mb-3">Business logo — used on visiting card, website listing and proposals.</p>
+            @{
+                ViewData["UploadInputName"] = "logoFile";
+                ViewData["UploadLabel"] = null;
+                ViewData["UploadHint"] = "PNG, JPG or WEBP · max 2 MB · square logo works best";
+                ViewData["UploadCurrentUrl"] = Model.LogoPath;
+                ViewData["UploadRemoveName"] = string.IsNullOrWhiteSpace(Model.LogoPath) ? null : "removeLogo";
+                ViewData["UploadRemoveId"] = "removeLogo";
+                ViewData["UploadVariant"] = "logo";
+            }
+            <partial name="_ImageUpload" />
+
+            <hr class="my-4" />
+
+            <h6 class="mb-1" style="color:#152238"><i class="bi bi-bank me-2 text-info"></i>Bank account</h6>
+            <p class="text-muted small mb-3">Shown on your proposals for client payments.</p>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label small text-muted">Bank name</label>
+                    <input type="text" name="bankName" class="form-control" value="@Model.BankName" maxlength="120" placeholder="e.g. HDFC Bank" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small text-muted">Account holder name</label>
+                    <input type="text" name="bankAccountName" class="form-control" value="@Model.BankAccountName" maxlength="120" placeholder="@Model.OwnerName" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small text-muted">Account number</label>
+                    <input type="text" name="bankAccountNumber" class="form-control" value="@Model.BankAccountNumber" maxlength="40" placeholder="XXXXXXXXXXXX" autocomplete="off" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small text-muted">IFSC code</label>
+                    <input type="text" name="bankIfsc" class="form-control" value="@Model.BankIfsc" maxlength="20" placeholder="HDFC0001234" style="text-transform:uppercase" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label small text-muted">Branch</label>
+                    <input type="text" name="bankBranch" class="form-control" value="@Model.BankBranch" maxlength="120" placeholder="City / branch name" />
+                </div>
+            </div>
+
+            <h6 class="mb-1" style="color:#152238"><i class="bi bi-phone me-2 text-info"></i>UPI</h6>
+            <p class="text-muted small mb-3">UPI ID and QR for faster client payments.</p>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label small text-muted">UPI ID</label>
+                    <input type="text" name="upiId" class="form-control" value="@Model.UpiId" maxlength="100" placeholder="yourname@oksbi" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small text-muted">UPI display name</label>
+                    <input type="text" name="upiName" class="form-control" value="@Model.UpiName" maxlength="120" placeholder="@Model.CompanyName" />
+                </div>
+                <div class="col-12">
+                    @{
+                        ViewData["UploadInputName"] = "qrFile";
+                        ViewData["UploadLabel"] = "UPI QR code";
+                        ViewData["UploadHint"] = "PNG, JPG or WEBP · max 2 MB · scan-to-pay QR";
+                        ViewData["UploadCurrentUrl"] = Model.UpiQrPath;
+                        ViewData["UploadRemoveName"] = string.IsNullOrWhiteSpace(Model.UpiQrPath) ? null : "removeQr";
+                        ViewData["UploadRemoveId"] = "removeQr";
+                        ViewData["UploadVariant"] = "logo";
+                    }
+                    <partial name="_ImageUpload" />
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 justify-content-end pt-3 border-top mb-4">
+                <button type="submit" class="btn btn-crm-primary">
+                    <i class="bi bi-save2 me-1"></i> Save profile
+                </button>
+            </div>
+
+            <hr class="my-2" />
+
+            <h6 class="mb-1 mt-4" style="color:#152238"><i class="bi bi-shield-lock me-2 text-info"></i>Change password</h6>
+            <p class="text-muted small mb-3">Leave blank to keep your current login password.</p>
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">Current password</label>
+                    <input type="password" name="currentPassword" class="form-control" autocomplete="current-password" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">New password</label>
+                    <input type="password" name="newPassword" class="form-control" minlength="4" autocomplete="new-password" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">Confirm new password</label>
+                    <input type="password" name="confirmPassword" class="form-control" minlength="4" autocomplete="new-password" />
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 justify-content-end pt-3 border-top">
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-crm-primary">
+                    <i class="bi bi-save2 me-1"></i> Save profile
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

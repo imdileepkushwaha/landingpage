@@ -1,0 +1,61 @@
+@model IEnumerable<SoftflipSolutions.ViewModels.FollowUpReminderItem>
+@using SoftflipSolutions.Models
+@{
+    var items = Model?.ToList() ?? new List<SoftflipSolutions.ViewModels.FollowUpReminderItem>();
+    var showActions = ViewData["FollowUpShowActions"] as bool? ?? false;
+    var completeAction = ViewData["FollowUpCompleteAction"] as string ?? "CompleteFollowUp";
+    var completeController = ViewData["FollowUpCompleteController"] as string;
+}
+
+@if (!items.Any())
+{
+    <p class="text-muted small mb-0">No follow-up steps yet. Add requirement, quotation, demo, or notes below.</p>
+}
+else
+{
+    <div class="fu-timeline">
+        @foreach (var item in items.OrderBy(x => x.DueAt).ThenBy(x => x.CreatedAt))
+        {
+            var step = FollowUpSteps.Get(item.StepType);
+            <div class="fu-timeline-item @(item.IsDone ? "is-done" : "") @(item.IsOverdue ? "is-overdue" : "")">
+                <div class="fu-timeline-dot"><i class="bi @step.Icon"></i></div>
+                <div class="fu-timeline-card">
+                    <div class="fu-timeline-top">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span class="badge bg-@step.Badge @(step.Badge is "warning" or "muted" ? "text-dark" : "")">@step.Label</span>
+                            @if (item.IsDone)
+                            {
+                                <span class="badge bg-success bg-opacity-25 text-success">Done</span>
+                            }
+                            else if (item.IsOverdue)
+                            {
+                                <span class="badge bg-warning text-dark">Overdue</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-info bg-opacity-25 text-info">Open</span>
+                            }
+                        </div>
+                        @if (showActions && !item.IsDone)
+                        {
+                            <form asp-action="@completeAction" asp-controller="@completeController" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-success">Done</button>
+                            </form>
+                        }
+                    </div>
+                    <div class="fu-timeline-note">@item.Note</div>
+                    <div class="fu-timeline-meta">
+                        <span><i class="bi bi-calendar-event"></i> Due @item.DueAt.ToString("dd MMM yyyy, hh:mm tt")</span>
+                        <span><i class="bi bi-plus-circle"></i> Added @item.CreatedAt.ToString("dd MMM yyyy, hh:mm tt")</span>
+                        @if (item.CompletedAt.HasValue)
+                        {
+                            <span><i class="bi bi-check2-circle"></i> Completed @item.CompletedAt.Value.ToString("dd MMM yyyy, hh:mm tt")</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

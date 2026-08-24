@@ -24,6 +24,7 @@ builder.Services.AddScoped<IEmployeeDocumentPdfService, EmployeeDocumentPdfServi
 builder.Services.AddScoped<IEmployeeAccessService, EmployeeAccessService>();
 builder.Services.AddScoped<ICompanyProfileService, CompanyProfileService>();
 builder.Services.AddScoped<IPartnerVisitingCardService, PartnerVisitingCardService>();
+builder.Services.AddScoped<IPartnerCertificateService, PartnerCertificateService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IEmailLogService, EmailLogService>();

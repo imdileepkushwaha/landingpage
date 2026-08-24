@@ -36,6 +36,9 @@
                 <a href="#partner-directory" class="btn btn-gradient rounded-pill px-4 py-2">
                     Meet partners <i class="bi bi-arrow-down ms-1"></i>
                 </a>
+                <a asp-controller="Partner" asp-action="Login" class="btn pf-hero-outline rounded-pill px-4 py-2">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Partner Login
+                </a>
                 <a href="https://wa.me/919696323296?text=Hi%2C%20I%20want%20to%20become%20a%20Softflip%20channel%20partner" target="_blank" rel="noopener noreferrer" class="btn pf-hero-outline rounded-pill px-4 py-2">
                     Become a partner
                 </a>
@@ -62,6 +65,14 @@
                 </div>
             }
         </div>
+
+        @if (ViewBag.ReferredPartner is SoftflipSolutions.Models.ChannelPartner referred)
+        {
+            <div class="alert alert-info mb-4" data-aos="fade-up">
+                Referred by <strong>@referred.CompanyName</strong> (@referred.OwnerName)
+                · <a href="tel:@referred.Mobile">@referred.Mobile</a>
+            </div>
+        }
 
         @if (partners.Any())
         {
@@ -131,7 +142,10 @@
                 <p>List your company, get a branded partner panel, and help clients adopt Softflip products in your region.</p>
             </div>
             <div class="pf-cta-actions">
-                <a href="https://wa.me/919696323296?text=Hi%2C%20I%20want%20to%20become%20a%20Softflip%20channel%20partner" target="_blank" rel="noopener noreferrer" class="btn btn-gradient rounded-pill px-4 py-2">
+                <a asp-controller="Partner" asp-action="Login" class="btn btn-gradient rounded-pill px-4 py-2">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Partner Login
+                </a>
+                <a href="https://wa.me/919696323296?text=Hi%2C%20I%20want%20to%20become%20a%20Softflip%20channel%20partner" target="_blank" rel="noopener noreferrer" class="btn pf-cta-outline rounded-pill px-4 py-2">
                     Apply on WhatsApp
                 </a>
                 <a href="tel:+919696323296" class="btn pf-cta-outline rounded-pill px-4 py-2">
