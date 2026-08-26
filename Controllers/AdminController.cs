@@ -1547,6 +1547,13 @@ public partial class AdminController : Controller
         return string.IsNullOrWhiteSpace(cleaned) ? "document" : cleaned;
     }
 
+    private static string BuildProposalDownloadName(string? serviceName, string? clientName)
+    {
+        var svc = SanitizeFileName(string.IsNullOrWhiteSpace(serviceName) ? "Service" : serviceName);
+        var client = SanitizeFileName(string.IsNullOrWhiteSpace(clientName) ? "Client" : clientName);
+        return $"{svc}_{client}_proposal.pdf";
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetMessageTemplates(string? channel)
     {
@@ -2864,7 +2871,7 @@ public partial class AdminController : Controller
 
         var attachments = new List<(byte[] Content, string FileName, string ContentType)>
         {
-            (pdf, $"Proposal-{proposal.Id}.pdf", "application/pdf")
+            (pdf, BuildProposalDownloadName(proposal.Service?.Name, lead.Name), "application/pdf")
         };
 
         if (attachServiceImages)
@@ -3155,14 +3162,16 @@ public partial class AdminController : Controller
 
     public async Task<IActionResult> DownloadProposal(int id)
     {
-        var proposal = await _context.Proposals.FindAsync(id);
+        var proposal = await _context.Proposals
+            .Include(p => p.Service)
+            .FirstOrDefaultAsync(p => p.Id == id);
         if (proposal == null) return NotFound();
         var lead = await GetLeadContactAsync(proposal.LeadType, proposal.LeadId);
         if (lead == null) return NotFound();
 
         var company = await _companyProfile.GetAsync();
         var pdf = await GetOrCreateProposalPdfAsync(proposal, lead, company);
-        return File(pdf, "application/pdf", $"Proposal-{proposal.Id}.pdf");
+        return File(pdf, "application/pdf", BuildProposalDownloadName(proposal.Service?.Name, lead.Name));
     }
 
     public async Task<IActionResult> DownloadInvoice(int id)

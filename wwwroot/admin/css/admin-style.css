@@ -5515,6 +5515,70 @@ a.cp-cred-value:hover {
     font-size: 0.9rem;
 }
 
+.sf-quill-wrap {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.sf-quill-wrap:focus-within {
+    border-color: #00aeef;
+    box-shadow: 0 0 0 3px rgba(0, 174, 239, 0.12);
+}
+
+.sf-quill-wrap .ql-toolbar.ql-snow {
+    border: 0;
+    border-bottom: 1px solid #eef0f4;
+    background: #f8fafc;
+    padding: 8px 10px;
+    font-family: Inter, sans-serif;
+}
+
+.sf-quill-wrap .ql-container.ql-snow {
+    border: 0;
+    font-family: Inter, sans-serif;
+    font-size: 0.9rem;
+    color: #152238;
+}
+
+.sf-quill-wrap .ql-editor {
+    min-height: 160px;
+    max-height: 320px;
+    overflow-y: auto;
+    line-height: 1.55;
+    padding: 12px 14px;
+}
+
+.sf-quill-wrap .ql-editor.ql-blank::before {
+    color: #9ca3af;
+    font-style: normal;
+    left: 14px;
+    right: 14px;
+}
+
+.sf-quill-wrap .ql-snow .ql-stroke {
+    stroke: #64748b;
+}
+
+.sf-quill-wrap .ql-snow .ql-fill {
+    fill: #64748b;
+}
+
+.sf-quill-wrap .ql-snow.ql-toolbar button:hover .ql-stroke,
+.sf-quill-wrap .ql-snow.ql-toolbar button.ql-active .ql-stroke {
+    stroke: #00aeef;
+}
+
+.sf-quill-wrap .ql-snow.ql-toolbar button:hover .ql-fill,
+.sf-quill-wrap .ql-snow.ql-toolbar button.ql-active .ql-fill {
+    fill: #00aeef;
+}
+
+.sf-quill-wrap .ql-snow .ql-picker {
+    color: #475569;
+}
+
 /* Reports submenu */
 .nav-group { margin: 0; }
 .nav-group-toggle {

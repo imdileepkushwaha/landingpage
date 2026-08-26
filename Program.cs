@@ -71,9 +71,8 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 
 // Classic wwwroot serving — uploads + CSS/JS. Avoid MapStaticAssets compressed
 // endpoints (site.css.br/.gz), which 500 on live when files are out of sync after partial deploy.

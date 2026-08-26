@@ -26,7 +26,7 @@ public static class ProposalTemplates
             Description = "Formal proposal with clear scope and investment block.",
             Icon = "bi-file-earmark-ruled",
             Accent = "#00aeef",
-            TitlePattern = "Project Proposal — {requirement}",
+            TitlePattern = "Proposal for {client} — {requirement}",
             ScopePattern =
                 "Dear {client},\n\n" +
                 "Thank you for considering Softflip for your {requirement} requirement.\n\n" +

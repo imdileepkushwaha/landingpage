@@ -104,7 +104,8 @@
                         </div>
                     </div>
 
-                    <form asp-action="GenerateProposal" method="post" class="mt-3" id="generateProposalForm">
+                    <form asp-action="GenerateProposal" method="post" class="mt-3" id="generateProposalForm"
+                          data-client-name="@Model.ClientName" data-requirement="@Model.Requirement">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="leadType" value="@Model.LeadType" />
                         <input type="hidden" name="leadId" value="@Model.LeadId" />
@@ -134,7 +135,7 @@
                             </div>
                             <div class="col-md-8">
                                 <label class="lead-info-label">Title</label>
-                                <input type="text" name="title" id="proposalTitle" class="form-control settings-input" value="@ProposalTemplates.Fill(ProposalTemplates.Get(ProposalTemplates.Classic).TitlePattern, Model.ClientName, Model.Requirement)" required maxlength="200" />
+                                <input type="text" name="title" id="proposalTitle" class="form-control settings-input" value="Proposal for @Model.ClientName — @Model.Requirement" required maxlength="200" />
                             </div>
                             <div class="col-md-4">
                                 <label class="lead-info-label">Amount (₹)</label>
@@ -142,7 +143,19 @@
                             </div>
                             <div class="col-12">
                                 <label class="lead-info-label">Scope / details</label>
-                                <textarea name="scope" id="proposalScope" class="form-control custom-textarea" rows="5" required maxlength="2000">@ProposalTemplates.Fill(ProposalTemplates.Get(ProposalTemplates.Classic).ScopePattern, Model.ClientName, Model.Requirement)</textarea>
+                                <div class="sf-quill-wrap">
+                                    <div id="proposalScopeEditor"></div>
+                                    <textarea name="scope" id="proposalScope" class="d-none" required></textarea>
+                                </div>
+                                <script type="text/template" id="proposalScopeSeed">
+                                    <p>Project scope based on: @Model.Requirement</p>
+                                    <ul>
+                                        <li>Discovery &amp; requirement finalization</li>
+                                        <li>Design / UI</li>
+                                        <li>Development &amp; testing</li>
+                                        <li>Deployment &amp; handover</li>
+                                    </ul>
+                                </script>
                             </div>
                             <div class="col-md-4">
                                 <label class="lead-info-label">Valid days</label>
@@ -407,6 +420,8 @@
         </div>
     </div>
 
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
     <script type="application/json" id="proposalTemplateData">@Html.Raw(templatesJson)</script>
     <script type="application/json" id="proposalServicesData">@Html.Raw(servicesJson)</script>
     <script>
@@ -417,15 +432,165 @@
             const titleEl = document.getElementById('proposalTitle');
             const scopeEl = document.getElementById('proposalScope');
             const keyInput = document.getElementById('templateKeyInput');
+            const form = document.getElementById('generateProposalForm');
+            const clientName = form ? (form.getAttribute('data-client-name') || '') : '';
+            const requirement = form ? (form.getAttribute('data-requirement') || '') : '';
+            const seedEl = document.getElementById('proposalScopeSeed');
+            let quill = null;
+            let titleTouched = false;
+
+            function escapeHtml(str) {
+                return String(str || '').replace(/[&<>"']/g, function (c) {
+                    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+                });
+            }
+
+            function htmlToPlain(root) {
+                const blocks = [];
+                function walk(node, listPrefix) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        const t = node.textContent.replace(/\u00a0/g, ' ');
+                        if (t) blocks.push({ type: 'text', text: t });
+                        return;
+                    }
+                    if (node.nodeType !== Node.ELEMENT_NODE) return;
+                    const tag = node.tagName.toLowerCase();
+                    if (tag === 'br') {
+                        blocks.push({ type: 'br' });
+                        return;
+                    }
+                    if (tag === 'li') {
+                        const parts = [];
+                        node.childNodes.forEach(function (c) {
+                            if (c.nodeType === Node.TEXT_NODE) parts.push(c.textContent);
+                            else if (c.nodeType === Node.ELEMENT_NODE && c.tagName.toLowerCase() !== 'ul' && c.tagName.toLowerCase() !== 'ol')
+                                parts.push(c.textContent);
+                        });
+                        blocks.push({ type: 'li', text: parts.join('').replace(/\s+/g, ' ').trim(), prefix: listPrefix });
+                        Array.from(node.children).forEach(function (c) {
+                            if (c.tagName.toLowerCase() === 'ul') Array.from(c.children).forEach(function (li) { walk(li, '• '); });
+                            if (c.tagName.toLowerCase() === 'ol') Array.from(c.children).forEach(function (li, i) { walk(li, (i + 1) + '. '); });
+                        });
+                        return;
+                    }
+                    if (tag === 'ul') {
+                        Array.from(node.children).forEach(function (li) { walk(li, '• '); });
+                        return;
+                    }
+                    if (tag === 'ol') {
+                        Array.from(node.children).forEach(function (li, i) { walk(li, (i + 1) + '. '); });
+                        return;
+                    }
+                    if (tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'blockquote' || tag === 'div' || tag === 'p') {
+                        if (blocks.length && blocks[blocks.length - 1].type !== 'br' && blocks[blocks.length - 1].type !== 'li')
+                            blocks.push({ type: 'br' });
+                        node.childNodes.forEach(function (c) { walk(c, listPrefix); });
+                        blocks.push({ type: 'br' });
+                        return;
+                    }
+                    node.childNodes.forEach(function (c) { walk(c, listPrefix); });
+                }
+                walk(root, '');
+                let out = '';
+                blocks.forEach(function (b) {
+                    if (b.type === 'br') out += '\n';
+                    else if (b.type === 'li') out += (out && !out.endsWith('\n') ? '\n' : '') + (b.prefix || '• ') + b.text + '\n';
+                    else out += b.text;
+                });
+                return out.replace(/\n{3,}/g, '\n\n').trim();
+            }
+
+            function syncScope() {
+                if (!quill || !scopeEl) return;
+                const tmp = document.createElement('div');
+                tmp.innerHTML = quill.root.innerHTML;
+                scopeEl.value = htmlToPlain(tmp);
+            }
+
+            function scopeTextToHtml(text) {
+                const lines = String(text || '').split(/\r?\n/);
+                let html = '';
+                let inList = false;
+                lines.forEach(function (line) {
+                    const bullet = line.match(/^\s*[•\-\*]\s+(.*)$/);
+                    const numbered = line.match(/^\s*\d+[.)]\s+(.*)$/);
+                    if (bullet || numbered) {
+                        if (!inList) { html += '<ul>'; inList = true; }
+                        html += '<li>' + escapeHtml((bullet || numbered)[1]) + '</li>';
+                    } else {
+                        if (inList) { html += '</ul>'; inList = false; }
+                        if (line.trim()) html += '<p>' + escapeHtml(line) + '</p>';
+                    }
+                });
+                if (inList) html += '</ul>';
+                return html;
+            }
+
+            function initQuill() {
+                if (quill || !window.Quill || !document.getElementById('proposalScopeEditor')) return;
+                quill = new Quill('#proposalScopeEditor', {
+                    theme: 'snow',
+                    placeholder: 'Describe project scope…',
+                    modules: {
+                        toolbar: [
+                            [{ header: [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ color: [] }, { background: [] }],
+                            [{ list: 'ordered' }, { list: 'bullet' }],
+                            [{ indent: '-1' }, { indent: '+1' }],
+                            ['blockquote', 'link'],
+                            ['clean']
+                        ]
+                    }
+                });
+                const seedHtml = seedEl ? seedEl.innerHTML.trim() : '';
+                if (seedHtml) quill.clipboard.dangerouslyPasteHTML(seedHtml);
+                quill.on('text-change', syncScope);
+                syncScope();
+            }
+
             document.querySelectorAll('input[name="templatePicker"]').forEach(function (radio) {
                 radio.addEventListener('change', function () {
                     const t = templates.find(x => x.Key === radio.value || x.key === radio.value);
                     if (!t) return;
                     if (keyInput) keyInput.value = radio.value;
-                    if (titleEl) titleEl.value = t.title;
-                    if (scopeEl) scopeEl.value = t.scope;
+                    const scopeText = t.scope || t.Scope || '';
+                    if (quill) {
+                        quill.setText('');
+                        quill.clipboard.dangerouslyPasteHTML(scopeTextToHtml(scopeText));
+                        syncScope();
+                    } else if (scopeEl) {
+                        scopeEl.value = scopeText;
+                    }
                 });
             });
+
+            if (titleEl) {
+                titleEl.addEventListener('input', function () { titleTouched = true; });
+            }
+
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    syncScope();
+                    if (!scopeEl || !scopeEl.value.trim()) {
+                        e.preventDefault();
+                        alert('Please enter Scope / details.');
+                        if (quill) quill.focus();
+                    }
+                });
+            }
+
+            const details = document.querySelector('details.lead-proposal-form');
+            if (details && !details.open) {
+                details.addEventListener('toggle', function onToggle() {
+                    if (details.open) {
+                        initQuill();
+                        details.removeEventListener('toggle', onToggle);
+                    }
+                });
+            } else {
+                initQuill();
+            }
 
             const servicesEl = document.getElementById('proposalServicesData');
             const serviceSelect = document.getElementById('proposalServiceSelect');
@@ -434,6 +599,15 @@
             if (!servicesEl || !serviceSelect || !wrap || !tree) return;
 
             const services = JSON.parse(servicesEl.textContent || '[]');
+
+            function applyProposalTitle() {
+                if (!titleEl || titleTouched) return;
+                const svc = services.find(s => String(s.id) === String(serviceSelect.value));
+                const suffix = (svc && svc.name) ? svc.name : requirement;
+                let next = 'Proposal for ' + clientName + ' — ' + suffix;
+                if (next.length > 200) next = next.slice(0, 200);
+                titleEl.value = next;
+            }
 
             function renderModules(serviceId) {
                 tree.innerHTML = '';
@@ -487,14 +661,9 @@
                 });
             }
 
-            function escapeHtml(str) {
-                return String(str || '').replace(/[&<>"']/g, function (c) {
-                    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
-                });
-            }
-
             serviceSelect.addEventListener('change', function () {
                 renderModules(serviceSelect.value);
+                applyProposalTitle();
             });
 
             const selectAllBtn = document.getElementById('proposalSelectAllModules');
