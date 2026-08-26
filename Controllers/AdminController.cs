@@ -182,7 +182,7 @@ public partial class AdminController : Controller
         return View(vm);
     }
 
-    public async Task<IActionResult> Proposals(string? source)
+    public async Task<IActionResult> Proposals(string? source, int page = 1)
     {
         var filter = (source ?? "all").Trim().ToLowerInvariant();
         ViewBag.ProposalSource = filter is "admin" or "partner" ? filter : "all";
@@ -245,7 +245,13 @@ public partial class AdminController : Controller
         ViewBag.AdminProposalCount = await _context.Proposals.CountAsync();
         ViewBag.PartnerProposalCount = await _context.PartnerProposals.CountAsync();
 
-        return View(rows.OrderByDescending(r => r.CreatedAt).ToList());
+        var all = rows.OrderByDescending(r => r.CreatedAt).ToList();
+        Dictionary<string, string>? extra = filter is "admin" or "partner"
+            ? new Dictionary<string, string> { ["source"] = filter }
+            : null;
+        var pager = PagerModel.Create(nameof(Proposals), page, all.Count, extra: extra);
+        ViewBag.Pager = pager;
+        return View(all.Skip((pager.Page - 1) * pager.PageSize).Take(pager.PageSize).ToList());
     }
 
     public async Task<IActionResult> DownloadPartnerProposal(int id)
@@ -291,11 +297,24 @@ public partial class AdminController : Controller
         return File(pdf, "application/pdf", downloadName);
     }
 
-    public async Task<IActionResult> Invoices()
+    public async Task<IActionResult> Invoices(int page = 1)
     {
+        var stats = await _context.Invoices.AsNoTracking()
+            .Select(i => new { i.Status, i.Amount, i.AmountPaid, i.Cgst, i.Sgst, i.Igst })
+            .ToListAsync();
+        ViewBag.InvoiceOpenCount = stats.Count(x => x.Status is "Unpaid" or "Partial");
+        ViewBag.InvoicePaidCount = stats.Count(x => x.Status == "Paid");
+        ViewBag.InvoiceOutstanding = stats.Sum(x => Math.Max(0, x.Amount + x.Cgst + x.Sgst + x.Igst - x.AmountPaid));
+
+        var total = stats.Count;
+        var pager = PagerModel.Create(nameof(Invoices), page, total);
+        ViewBag.Pager = pager;
+
         var invoices = await _context.Invoices
             .AsNoTracking()
             .OrderByDescending(i => i.CreatedAt)
+            .Skip((pager.Page - 1) * pager.PageSize)
+            .Take(pager.PageSize)
             .ToListAsync();
 
         var names = await ResolveLeadNamesAsync(

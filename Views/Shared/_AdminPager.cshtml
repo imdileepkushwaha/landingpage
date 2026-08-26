@@ -1,0 +1,70 @@
+@{
+    var pager = ViewBag.Pager as SoftflipSolutions.ViewModels.PagerModel;
+}
+@if (pager != null && pager.TotalItems > 0)
+{
+    var rangeStart = ((pager.Page - 1) * pager.PageSize) + 1;
+    var rangeEnd = Math.Min(pager.Page * pager.PageSize, pager.TotalItems);
+    <nav class="admin-pager" aria-label="Pagination">
+        <div class="admin-pager-meta">Showing @rangeStart–@rangeEnd of @pager.TotalItems</div>
+        <ul class="admin-pager-list">
+            <li>
+                @if (pager.HasPrev)
+                {
+                    <a asp-controller="@pager.Controller" asp-action="@pager.Action" asp-all-route-data="@pager.RouteFor(1)">First</a>
+                }
+                else
+                {
+                    <span class="is-disabled">First</span>
+                }
+            </li>
+            <li>
+                @if (pager.HasPrev)
+                {
+                    <a asp-controller="@pager.Controller" asp-action="@pager.Action" asp-all-route-data="@pager.RouteFor(pager.Page - 1)">Prev</a>
+                }
+                else
+                {
+                    <span class="is-disabled">Prev</span>
+                }
+            </li>
+            @foreach (var p in pager.VisiblePages())
+            {
+                if (p == null)
+                {
+                    <li><span class="is-ellipsis">…</span></li>
+                }
+                else if (p == pager.Page)
+                {
+                    <li><span class="is-active">@p</span></li>
+                }
+                else
+                {
+                    <li>
+                        <a asp-controller="@pager.Controller" asp-action="@pager.Action" asp-all-route-data="@pager.RouteFor(p.Value)">@p</a>
+                    </li>
+                }
+            }
+            <li>
+                @if (pager.HasNext)
+                {
+                    <a asp-controller="@pager.Controller" asp-action="@pager.Action" asp-all-route-data="@pager.RouteFor(pager.Page + 1)">Next</a>
+                }
+                else
+                {
+                    <span class="is-disabled">Next</span>
+                }
+            </li>
+            <li>
+                @if (pager.HasNext)
+                {
+                    <a asp-controller="@pager.Controller" asp-action="@pager.Action" asp-all-route-data="@pager.RouteFor(pager.TotalPages)">Last</a>
+                }
+                else
+                {
+                    <span class="is-disabled">Last</span>
+                }
+            </li>
+        </ul>
+    </nav>
+}

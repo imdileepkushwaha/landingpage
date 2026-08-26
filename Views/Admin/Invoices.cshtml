@@ -2,9 +2,9 @@
 @{
     ViewData["Title"] = "All Invoices";
     Layout = "_AdminLayout";
-    var unpaid = Model.Count(x => x.Status is "Unpaid" or "Partial");
-    var paid = Model.Count(x => x.Status == "Paid");
-    var outstanding = Model.Sum(x => x.Balance);
+    var unpaid = (int)(ViewBag.InvoiceOpenCount ?? 0);
+    var paid = (int)(ViewBag.InvoicePaidCount ?? 0);
+    var outstanding = (decimal)(ViewBag.InvoiceOutstanding ?? 0m);
 }
 
 <div class="page-toolbar">
@@ -98,6 +98,7 @@
             </tbody>
         </table>
     </div>
+    <partial name="_AdminPager" />
 </div>
 
 @functions {

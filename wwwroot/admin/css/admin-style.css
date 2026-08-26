@@ -1311,6 +1311,66 @@ body.sidebar-collapsed .sidebar-logout-ico {
     gap: 6px;
 }
 
+.admin-pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 14px 18px;
+    border-top: 1px solid #eef0f4;
+    background: #fafbfc;
+}
+.admin-pager-meta {
+    font-size: 0.82rem;
+    color: #6b7280;
+}
+.admin-pager-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.admin-pager-list a,
+.admin-pager-list span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 34px;
+    padding: 0 11px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #152238;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1;
+}
+.admin-pager-list a:hover {
+    border-color: #00aeef;
+    color: #00aeef;
+}
+.admin-pager-list .is-active {
+    background: #00aeef;
+    border-color: #00aeef;
+    color: #fff;
+}
+.admin-pager-list .is-disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+.admin-pager-list .is-ellipsis {
+    border: 0;
+    background: transparent;
+    min-width: 18px;
+    padding: 0 2px;
+    color: #9ca3af;
+}
+
 /* ========== Tables ========== */
 .table {
     color: var(--text-main);
@@ -2559,7 +2619,29 @@ body.admin-login-body::after {
     border-radius: 14px;
     box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.05);
     overflow: hidden;
+}
+
+.lead-profile-card {
     height: 100%;
+}
+
+.lead-assign-banner {
+    align-items: flex-start;
+}
+
+.lead-assign-banner .lead-action-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.lead-assign-banner .lead-assign-note {
+    margin: 8px 0 0;
+    color: #6b7280;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .lead-profile-top {

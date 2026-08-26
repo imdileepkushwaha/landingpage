@@ -137,3 +137,81 @@ public class PartnerAssignedLeadRow
     public string? LatestFollowUpNote { get; set; }
 }
 
+public class PagerModel
+{
+    public string Action { get; set; } = string.Empty;
+    public string Controller { get; set; } = "Admin";
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public int TotalItems { get; set; }
+    public Dictionary<string, string> ExtraRoutes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalItems / (double)Math.Max(1, PageSize)));
+    public bool HasPrev => Page > 1;
+    public bool HasNext => Page < TotalPages;
+
+    public static PagerModel Create(string action, int page, int totalItems, int pageSize = 10, Dictionary<string, string>? extra = null)
+    {
+        var size = Math.Max(1, pageSize);
+        var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)size));
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+        return new PagerModel
+        {
+            Action = action,
+            Page = page,
+            PageSize = size,
+            TotalItems = totalItems,
+            ExtraRoutes = extra ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        };
+    }
+
+    public Dictionary<string, string> RouteFor(int pageNumber)
+    {
+        var dict = new Dictionary<string, string>(ExtraRoutes, StringComparer.OrdinalIgnoreCase)
+        {
+            ["page"] = pageNumber.ToString()
+        };
+        return dict;
+    }
+
+    public List<int?> VisiblePages()
+    {
+        var pages = new List<int?>();
+        var total = TotalPages;
+        if (total <= 7)
+        {
+            for (var i = 1; i <= total; i++) pages.Add(i);
+            return pages;
+        }
+
+        const int window = 1;
+        var start = Math.Max(1, Page - window);
+        var end = Math.Min(total, Page + window);
+
+        if (start <= 2)
+        {
+            start = 1;
+            end = Math.Min(total, 3);
+        }
+        if (end >= total - 1)
+        {
+            end = total;
+            start = Math.Max(1, total - 2);
+        }
+
+        if (start > 1)
+        {
+            pages.Add(1);
+            if (start > 2) pages.Add(null);
+        }
+        for (var i = start; i <= end; i++) pages.Add(i);
+        if (end < total)
+        {
+            if (end < total - 1) pages.Add(null);
+            pages.Add(total);
+        }
+        return pages;
+    }
+}
+

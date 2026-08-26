@@ -1,14 +1,21 @@
 @model IEnumerable<SoftflipSolutions.Models.LeadTask>
+@using SoftflipSolutions.Models
 @{
     ViewData["Title"] = "Lead Tasks";
     Layout = "_AdminLayout";
     var showDone = ViewBag.ShowDone as bool? ?? false;
     var leadNames = ViewBag.LeadNames as Dictionary<(string, int), string> ?? new();
+    var assignees = ViewBag.Assignees as List<string> ?? new();
+    var leadsJson = ViewBag.LeadTaskLeadsJson as string ?? "[]";
 }
 
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
 }
 
 <div class="page-toolbar">
@@ -19,14 +26,43 @@
 
 <div class="glass-card p-4 mb-4">
     <h6 class="mb-3">Add task</h6>
-    <form asp-action="AddLeadTask" method="post" class="row g-2 align-items-end">
+    <form asp-action="AddLeadTask" method="post" class="row g-2 align-items-end" id="addLeadTaskForm">
         @Html.AntiForgeryToken()
-        <div class="col-md-2"><label class="form-label small">Lead type</label><select name="leadType" class="form-select settings-input" required><option value="Enquiry">Enquiry</option><option value="ClientLead">ClientLead</option><option value="DemoRequest">DemoRequest</option></select></div>
-        <div class="col-md-1"><label class="form-label small">Lead ID</label><input name="leadId" type="number" class="form-control settings-input" required /></div>
-        <div class="col-md-3"><label class="form-label small">Title</label><input name="title" class="form-control settings-input" required /></div>
-        <div class="col-md-2"><label class="form-label small">Assigned to</label><input name="assignedTo" class="form-control settings-input" /></div>
-        <div class="col-md-2"><label class="form-label small">Due</label><input name="dueAt" type="date" class="form-control settings-input" /></div>
-        <div class="col-md-2"><button type="submit" class="btn btn-crm-primary w-100">Add</button></div>
+        <div class="col-md-3">
+            <label class="form-label small">Lead type</label>
+            <select name="leadType" id="leadTaskType" class="form-select settings-input" required>
+                <option value="@LeadPipeline.LeadEnquiry">Enquiry</option>
+                <option value="@LeadPipeline.LeadClient">External Client</option>
+                <option value="@LeadPipeline.LeadDemo">Demo Request</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small">Lead</label>
+            <select name="leadId" id="leadTaskLeadId" class="form-select settings-input" required>
+                <option value="">— Choose lead —</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Assigned to</label>
+            <select name="assignedTo" id="leadTaskAssignedTo" class="form-select settings-input">
+                <option value="">— Unassigned —</option>
+                @foreach (var person in assignees)
+                {
+                    <option value="@person">@person</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Due</label>
+            <input name="dueAt" type="date" class="form-control settings-input" />
+        </div>
+        <div class="col-md-10">
+            <label class="form-label small">Title</label>
+            <input name="title" class="form-control settings-input" required placeholder="e.g. Call back, send brochure" />
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-crm-primary w-100">Add</button>
+        </div>
     </form>
 </div>
 
@@ -57,3 +93,38 @@
         </table>
     </div>
 </div>
+
+<script type="application/json" id="leadTaskLeadsData">@Html.Raw(leadsJson)</script>
+<script>
+    (function () {
+        const typeEl = document.getElementById('leadTaskType');
+        const leadEl = document.getElementById('leadTaskLeadId');
+        const dataEl = document.getElementById('leadTaskLeadsData');
+        if (!typeEl || !leadEl || !dataEl) return;
+        const leads = JSON.parse(dataEl.textContent || '[]');
+
+        function fillLeads() {
+            const type = typeEl.value;
+            const current = leadEl.value;
+            const matches = leads.filter(function (x) { return (x.type || x.Type) === type; });
+            leadEl.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = matches.length ? '— Choose lead —' : '— No leads —';
+            leadEl.appendChild(placeholder);
+            matches.forEach(function (x) {
+                const opt = document.createElement('option');
+                opt.value = String(x.id != null ? x.id : x.Id);
+                const name = x.name || x.Name || ('#' + opt.value);
+                opt.textContent = name + ' (#' + opt.value + ')';
+                leadEl.appendChild(opt);
+            });
+            if (current && Array.from(leadEl.options).some(function (o) { return o.value === current; })) {
+                leadEl.value = current;
+            }
+        }
+
+        typeEl.addEventListener('change', fillLeads);
+        fillLeads();
+    })();
+</script>

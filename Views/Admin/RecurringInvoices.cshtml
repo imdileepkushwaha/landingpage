@@ -1,12 +1,19 @@
+@using SoftflipSolutions.Models
 @{
     ViewData["Title"] = "Recurring Invoices";
     Layout = "_AdminLayout";
-    var recurring = ViewBag.Recurring as List<SoftflipSolutions.Models.RecurringInvoice> ?? new();
+    var recurring = ViewBag.Recurring as List<RecurringInvoice> ?? new();
+    var leadNames = ViewBag.LeadNames as Dictionary<(string, int), string> ?? new();
+    var leadsJson = ViewBag.LeadTaskLeadsJson as string ?? "[]";
 }
 
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
 }
 
 <div class="glass-card p-4 mb-4">
@@ -16,13 +23,43 @@
     </div>
     <form asp-action="RecurringInvoices" method="post" class="row g-2 align-items-end">
         @Html.AntiForgeryToken()
-        <div class="col-md-2"><label class="form-label small">Lead type</label><select name="leadType" class="form-select settings-input" required><option value="Enquiry">Enquiry</option><option value="ClientLead">ClientLead</option><option value="DemoRequest">DemoRequest</option></select></div>
-        <div class="col-md-1"><label class="form-label small">Lead ID</label><input name="leadId" type="number" class="form-control settings-input" required /></div>
-        <div class="col-md-3"><label class="form-label small">Title</label><input name="title" class="form-control settings-input" required /></div>
-        <div class="col-md-2"><label class="form-label small">Amount</label><input name="amount" type="number" step="0.01" class="form-control settings-input" required /></div>
-        <div class="col-md-2"><label class="form-label small">Frequency</label><select name="frequency" class="form-select settings-input"><option>Monthly</option><option>Quarterly</option><option>Yearly</option></select></div>
-        <div class="col-md-1"><label class="form-label small">Next due</label><input name="nextDueDate" type="date" class="form-control settings-input" required /></div>
-        <div class="col-md-1"><button type="submit" class="btn btn-crm-primary w-100">Add</button></div>
+        <div class="col-md-3">
+            <label class="form-label small">Lead type</label>
+            <select name="leadType" id="leadPickerType" class="form-select settings-input" required>
+                <option value="@LeadPipeline.LeadEnquiry">Enquiry</option>
+                <option value="@LeadPipeline.LeadClient">External Client</option>
+                <option value="@LeadPipeline.LeadDemo">Demo Request</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small">Lead</label>
+            <select name="leadId" id="leadPickerLeadId" class="form-select settings-input" required>
+                <option value="">— Choose lead —</option>
+            </select>
+        </div>
+        <div class="col-md-5">
+            <label class="form-label small">Title</label>
+            <input name="title" class="form-control settings-input" required />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Amount</label>
+            <input name="amount" type="number" step="0.01" class="form-control settings-input" required />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Frequency</label>
+            <select name="frequency" class="form-select settings-input">
+                <option>Monthly</option>
+                <option>Quarterly</option>
+                <option>Yearly</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Next due</label>
+            <input name="nextDueDate" type="date" class="form-control settings-input" required />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-crm-primary w-100">Add</button>
+        </div>
     </form>
 </div>
 
@@ -33,9 +70,11 @@
             <tbody>
                 @foreach (var r in recurring)
                 {
+                    var key = (r.LeadType, r.LeadId);
+                    var name = leadNames.GetValueOrDefault(key, $"{r.LeadType} #{r.LeadId}");
                     <tr>
                         <td>@r.Title</td>
-                        <td class="small">@r.LeadType #@r.LeadId</td>
+                        <td class="small">@name</td>
                         <td>₹@r.Amount.ToString("N0")</td>
                         <td>@r.Frequency</td>
                         <td>@r.NextDueDate.ToString("dd MMM yyyy")</td>
@@ -49,3 +88,38 @@
         </table>
     </div>
 </div>
+
+<script type="application/json" id="leadPickerLeadsData">@Html.Raw(leadsJson)</script>
+<script>
+    (function () {
+        const typeEl = document.getElementById('leadPickerType');
+        const leadEl = document.getElementById('leadPickerLeadId');
+        const dataEl = document.getElementById('leadPickerLeadsData');
+        if (!typeEl || !leadEl || !dataEl) return;
+        const leads = JSON.parse(dataEl.textContent || '[]');
+
+        function fillLeads() {
+            const type = typeEl.value;
+            const current = leadEl.value;
+            const matches = leads.filter(function (x) { return (x.type || x.Type) === type; });
+            leadEl.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = matches.length ? '— Choose lead —' : '— No leads —';
+            leadEl.appendChild(placeholder);
+            matches.forEach(function (x) {
+                const opt = document.createElement('option');
+                opt.value = String(x.id != null ? x.id : x.Id);
+                const name = x.name || x.Name || ('#' + opt.value);
+                opt.textContent = name + ' (#' + opt.value + ')';
+                leadEl.appendChild(opt);
+            });
+            if (current && Array.from(leadEl.options).some(function (o) { return o.value === current; })) {
+                leadEl.value = current;
+            }
+        }
+
+        typeEl.addEventListener('change', fillLeads);
+        fillLeads();
+    })();
+</script>

@@ -3,6 +3,9 @@
     ViewData["Title"] = Model.Name;
     Layout = "_AdminLayout";
     var partner = Model.ChannelPartner;
+    var initial = string.IsNullOrEmpty(Model.Name) ? "?" : Model.Name.Substring(0, 1).ToUpper();
+    var partnerFollowUps = ViewBag.PartnerFollowUps as List<SoftflipSolutions.ViewModels.FollowUpReminderItem>
+        ?? new List<SoftflipSolutions.ViewModels.FollowUpReminderItem>();
 }
 
 <div class="lead-detail-toolbar">
@@ -12,11 +15,11 @@
     </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-lg-4">
+<div class="row g-4 align-items-start">
+    <div class="col-xl-4 col-lg-5">
         <div class="lead-profile-card">
             <div class="lead-profile-top">
-                <div class="lead-avatar">@Model.Name.Substring(0, 1).ToUpper()</div>
+                <div class="lead-avatar">@initial</div>
                 <div>
                     <h3>@Model.Name</h3>
                     <span class="badge bg-warning text-dark">via @(partner?.CompanyName ?? "Partner")</span>
@@ -55,11 +58,33 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-8">
-        @{
-            var partnerFollowUps = ViewBag.PartnerFollowUps as List<SoftflipSolutions.ViewModels.FollowUpReminderItem>
-                ?? new List<SoftflipSolutions.ViewModels.FollowUpReminderItem>();
+    <div class="col-xl-8 col-lg-7">
+        @if (Model.IsAssignedFromAdmin && Model.SourceLeadId.HasValue)
+        {
+            <div class="lead-action-bar lead-assign-banner mb-4">
+                <div class="lead-action-copy">
+                    <div class="lead-action-icon warning"><i class="bi bi-link-45deg"></i></div>
+                    <div>
+                        <h5>Assigned Softflip lead</h5>
+                        <p>
+                            Source: @Model.SourceLeadType #@Model.SourceLeadId
+                            @if (Model.AssignedAt.HasValue)
+                            {
+                                <span>· @Model.AssignedAt.Value.ToString("dd MMM yyyy")</span>
+                            }
+                        </p>
+                        @if (!string.IsNullOrWhiteSpace(Model.AssignNote))
+                        {
+                            <p class="lead-assign-note">@Model.AssignNote</p>
+                        }
+                    </div>
+                </div>
+                <a href="@SourceLeadUrl(Model.SourceLeadType!, Model.SourceLeadId.Value)" class="btn btn-lead-back flex-shrink-0">
+                    Open source lead
+                </a>
+            </div>
         }
+
         <div class="lead-notes-card mb-4">
             <div class="lead-notes-header">
                 <div>
@@ -74,26 +99,6 @@
                 <partial name="_FollowUpTimeline" model="partnerFollowUps" />
             </div>
         </div>
-
-        @if (Model.IsAssignedFromAdmin)
-        {
-            <div class="alert alert-warning d-flex flex-wrap justify-content-between gap-2 align-items-center mb-4">
-                <div>
-                    <strong>Assigned Softflip lead</strong>
-                    <div class="small">Source: @Model.SourceLeadType #@Model.SourceLeadId
-                        @if (Model.AssignedAt.HasValue)
-                        {
-                            <span>· @Model.AssignedAt.Value.ToString("dd MMM yyyy")</span>
-                        }
-                    </div>
-                    @if (!string.IsNullOrWhiteSpace(Model.AssignNote))
-                    {
-                        <div class="small mt-1">@Model.AssignNote</div>
-                    }
-                </div>
-                <a href="@SourceLeadUrl(Model.SourceLeadType!, Model.SourceLeadId!.Value)" class="btn btn-sm btn-outline-dark">Open source lead</a>
-            </div>
-        }
 
         <div class="lead-notes-card">
             <div class="lead-notes-header">

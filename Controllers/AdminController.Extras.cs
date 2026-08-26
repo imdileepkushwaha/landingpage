@@ -241,6 +241,7 @@ public partial class AdminController
         var tasks = await query.OrderBy(t => t.DueAt).ThenByDescending(t => t.CreatedAt).ToListAsync();
         ViewBag.ShowDone = showDone;
         ViewBag.LeadNames = await ResolveLeadNamesAsync(tasks.Select(t => (t.LeadType, t.LeadId)).Distinct().ToList());
+        await PopulateLeadTaskFormOptionsAsync();
         return View(tasks);
     }
 
@@ -254,9 +255,15 @@ public partial class AdminController
             return RedirectToAction(nameof(LeadTasks));
         }
 
+        if (!await LeadExistsForTaskAsync(leadType, leadId))
+        {
+            TempData["ErrorMessage"] = "Select a valid lead from the list.";
+            return RedirectToAction(nameof(LeadTasks));
+        }
+
         _context.LeadTasks.Add(new LeadTask
         {
-            LeadType = leadType,
+            LeadType = leadType.Trim(),
             LeadId = leadId,
             Title = title.Trim(),
             AssignedTo = string.IsNullOrWhiteSpace(assignedTo) ? null : assignedTo.Trim(),
@@ -265,6 +272,58 @@ public partial class AdminController
         await _context.SaveChangesAsync();
         TempData["SuccessMessage"] = "Task added.";
         return RedirectToAction(nameof(LeadTasks));
+    }
+
+    private async Task PopulateLeadTaskFormOptionsAsync()
+    {
+        ViewBag.LeadTaskLeadsJson = await BuildLeadPickerJsonAsync();
+
+        var admins = await _context.AdminUsers.AsNoTracking()
+            .Where(u => u.IsActive)
+            .OrderBy(u => u.Username)
+            .Select(u => u.Username)
+            .ToListAsync();
+        var employees = await _context.Employees.AsNoTracking()
+            .Where(e => e.IsActive)
+            .OrderBy(e => e.FullName)
+            .Select(e => e.FullName)
+            .ToListAsync();
+        ViewBag.Assignees = admins
+            .Concat(employees)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(n => n)
+            .ToList();
+    }
+
+    private async Task<string> BuildLeadPickerJsonAsync()
+    {
+        var leads = new List<object>();
+        leads.AddRange(await _context.Enquiries.AsNoTracking()
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => new { type = LeadPipeline.LeadEnquiry, id = x.Id, name = x.Name })
+            .ToListAsync());
+        leads.AddRange(await _context.ClientLeads.AsNoTracking()
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => new { type = LeadPipeline.LeadClient, id = x.Id, name = x.Name })
+            .ToListAsync());
+        leads.AddRange(await _context.DemoRequests.AsNoTracking()
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => new { type = LeadPipeline.LeadDemo, id = x.Id, name = x.Name })
+            .ToListAsync());
+        return System.Text.Json.JsonSerializer.Serialize(leads);
+    }
+
+    private async Task<bool> LeadExistsForTaskAsync(string? leadType, int leadId)
+    {
+        if (leadId <= 0 || string.IsNullOrWhiteSpace(leadType)) return false;
+        return leadType switch
+        {
+            LeadPipeline.LeadEnquiry => await _context.Enquiries.AnyAsync(x => x.Id == leadId),
+            LeadPipeline.LeadClient => await _context.ClientLeads.AnyAsync(x => x.Id == leadId),
+            LeadPipeline.LeadDemo => await _context.DemoRequests.AnyAsync(x => x.Id == leadId),
+            _ => false
+        };
     }
 
     [HttpPost]
@@ -769,7 +828,10 @@ public partial class AdminController
 
     public async Task<IActionResult> RecurringInvoices()
     {
-        ViewBag.Recurring = await _context.RecurringInvoices.OrderByDescending(r => r.IsActive).ThenBy(r => r.NextDueDate).ToListAsync();
+        var recurring = await _context.RecurringInvoices.OrderByDescending(r => r.IsActive).ThenBy(r => r.NextDueDate).ToListAsync();
+        ViewBag.Recurring = recurring;
+        ViewBag.LeadTaskLeadsJson = await BuildLeadPickerJsonAsync();
+        ViewBag.LeadNames = await ResolveLeadNamesAsync(recurring.Select(r => (r.LeadType, r.LeadId)).Distinct().ToList());
         return View();
     }
 
@@ -777,9 +839,20 @@ public partial class AdminController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RecurringInvoices(string leadType, int leadId, string title, decimal amount, string frequency, DateTime nextDueDate)
     {
+        if (string.IsNullOrWhiteSpace(title) || amount <= 0)
+        {
+            TempData["ErrorMessage"] = "Title and a valid amount are required.";
+            return RedirectToAction(nameof(RecurringInvoices));
+        }
+        if (!await LeadExistsForTaskAsync(leadType, leadId))
+        {
+            TempData["ErrorMessage"] = "Select a valid lead from the list.";
+            return RedirectToAction(nameof(RecurringInvoices));
+        }
+
         _context.RecurringInvoices.Add(new RecurringInvoice
         {
-            LeadType = leadType,
+            LeadType = leadType.Trim(),
             LeadId = leadId,
             Title = title.Trim(),
             Amount = amount,
