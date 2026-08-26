@@ -1,259 +1,410 @@
 @model SoftflipSolutions.Models.DemoRequest
+@using SoftflipSolutions.Models
 @{
-    ViewData["Title"] = "Demo Request Details";
+    ViewData["Title"] = string.IsNullOrWhiteSpace(Model.Name) ? "Demo request" : Model.Name;
+    ViewData["PageSection"] = "Demo Requests";
     Layout = "_AdminLayout";
-}
+    ViewBag.SuppressDealAlerts = true;
 
-
-<div class="d-flex justify-content-end align-items-center mb-4">
-    <a asp-action="DemoRequests" class="btn btn-outline-secondary rounded-pill px-4"><i class="bi bi-arrow-left me-2"></i>Back to List</a>
-</div>
-
-@{
+    var status = string.IsNullOrEmpty(Model.Status) ? LeadPipeline.Pending : Model.Status;
+    var statusClass = LeadPipeline.BadgeClass(status);
+    var statusIcon = LeadPipeline.BadgeIcon(status);
+    var statusLabel = LeadPipeline.DisplayName(status);
+    var initial = string.IsNullOrEmpty(Model.Name) ? "?" : Model.Name.Substring(0, 1).ToUpper();
     var dealPanel = ViewBag.DealPanel as SoftflipSolutions.ViewModels.LeadDealPanelViewModel;
     var documentsPanel = ViewBag.DocumentsPanel as SoftflipSolutions.ViewModels.LeadDocumentsPanelViewModel;
     var followUpsPanel = ViewBag.FollowUpsPanel as SoftflipSolutions.ViewModels.LeadFollowUpsPanelViewModel;
-}
-@if (dealPanel != null)
-{
-    <partial name="_LeadDealPanel" model="dealPanel" />
-}
-@if (documentsPanel != null)
-{
-    <partial name="_LeadDocumentsPanel" model="documentsPanel" />
-}
-@if (followUpsPanel != null)
-{
-    <partial name="_LeadFollowUpsPanel" model="followUpsPanel" />
-}
-
-@{
     var partnerAssignPanel = ViewBag.PartnerAssignPanel as SoftflipSolutions.ViewModels.LeadPartnerAssignPanelViewModel;
-}
-@if (partnerAssignPanel != null)
-{
-    <partial name="_LeadPartnerAssignPanel" model="partnerAssignPanel" />
+    var duplicates = ViewBag.DuplicateLeads as IEnumerable<SoftflipSolutions.ViewModels.DuplicateLeadMatch>;
+    var showDealTab = dealPanel != null && (LeadPipeline.IsActiveDeal(status) || status == LeadPipeline.Confirmed);
+    var noteCount = Model.Notes?.Count ?? 0;
+    var followUpOpen = followUpsPanel?.Items.Count(x => !x.IsDone) ?? 0;
+    var docCount = documentsPanel?.Documents.Count ?? 0;
+
+    var defaultTab = status == LeadPipeline.Confirmed && dealPanel?.LatestProposal == null ? "deal" : "notes";
+    if (!showDealTab && defaultTab == "deal") defaultTab = "notes";
+    ViewBag.LeadTabStorageKey = "lead-tab-demo-" + Model.Id;
+    ViewBag.LeadDefaultTab = defaultTab;
+
+    var waDigits = new string((Model.Phone ?? "").Where(char.IsDigit).ToArray());
+    if (waDigits.Length == 10) waDigits = "91" + waDigits;
+    var templates = ViewBag.MessageTemplates as IEnumerable<MessageTemplate> ?? Enumerable.Empty<MessageTemplate>();
+    var waTemplates = templates.Where(t => t.Channel == "WhatsApp").ToList();
+    var canContact = status != LeadPipeline.Rejected;
+    var hasWa = waDigits.Length >= 10;
 }
 
-@{
-    var duplicates = ViewBag.DuplicateLeads as IEnumerable<SoftflipSolutions.ViewModels.DuplicateLeadMatch>;
-}
+<div class="lead-detail-toolbar">
+    <a asp-action="DemoRequests" class="btn btn-lead-back">
+        <i class="bi bi-arrow-left"></i> Back to Demo Requests
+    </a>
+    <div class="lead-detail-meta">
+        <span><i class="bi bi-calendar3"></i> @Model.CreatedAt.ToString("dd MMM yyyy, hh:mm tt")</span>
+        <span class="badge bg-@statusClass"><i class="bi @statusIcon me-1"></i>@statusLabel</span>
+    </div>
+</div>
+
+<partial name="_LeadFlash" />
+
 @if (duplicates != null)
 {
     <partial name="_DuplicateLeadsAlert" model="duplicates" />
 }
 
-<div class="row g-4">
-    <!-- Left Pane: 1/3 User Details -->
-    <div class="col-xl-4 col-lg-5">
-        <div class="detail-card h-100">
-            <div class="detail-header d-flex align-items-center">
-                <div class="bg-success bg-opacity-25 text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-size: 1.5rem; font-weight: bold;">
-                    @Model.Name.Substring(0, 1).ToUpper()
-                </div>
-                <div>
-                    <h4 class="mb-1 text-white">@Model.Name</h4>
-                    <span class="badge @(Model.Status == "Confirmed" ? "bg-success" : Model.Status == "Rejected" ? "bg-danger" : "bg-warning text-dark") rounded-pill px-3">
-                        <i class="bi @(Model.Status == "Confirmed" ? "bi-check-circle" : Model.Status == "Rejected" ? "bi-x-circle" : "bi-hourglass-split") me-1"></i>
-                        @(string.IsNullOrEmpty(Model.Status) ? "Pending" : Model.Status)
-                    </span>
+@if (status == LeadPipeline.Pending)
+{
+    <div class="lead-action-bar mb-4">
+        <div class="lead-action-copy">
+            <div class="lead-action-icon warning"><i class="bi bi-exclamation-circle"></i></div>
+            <div>
+                <h5>Decision pending</h5>
+                <p>Have you conducted the demo? Confirm or reject this request.</p>
+            </div>
+        </div>
+        <div class="lead-action-buttons">
+            <form asp-action="UpdateDemoRequestStatus" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" name="status" value="@LeadPipeline.Confirmed" />
+                <button type="submit" class="btn btn-lead-success"><i class="bi bi-check2-circle"></i> Confirm demo</button>
+            </form>
+            <form asp-action="UpdateDemoRequestStatus" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" name="status" value="@LeadPipeline.Rejected" />
+                <button type="submit" class="btn btn-lead-danger" onclick="return confirm('Reject this demo request?');"><i class="bi bi-x-circle"></i> Reject</button>
+            </form>
+        </div>
+    </div>
+}
+
+<div class="lead-hero">
+    <div class="lead-hero-top">
+        <div class="lead-hero-id">
+            <div class="lead-avatar">@initial</div>
+            <div>
+                <h2>@Model.Name</h2>
+                <div class="lead-hero-meta">
+                    <span class="lead-type-pill">Demo request</span>
+                    <span class="badge bg-@statusClass"><i class="bi @statusIcon me-1"></i>@statusLabel</span>
+                    <span class="lead-hero-date">Added @Model.CreatedAt.ToString("dd MMM yyyy")</span>
                 </div>
             </div>
-            
-            <div class="card-body p-4">
-                <div class="info-label"><i class="bi bi-building me-2"></i>Company Name</div>
-                <div class="info-value">@Model.CompanyName</div>
-
-                <div class="info-label"><i class="bi bi-envelope-fill me-2"></i>Email Address</div>
-                <div class="info-value"><a href="mailto:@Model.Email" class="text-success text-decoration-none">@Model.Email</a></div>
-
-                <div class="info-label"><i class="bi bi-telephone-fill me-2"></i>Phone Number</div>
-                <div class="info-value"><a href="tel:@Model.Phone" class="text-white text-decoration-none">@Model.Phone</a></div>
-
-                <div class="info-label"><i class="bi bi-tag-fill me-2"></i>Requested Product</div>
-                <div class="info-value"><span class="badge bg-secondary px-3 py-2">@Model.Requirement</span></div>
-
-                <div class="info-label mt-4"><i class="bi bi-chat-left-text-fill me-2"></i>Message Details</div>
-                <div class="note-box mt-2 text-white-50 fst-italic">
-                    "@Model.Message"
-                </div>
-
-                @if (Model.Status != "Rejected")
-                {
-                    <div class="mt-4 pt-3 border-top border-secondary">
-                        <button class="btn btn-outline-success w-100 rounded-pill py-2" data-bs-toggle="modal" data-bs-target="#emailModal">
-                            <i class="bi bi-envelope-paper-heart me-2"></i> Compose Email
+        </div>
+        <div class="lead-hero-actions">
+            @if (canContact && !string.IsNullOrWhiteSpace(Model.Phone))
+            {
+                <a class="lead-quick-btn" href="tel:@Model.Phone"><i class="bi bi-telephone"></i> Call</a>
+            }
+            @if (canContact && hasWa && waTemplates.Any())
+            {
+                    <div class="dropdown">
+                        <button class="lead-quick-btn wa dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-whatsapp"></i> WhatsApp
                         </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="https://wa.me/@waDigits" target="_blank" rel="noopener">
+                                    <i class="bi bi-chat-dots me-2"></i> Chat on WhatsApp
+                                </a>
+                            </li>
+                            @foreach (var t in waTemplates)
+                            {
+                                var body = t.Body
+                                    .Replace("{{Name}}", Model.Name, StringComparison.OrdinalIgnoreCase)
+                                    .Replace("{{Requirement}}", Model.Requirement, StringComparison.OrdinalIgnoreCase)
+                                    .Replace("{{Phone}}", Model.Phone, StringComparison.OrdinalIgnoreCase)
+                                    .Replace("{{Email}}", Model.Email ?? "", StringComparison.OrdinalIgnoreCase);
+                                var waUrl = $"https://wa.me/{waDigits}?text={Uri.EscapeDataString(body)}";
+                                <li><a class="dropdown-item" href="@waUrl" target="_blank" rel="noopener">@t.Name</a></li>
+                            }
+                        </ul>
                     </div>
-                }
-            </div>
+            }
+            else if (canContact && hasWa)
+            {
+                    <a class="lead-quick-btn wa" href="https://wa.me/@waDigits" target="_blank" rel="noopener">
+                        <i class="bi bi-whatsapp"></i> WhatsApp
+                    </a>
+            }
+            @if (canContact && !string.IsNullOrWhiteSpace(Model.Email))
+            {
+                <button type="button" class="lead-quick-btn" data-bs-toggle="modal" data-bs-target="#emailModal">
+                    <i class="bi bi-envelope"></i> Email
+                </button>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Phone))
+            {
+                <button type="button" class="lead-quick-btn" data-copy-text="@Model.Phone">
+                    <i class="bi bi-clipboard"></i> Copy number
+                </button>
+            }
+            <a asp-action="EditDemoRequest" asp-route-id="@Model.Id" class="lead-quick-btn">
+                <i class="bi bi-pencil"></i> Edit contact
+            </a>
         </div>
     </div>
 
-    <!-- Right Pane: 2/3 Call Notes & Actions -->
-    <div class="col-xl-8 col-lg-7">
-        
-        <!-- Workflow Actions -->
-        @if (Model.Status == "Pending" || string.IsNullOrEmpty(Model.Status))
-        {
-            <div class="detail-card mb-4" style="border-left: 4px solid #ffc107;">
-                <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-                    <div>
-                        <h5 class="mb-1 text-warning"><i class="bi bi-exclamation-circle-fill me-2"></i>Decision Pending</h5>
-                        <p class="text-muted mb-0 small">Have you conducted the demo? Finalize the status below.</p>
-                    </div>
-                    <div class="d-flex gap-3">
-                        <form asp-action="UpdateDemoRequestStatus" method="post">
-                            <input type="hidden" name="id" value="@Model.Id" />
-                            <input type="hidden" name="status" value="Confirmed" />
-                            <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm"><i class="bi bi-check2-circle me-2"></i> Confirm Demo</button>
-                        </form>
-                        <form asp-action="UpdateDemoRequestStatus" method="post">
-                            <input type="hidden" name="id" value="@Model.Id" />
-                            <input type="hidden" name="status" value="Rejected" />
-                            <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm" onclick="return confirm('Are you sure you want to mark this as rejected?');"><i class="bi bi-x-circle me-2"></i> Reject</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        }
-
-        <!-- CRM Notes Section -->
-        <div class="detail-card">
-            <div class="detail-header d-flex align-items-center">
-                <i class="bi bi-journal-album text-white fs-4 me-3"></i>
-                <h5 class="mb-0 text-white">Call Logs & Conversations</h5>
-            </div>
-            <div class="card-body p-4">
-                
-                @if (Model.Status != "Rejected")
-                {
-                    <!-- Add Note Form -->
-                    <form asp-action="AddDemoRequestNote" method="post" class="mb-5">
-                        <input type="hidden" name="id" value="@Model.Id" />
-                        <div class="mb-3">
-                            <label class="form-label text-success small fw-bold text-uppercase" style="letter-spacing: 1px;"><i class="bi bi-pencil-square me-1"></i> Add a New Note</label>
-                            <textarea name="noteText" class="form-control custom-textarea p-3" rows="3" placeholder="Type demo summary or client feedback here..." required></textarea>
-                        </div>
-                        <div class="text-end">
-                            <button type="submit" class="btn btn-gradient-success rounded-pill px-4">
-                                <i class="bi bi-plus-lg me-1"></i> Add Note
-                            </button>
-                        </div>
-                    </form>
-                }
-                else
-                {
-                    <div class="alert alert-glass mb-5 d-flex align-items-center border-danger">
-                        <i class="bi bi-slash-circle text-danger fs-3 me-3"></i>
-                        <div>
-                            <h6 class="mb-0 fw-bold text-danger">Lead Rejected</h6>
-                            <p class="mb-0 small opacity-75">Further conversations and emails have been disabled for this lead.</p>
-                        </div>
-                    </div>
-                }
-
-                <!-- Notes Timeline -->
-                <h6 class="text-white mb-4 fw-bold"><i class="bi bi-clock-history me-2"></i>History</h6>
-                
-                @if (Model.Notes != null && Model.Notes.Any())
-                {
-                    <div class="timeline">
-                        @foreach (var note in Model.Notes)
-                        {
-                            <div class="timeline-item @(note.IsPostConfirmation ? "post-confirmation" : "")">
-                                <div class="d-flex justify-content-between mb-2 align-items-center">
-                                    <div>
-                                        <span class="badge bg-secondary text-light px-2 py-1"><i class="bi bi-calendar-check me-1"></i> @note.CreatedAt.ToString("MMM dd, yyyy")</span>
-                                        @if (note.IsPostConfirmation)
-                                        {
-                                            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50 ms-2"><i class="bi bi-check-circle me-1"></i> Post-Confirmation Note</span>
-                                        }
-                                    </div>
-                                    <small class="text-muted"><i class="bi bi-clock"></i> @note.CreatedAt.ToString("hh:mm tt")</small>
-                                </div>
-                                <div class="note-box text-light @(note.IsPostConfirmation ? "border-success border-opacity-50 bg-success bg-opacity-10" : "")">
-                                    @note.NoteText
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center py-5">
-                        <div class="text-muted mb-3"><i class="bi bi-journal-x" style="font-size: 3rem;"></i></div>
-                        <h6 class="text-white-50">No conversation history</h6>
-                        <p class="text-muted small">Call logs and notes added will appear in a timeline here.</p>
-                    </div>
-                }
+    <div class="lead-hero-grid">
+        <div class="lead-hero-field">
+            <div class="lead-info-label">Company</div>
+            <span class="lead-hero-value">@Model.CompanyName</span>
+        </div>
+        <div class="lead-hero-field">
+            <div class="lead-info-label">Phone</div>
+            <a href="tel:@Model.Phone">@Model.Phone</a>
+        </div>
+        <div class="lead-hero-field">
+            <div class="lead-info-label">Email</div>
+            <a href="mailto:@Model.Email">@Model.Email</a>
+        </div>
+        <div class="lead-hero-field">
+            <div class="lead-info-label">Requested product</div>
+            <span class="badge bg-secondary">@Model.Requirement</span>
+        </div>
+        <div class="lead-hero-field lead-hero-message">
+            <div class="lead-info-label">Original message</div>
+            <div class="lead-message-box">
+                <p>@(string.IsNullOrWhiteSpace(Model.Message) ? "No message provided." : Model.Message)</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Email UI Modal (Ultra Premium Design) -->
-<div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content modal-glass border-0" style="border-radius: 24px;">
-            <form asp-action="SendEmail" method="post">
-            <div class="modal-header border-bottom border-secondary border-opacity-25 p-4" style="background: linear-gradient(135deg, rgba(113,181,0,0.15) 0%, rgba(20,24,35,0) 100%); border-radius: 24px 24px 0 0;">
-                <div class="d-flex align-items-center">
-                    <div class="bg-success bg-opacity-25 text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 52px; height: 52px;">
-                        <i class="bi bi-envelope-paper-heart fs-4"></i>
-                    </div>
+@if (showDealTab && status == LeadPipeline.Confirmed && dealPanel?.LatestProposal == null)
+{
+    <div class="lead-next-bar">
+        <div>
+            <strong>Next: generate a proposal</strong>
+            <p>Demo is confirmed. Create a proposal PDF and share it on WhatsApp or email.</p>
+        </div>
+        <button type="button" class="btn btn-crm-primary" data-open-tab="deal">
+            <i class="bi bi-file-earmark-plus me-1"></i> Open deal
+        </button>
+    </div>
+}
+else if (showDealTab && status == LeadPipeline.ProposalSent)
+{
+    <div class="lead-next-bar">
+        <div>
+            <strong>Next: convert to invoice</strong>
+            <p>Proposal is out. When the client agrees, raise an invoice from the Deal tab.</p>
+        </div>
+        <button type="button" class="btn btn-crm-primary" data-open-tab="deal">Open deal</button>
+    </div>
+}
+else if (showDealTab && status == LeadPipeline.Invoiced)
+{
+    <div class="lead-next-bar">
+        <div>
+            <strong>Next: collect payment</strong>
+            <p>Invoice is ready. Follow up for payment and mark it paid when received.</p>
+        </div>
+        <button type="button" class="btn btn-crm-primary" data-open-tab="deal">Open deal</button>
+    </div>
+}
+
+<div class="lead-workspace" id="leadWorkspace">
+    <ul class="nav lead-workspace-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(defaultTab == "notes" ? "active" : null)" data-bs-toggle="tab" data-bs-target="#lead-tab-notes" data-lead-tab="notes" type="button" role="tab">
+                Call log
+                @if (noteCount > 0)
+                {
+                    <span class="lead-tab-count">@noteCount</span>
+                }
+            </button>
+        </li>
+        @if (followUpsPanel != null)
+        {
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(defaultTab == "followups" ? "active" : null)" data-bs-toggle="tab" data-bs-target="#lead-tab-followups" data-lead-tab="followups" type="button" role="tab">
+                    Follow-ups
+                    @if (followUpOpen > 0)
+                    {
+                        <span class="lead-tab-count">@followUpOpen</span>
+                    }
+                </button>
+            </li>
+        }
+        @if (showDealTab)
+        {
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(defaultTab == "deal" ? "active" : null)" data-bs-toggle="tab" data-bs-target="#lead-tab-deal" data-lead-tab="deal" type="button" role="tab">Deal</button>
+            </li>
+        }
+        @if (documentsPanel != null)
+        {
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(defaultTab == "docs" ? "active" : null)" data-bs-toggle="tab" data-bs-target="#lead-tab-docs" data-lead-tab="docs" type="button" role="tab">
+                    Documents
+                    @if (docCount > 0)
+                    {
+                        <span class="lead-tab-count">@docCount</span>
+                    }
+                </button>
+            </li>
+        }
+        @if (partnerAssignPanel != null)
+        {
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(defaultTab == "partner" ? "active" : null)" data-bs-toggle="tab" data-bs-target="#lead-tab-partner" data-lead-tab="partner" type="button" role="tab">
+                    Partner
+                    @if (partnerAssignPanel.IsAssigned)
+                    {
+                        <span class="lead-tab-count">1</span>
+                    }
+                </button>
+            </li>
+        }
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade lead-tab-pane @(defaultTab == "notes" ? "show active" : null)" id="lead-tab-notes" role="tabpanel">
+            <div class="lead-notes-card">
+                <div class="lead-notes-header">
                     <div>
-                        <h5 class="modal-title text-white fw-bold mb-0" id="emailModalLabel">Compose Message</h5>
-                        <small class="text-success fw-medium">Reply to @Model.Name</small>
+                        <h5><i class="bi bi-journal-text me-2"></i>Call log</h5>
+                        <p>Demo notes and conversation history. Scheduled reminders live in Follow-ups.</p>
                     </div>
                 </div>
-                <button type="button" class="btn-close btn-close-white opacity-75" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-
-            <div class="modal-body p-4">
-                <input type="hidden" name="returnUrl" value="/Admin/DemoRequestDetails/@Model.Id" />
-                <div class="row mb-4 align-items-center">
-                        <label class="col-sm-2 col-form-label text-muted fw-medium">To:</label>
-                        <div class="col-sm-10">
-                            <div class="d-flex align-items-center modal-input rounded-pill px-3 py-2">
-                                <div class="email-avatar bg-secondary bg-opacity-50 text-white me-3">
-                                    @Model.Name.Substring(0, 1).ToUpper()
+                <div class="lead-notes-body">
+                    @if (status != LeadPipeline.Rejected)
+                    {
+                        <form asp-action="AddDemoRequestNote" method="post" class="lead-note-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <div class="lead-note-composer">
+                                <div class="lead-note-composer-icon"><i class="bi bi-pencil-square"></i></div>
+                                <div class="lead-note-composer-fields">
+                                    <textarea name="noteText" class="form-control lead-note-input" rows="2" placeholder="Type demo summary or client feedback..." required></textarea>
+                                    <button type="submit" class="btn lead-note-submit"><i class="bi bi-plus-lg"></i> Add</button>
                                 </div>
-                                <span class="text-white-50 flex-grow-1">@Model.Name &lt;<span class="text-white">@Model.Email</span>&gt;</span>
-                                <input type="hidden" name="toEmail" value="@Model.Email" />
+                            </div>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="lead-rejected-banner">
+                            <i class="bi bi-slash-circle"></i>
+                            <div>
+                                <strong>Lead rejected</strong>
+                                <p>Further conversations and emails are disabled for this request.</p>
                             </div>
                         </div>
-                    </div>
+                    }
 
-                <div class="row mb-4 align-items-center">
-                    <label class="col-sm-2 col-form-label text-muted fw-medium">Subject:</label>
-                    <div class="col-sm-10">
-                        <input type="text" name="subject" class="form-control modal-input rounded-pill px-4 py-3 fw-medium shadow-none" value="Regarding your Demo Request with SoftflipSolutions" required>
-                    </div>
+                    <div class="lead-history-title"><i class="bi bi-clock-history me-2"></i>History</div>
+                    @if (Model.Notes != null && Model.Notes.Any())
+                    {
+                        <div class="timeline">
+                            @foreach (var note in Model.Notes)
+                            {
+                                <div class="timeline-item @(note.IsPostConfirmation ? "post-confirmation" : "")">
+                                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <span class="badge bg-secondary">@note.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                            @if (note.IsPostConfirmation)
+                                            {
+                                                <span class="badge bg-success">Post-confirmation</span>
+                                            }
+                                        </div>
+                                        <small class="text-muted">@note.CreatedAt.ToString("hh:mm tt")</small>
+                                    </div>
+                                    <div class="note-box @(note.IsPostConfirmation ? "note-box-success" : "")">@note.NoteText</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="lead-empty-notes">
+                            <i class="bi bi-journal-x"></i>
+                            <h6>No notes yet</h6>
+                            <p>Demo notes and call logs will appear here.</p>
+                        </div>
+                    }
                 </div>
+            </div>
+        </div>
 
-                <div class="row">
-                    <div class="col-12">
-                        <label class="form-label text-muted fw-medium mb-3">Message:</label>
-                        <textarea name="message" class="form-control modal-input custom-textarea p-4 shadow-none" rows="8" style="border-radius: 16px; font-size: 0.95rem; line-height: 1.7;" required>Hi @Model.Name,
+        @if (followUpsPanel != null)
+        {
+            <div class="tab-pane fade lead-tab-pane @(defaultTab == "followups" ? "show active" : null)" id="lead-tab-followups" role="tabpanel">
+                <p class="lead-tab-hint">Schedule the next reminder. This is separate from the call log.</p>
+                <partial name="_LeadFollowUpsPanel" model="followUpsPanel" />
+            </div>
+        }
 
-Thank you for booking a demo with SoftflipSolutions. We received your request for: @Model.Requirement.
+        @if (showDealTab)
+        {
+            <div class="tab-pane fade lead-tab-pane @(defaultTab == "deal" ? "show active" : null)" id="lead-tab-deal" role="tabpanel">
+                <partial name="_LeadDealPanel" model="dealPanel" />
+            </div>
+        }
+
+        @if (documentsPanel != null)
+        {
+            <div class="tab-pane fade lead-tab-pane @(defaultTab == "docs" ? "show active" : null)" id="lead-tab-docs" role="tabpanel">
+                <partial name="_LeadDocumentsPanel" model="documentsPanel" />
+            </div>
+        }
+
+        @if (partnerAssignPanel != null)
+        {
+            <div class="tab-pane fade lead-tab-pane @(defaultTab == "partner" ? "show active" : null)" id="lead-tab-partner" role="tabpanel">
+                <partial name="_LeadPartnerAssignPanel" model="partnerAssignPanel" />
+            </div>
+        }
+    </div>
+</div>
+
+<partial name="_LeadWorkspaceScripts" />
+
+<div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content lead-email-modal">
+            <form asp-action="SendEmail" method="post">
+                <div class="modal-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="lead-email-icon"><i class="bi bi-envelope-paper"></i></div>
+                        <div>
+                            <h5 class="modal-title mb-0" id="emailModalLabel">Compose email</h5>
+                            <small class="text-muted">Reply to @Model.Name</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="returnUrl" value="/Admin/DemoRequestDetails/@Model.Id" />
+                    <input type="hidden" name="toEmail" value="@Model.Email" />
+                    <div class="mb-3">
+                        <label class="lead-info-label">To</label>
+                        <div class="lead-email-to">
+                            <span class="lead-avatar sm">@initial</span>
+                            <span>@Model.Name &lt;@Model.Email&gt;</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="lead-info-label">Subject</label>
+                        <input type="text" name="subject" class="form-control settings-input" value="Regarding your Demo Request with Softflip Solutions" required />
+                    </div>
+                    <div class="mb-0">
+                        <label class="lead-info-label">Message</label>
+                        <textarea name="message" class="form-control custom-textarea" rows="8" required>Hi @Model.Name,
+
+Thank you for booking a demo with Softflip Solutions. We received your request for: @Model.Requirement.
 
 We would love to schedule a quick call to give you a personalized walkthrough of our system. Let us know your availability.
 
-Best Regards,
-SoftflipSolutions Team
-</textarea>
+Best regards,
+Softflip Solutions Team</textarea>
                     </div>
                 </div>
-            </div>
-
-            <div class="modal-footer border-top border-secondary border-opacity-25 p-3" style="background: rgb(191 191 191 / 20%); border-radius: 0 0 24px 24px;">
-                <button type="button" class="btn text-white-50 border-0 me-3 shadow-none hover-white" data-bs-dismiss="modal">Discard</button>
-                <button type="submit" class="btn btn-gradient-success rounded-pill px-5 py-2 fw-bold shadow-lg">
-                    <i class="bi bi-send-fill me-2"></i> Send Message
-                </button>
-            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-lead-back" data-bs-dismiss="modal">Discard</button>
+                    <button type="submit" class="btn btn-crm-primary"><i class="bi bi-send-fill me-1"></i> Send message</button>
+                </div>
             </form>
         </div>
     </div>

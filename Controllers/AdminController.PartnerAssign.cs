@@ -68,21 +68,21 @@ public partial class AdminController
         if (existing != null)
         {
             TempData["ErrorMessage"] = "This lead is already assigned to a partner.";
-            return RedirectToLeadDetails(leadType, leadId);
+            return RedirectToLeadDetails(leadType, leadId, "partner");
         }
 
         var partner = await _context.ChannelPartners.FirstOrDefaultAsync(p => p.Id == channelPartnerId && p.IsActive);
         if (partner == null)
         {
             TempData["ErrorMessage"] = "Select an active channel partner.";
-            return RedirectToLeadDetails(leadType, leadId);
+            return RedirectToLeadDetails(leadType, leadId, "partner");
         }
 
         var contact = await GetLeadContactAsync(leadType, leadId);
         if (contact == null)
         {
             TempData["ErrorMessage"] = "Lead not found.";
-            return RedirectToLeadDetails(leadType, leadId);
+            return RedirectToLeadDetails(leadType, leadId, "partner");
         }
 
         var budget = leadType == LeadPipeline.LeadClient
@@ -110,7 +110,7 @@ public partial class AdminController
         await _context.SaveChangesAsync();
 
         TempData["SuccessMessage"] = $"Lead assigned to {partner.CompanyName}. Partner can now follow up from their panel.";
-        return RedirectToLeadDetails(leadType, leadId);
+        return RedirectToLeadDetails(leadType, leadId, "partner");
     }
 
     [HttpPost]
@@ -125,7 +125,7 @@ public partial class AdminController
         if (client == null)
         {
             TempData["ErrorMessage"] = "No partner assignment found for this lead.";
-            return RedirectToLeadDetails(leadType, leadId);
+            return RedirectToLeadDetails(leadType, leadId, "partner");
         }
 
         // Keep partner's client record; clear Softflip assignment link so lead can be reassigned.
@@ -137,7 +137,7 @@ public partial class AdminController
         await _context.SaveChangesAsync();
 
         TempData["SuccessMessage"] = "Partner assignment removed. The partner still keeps the client record.";
-        return RedirectToLeadDetails(leadType, leadId);
+        return RedirectToLeadDetails(leadType, leadId, "partner");
     }
 
     private async Task PopulatePartnerAssignPanelAsync(string leadType, int leadId, string leadName)

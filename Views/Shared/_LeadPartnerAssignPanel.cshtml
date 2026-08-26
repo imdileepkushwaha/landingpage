@@ -48,6 +48,7 @@
         }
         else
         {
+            ViewData["FollowUpShowActions"] = false;
             <div class="d-flex flex-wrap justify-content-between gap-3 mb-3">
                 <div>
                     <div class="fw-semibold">@(Model.PartnerCompanyName ?? "Partner")</div>
@@ -91,7 +92,6 @@
             </div>
 
             <h6 class="small text-uppercase text-muted mb-2">Partner follow-up timeline</h6>
-            ViewData["FollowUpShowActions"] = false;
             <partial name="_FollowUpTimeline" model="Model.PartnerFollowUps" />
         }
     </div>

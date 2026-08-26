@@ -41,11 +41,11 @@
     }
 }
 
-@if (TempData["SuccessMessage"] != null)
+@if (!true.Equals(ViewBag.SuppressDealAlerts) && TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success deal-alert">@TempData["SuccessMessage"]</div>
 }
-@if (TempData["ErrorMessage"] != null)
+@if (!true.Equals(ViewBag.SuppressDealAlerts) && TempData["ErrorMessage"] != null)
 {
     <div class="alert alert-danger deal-alert">@TempData["ErrorMessage"]</div>
 }
@@ -526,6 +526,14 @@
                 return html;
             }
 
+            function isEditorVisible() {
+                const el = document.getElementById('proposalScopeEditor');
+                if (!el) return false;
+                const pane = el.closest('.tab-pane');
+                if (pane && !pane.classList.contains('active')) return false;
+                return true;
+            }
+
             function initQuill() {
                 if (quill || !window.Quill || !document.getElementById('proposalScopeEditor')) return;
                 quill = new Quill('#proposalScopeEditor', {
@@ -547,6 +555,17 @@
                 if (seedHtml) quill.clipboard.dangerouslyPasteHTML(seedHtml);
                 quill.on('text-change', syncScope);
                 syncScope();
+                requestAnimationFrame(function () {
+                    try { quill.update(); } catch (e) { /* ignore */ }
+                });
+            }
+
+            const details = document.querySelector('details.lead-proposal-form');
+
+            function tryInitQuill() {
+                if (!isEditorVisible()) return;
+                if (details && !details.open) return;
+                initQuill();
             }
 
             document.querySelectorAll('input[name="templatePicker"]').forEach(function (radio) {
@@ -580,17 +599,23 @@
                 });
             }
 
-            const details = document.querySelector('details.lead-proposal-form');
             if (details && !details.open) {
                 details.addEventListener('toggle', function onToggle() {
                     if (details.open) {
-                        initQuill();
+                        tryInitQuill();
                         details.removeEventListener('toggle', onToggle);
                     }
                 });
             } else {
-                initQuill();
+                tryInitQuill();
             }
+
+            document.addEventListener('shown.bs.tab', function (e) {
+                const t = e.target;
+                if (t && t.getAttribute && t.getAttribute('data-lead-tab') === 'deal') {
+                    tryInitQuill();
+                }
+            });
 
             const servicesEl = document.getElementById('proposalServicesData');
             const serviceSelect = document.getElementById('proposalServiceSelect');

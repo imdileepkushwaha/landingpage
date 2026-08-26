@@ -445,7 +445,7 @@ public partial class AdminController : Controller
     public async Task<IActionResult> AddFollowUp(string leadType, int leadId, string stepType, DateTime dueAt, string note)
     {
         if (!IsKnownLeadType(leadType) || string.IsNullOrWhiteSpace(note))
-            return RedirectToLeadDetails(leadType, leadId);
+            return RedirectToLeadDetails(leadType, leadId, "followups");
 
         var step = FollowUpSteps.IsKnown(stepType) ? stepType.Trim() : FollowUpSteps.Note;
 
@@ -461,7 +461,7 @@ public partial class AdminController : Controller
         });
         await _context.SaveChangesAsync();
         TempData["SuccessMessage"] = $"{FollowUpSteps.Get(step).Label} follow-up scheduled.";
-        return RedirectToLeadDetails(leadType, leadId);
+        return RedirectToLeadDetails(leadType, leadId, "followups");
     }
 
     [HttpPost]
@@ -479,7 +479,7 @@ public partial class AdminController : Controller
         if (!string.IsNullOrWhiteSpace(referer) && referer.Contains("/Admin/FollowUps", StringComparison.OrdinalIgnoreCase))
             return RedirectToAction(nameof(FollowUps));
 
-        return RedirectToLeadDetails(item.LeadType, item.LeadId);
+        return RedirectToLeadDetails(item.LeadType, item.LeadId, "followups");
     }
 
     public async Task<IActionResult> Activity()
@@ -1906,6 +1906,7 @@ public partial class AdminController : Controller
     public async Task<IActionResult> PartnerClients()
     {
         var clients = await _context.PartnerClients
+            .AsNoTracking()
             .Include(c => c.ChannelPartner)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
@@ -2555,7 +2556,7 @@ public partial class AdminController : Controller
         return RedirectToAction(nameof(DemoRequests));
     }
 
-    public async Task<IActionResult> EnquiryDetails(int id)
+    public async Task<IActionResult> EnquiryDetails(int id, string? tab)
     {
         var enquiry = await _context.Enquiries.Include(e => e.Notes.OrderByDescending(n => n.CreatedAt)).FirstOrDefaultAsync(e => e.Id == id);
         if (enquiry == null) return NotFound();
@@ -2592,6 +2593,7 @@ public partial class AdminController : Controller
         ViewBag.ServiceDemoDetails = serviceDemoDetails;
         ViewBag.ServiceDemoName = serviceDemoName;
         ViewBag.MatchedServiceId = matchedServiceId;
+        ViewBag.InitialTab = tab;
         return View(enquiry);
     }
 
@@ -2605,7 +2607,7 @@ public partial class AdminController : Controller
             _context.EnquiryNotes.Add(new EnquiryNote { EnquiryId = id, NoteText = noteText, IsPostConfirmation = isPost });
             await _context.SaveChangesAsync();
         }
-        return RedirectToAction(nameof(EnquiryDetails), new { id });
+        return RedirectToAction(nameof(EnquiryDetails), new { id, tab = "notes" });
     }
 
     [HttpPost]
@@ -2618,11 +2620,11 @@ public partial class AdminController : Controller
             await _context.SaveChangesAsync();
         }
         return status == LeadPipeline.Confirmed
-            ? RedirectToAction(nameof(EnquiryDetails), new { id })
+            ? RedirectToAction(nameof(EnquiryDetails), new { id, tab = "deal" })
             : RedirectToAction(nameof(RejectedClients));
     }
 
-    public async Task<IActionResult> DemoRequestDetails(int id)
+    public async Task<IActionResult> DemoRequestDetails(int id, string? tab)
     {
         var request = await _context.DemoRequests.Include(e => e.Notes.OrderByDescending(n => n.CreatedAt)).FirstOrDefaultAsync(e => e.Id == id);
         if (request == null) return NotFound();
@@ -2633,6 +2635,7 @@ public partial class AdminController : Controller
         ViewBag.DuplicateLeads = await FindDuplicateLeadsAsync(request.Phone, request.Email, LeadPipeline.LeadDemo, id);
         ViewBag.MessageTemplates = await _context.MessageTemplates.AsNoTracking()
             .Where(t => t.IsActive).OrderBy(t => t.Name).ToListAsync();
+        ViewBag.InitialTab = tab;
         return View(request);
     }
 
@@ -2646,7 +2649,7 @@ public partial class AdminController : Controller
             _context.DemoRequestNotes.Add(new DemoRequestNote { DemoRequestId = id, NoteText = noteText, IsPostConfirmation = isPost });
             await _context.SaveChangesAsync();
         }
-        return RedirectToAction(nameof(DemoRequestDetails), new { id });
+        return RedirectToAction(nameof(DemoRequestDetails), new { id, tab = "notes" });
     }
 
     [HttpPost]
@@ -2659,7 +2662,7 @@ public partial class AdminController : Controller
             await _context.SaveChangesAsync();
         }
         return status == LeadPipeline.Confirmed
-            ? RedirectToAction(nameof(DemoRequestDetails), new { id })
+            ? RedirectToAction(nameof(DemoRequestDetails), new { id, tab = "deal" })
             : RedirectToAction(nameof(RejectedClients));
     }
 
@@ -2738,7 +2741,7 @@ public partial class AdminController : Controller
         return RedirectToAction(nameof(ClientLeadDetails), new { id = model.Id });
     }
 
-    public async Task<IActionResult> ClientLeadDetails(int id)
+    public async Task<IActionResult> ClientLeadDetails(int id, string? tab)
     {
         var lead = await _context.ClientLeads
             .Include(e => e.Notes.OrderByDescending(n => n.CreatedAt))
@@ -2751,6 +2754,7 @@ public partial class AdminController : Controller
         ViewBag.DuplicateLeads = await FindDuplicateLeadsAsync(lead.Mobile, lead.Email, LeadPipeline.LeadClient, id);
         ViewBag.MessageTemplates = await _context.MessageTemplates.AsNoTracking()
             .Where(t => t.IsActive).OrderBy(t => t.Name).ToListAsync();
+        ViewBag.InitialTab = tab;
         return View(lead);
     }
 
@@ -2770,7 +2774,7 @@ public partial class AdminController : Controller
             });
             await _context.SaveChangesAsync();
         }
-        return RedirectToAction(nameof(ClientLeadDetails), new { id });
+        return RedirectToAction(nameof(ClientLeadDetails), new { id, tab = "notes" });
     }
 
     [HttpPost]
@@ -2784,7 +2788,7 @@ public partial class AdminController : Controller
             await _context.SaveChangesAsync();
         }
         return status == LeadPipeline.Confirmed
-            ? RedirectToAction(nameof(ClientLeadDetails), new { id })
+            ? RedirectToAction(nameof(ClientLeadDetails), new { id, tab = "deal" })
             : RedirectToAction(nameof(RejectedClients));
     }
 
@@ -2847,7 +2851,7 @@ public partial class AdminController : Controller
         await _context.SaveChangesAsync();
 
         TempData["SuccessMessage"] = "Proposal ready — download, email, or share on WhatsApp.";
-        return RedirectToLeadDetails(leadType, leadId);
+        return RedirectToLeadDetails(leadType, leadId, "deal");
     }
 
     [HttpPost]
@@ -3134,7 +3138,7 @@ public partial class AdminController : Controller
         await _context.SaveChangesAsync();
 
         TempData["SuccessMessage"] = $"Document \"{displayTitle}\" uploaded.";
-        return RedirectToLeadDetails(leadType, leadId);
+        return RedirectToLeadDetails(leadType, leadId, "docs");
     }
 
     public async Task<IActionResult> DownloadLeadDocument(int id)
@@ -3176,7 +3180,7 @@ public partial class AdminController : Controller
         await _context.SaveChangesAsync();
 
         TempData["SuccessMessage"] = "Document deleted.";
-        return RedirectToLeadDetails(leadType, leadId);
+        return RedirectToLeadDetails(leadType, leadId, "docs");
     }
 
     public async Task<IActionResult> DownloadProposal(int id)
@@ -3367,12 +3371,19 @@ public partial class AdminController : Controller
         _ => Url.Action(nameof(EnquiryDetails), new { id = leadId })!
     };
 
-    private IActionResult RedirectToLeadDetails(string leadType, int leadId) => leadType switch
+    private IActionResult RedirectToLeadDetails(string leadType, int leadId, string? tab = null)
     {
-        LeadPipeline.LeadClient => RedirectToAction(nameof(ClientLeadDetails), new { id = leadId }),
-        LeadPipeline.LeadDemo => RedirectToAction(nameof(DemoRequestDetails), new { id = leadId }),
-        _ => RedirectToAction(nameof(EnquiryDetails), new { id = leadId })
-    };
+        object route = string.IsNullOrWhiteSpace(tab)
+            ? new { id = leadId }
+            : new { id = leadId, tab };
+        return leadType switch
+        {
+            LeadPipeline.LeadClient => RedirectToAction(nameof(ClientLeadDetails), route),
+            LeadPipeline.LeadDemo => RedirectToAction(nameof(DemoRequestDetails), route),
+            LeadPipeline.LeadPartnerClient => RedirectToAction(nameof(PartnerClientDetails), route),
+            _ => RedirectToAction(nameof(EnquiryDetails), route)
+        };
+    }
 
     private static string Truncate(string? text, int max)
     {

@@ -1,0 +1,90 @@
+@{
+    var storageKey = ViewBag.LeadTabStorageKey as string ?? "lead-tab";
+    var defaultTab = ViewBag.LeadDefaultTab as string ?? "notes";
+    var initialTab = ViewBag.InitialTab as string ?? "";
+}
+<div id="leadCopyToast" class="lead-copy-toast" hidden>Copied</div>
+<script>
+    (function () {
+        document.querySelectorAll('[data-copy-text]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const text = btn.getAttribute('data-copy-text') || '';
+                if (!text) return;
+                const done = function () {
+                    const toast = document.getElementById('leadCopyToast');
+                    if (!toast) return;
+                    toast.hidden = false;
+                    setTimeout(function () { toast.hidden = true; }, 1400);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(done).catch(function () {
+                        window.prompt('Copy number', text);
+                    });
+                } else {
+                    window.prompt('Copy number', text);
+                }
+            });
+        });
+
+        const storageKey = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(storageKey));
+        const defaultTab = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(defaultTab));
+        const initialTab = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(initialTab));
+
+        function startTabs() {
+            const root = document.getElementById('leadWorkspace');
+            if (!root) return;
+            if (typeof bootstrap === 'undefined' || !bootstrap.Tab) {
+                setTimeout(startTabs, 40);
+                return;
+            }
+
+            const allowed = Array.from(root.querySelectorAll('[data-lead-tab]')).map(function (el) {
+                return el.getAttribute('data-lead-tab');
+            });
+
+            function normalize(name) {
+                const n = (name || '').replace(/^#/, '').trim().toLowerCase();
+                return allowed.indexOf(n) >= 0 ? n : null;
+            }
+
+            function activate(name, persist) {
+                const tab = normalize(name) || defaultTab;
+                const trigger = root.querySelector('[data-lead-tab="' + tab + '"]');
+                if (!trigger) return tab;
+                bootstrap.Tab.getOrCreateInstance(trigger).show();
+                if (persist !== false) {
+                    try { sessionStorage.setItem(storageKey, tab); } catch (e) { /* ignore */ }
+                    if (history.replaceState) history.replaceState(null, '', '#' + tab);
+                }
+                return tab;
+            }
+
+            const fromHash = normalize(location.hash);
+            const fromStore = (function () {
+                try { return normalize(sessionStorage.getItem(storageKey)); }
+                catch (e) { return null; }
+            })();
+            activate(normalize(initialTab) || fromHash || fromStore || defaultTab, true);
+
+            root.querySelectorAll('[data-lead-tab]').forEach(function (btn) {
+                btn.addEventListener('shown.bs.tab', function () {
+                    const tab = btn.getAttribute('data-lead-tab');
+                    try { sessionStorage.setItem(storageKey, tab); } catch (e) { /* ignore */ }
+                    if (history.replaceState) history.replaceState(null, '', '#' + tab);
+                });
+            });
+
+            document.querySelectorAll('[data-open-tab]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    activate(btn.getAttribute('data-open-tab'), true);
+                });
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startTabs);
+        } else {
+            startTabs();
+        }
+    })();
+</script>
