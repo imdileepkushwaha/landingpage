@@ -11,6 +11,8 @@
     </div>
 </div>
 
+<partial name="_LeadFlash" />
+
 <div class="row g-4">
     <div class="col-lg-5">
         <form asp-action="AddMarketingKitItem" method="post" enctype="multipart/form-data" class="glass-card p-4">
@@ -90,13 +92,15 @@
                             <td>
                                 @if (isImage)
                                 {
-                                    <img src="@m.FilePath" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:10px;border:1px solid #e5e7eb;background:#fff;" />
+                                    <a asp-action="ViewMarketingKitItem" asp-route-id="@m.Id" target="_blank" rel="noopener" title="View">
+                                        <img src="@m.FilePath" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:10px;border:1px solid #e5e7eb;background:#fff;" />
+                                    </a>
                                 }
                                 else
                                 {
-                                    <div class="d-flex align-items-center justify-content-center" style="width:48px;height:48px;border-radius:10px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;">
+                                    <a asp-action="ViewMarketingKitItem" asp-route-id="@m.Id" target="_blank" rel="noopener" class="d-flex align-items-center justify-content-center" style="width:48px;height:48px;border-radius:10px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;" title="View">
                                         <i class="bi bi-file-earmark"></i>
-                                    </div>
+                                    </a>
                                 }
                             </td>
                             <td>
@@ -116,13 +120,16 @@
                             </td>
                             <td class="text-end">
                                 <div class="admin-row-actions justify-content-end">
+                                    <a asp-action="ViewMarketingKitItem" asp-route-id="@m.Id" class="btn btn-icon-action" title="View" target="_blank" rel="noopener">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
                                     <form asp-action="ToggleMarketingKitItem" method="post" class="d-inline">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@m.Id" />
                                         <button type="submit"
                                                 class="btn btn-icon-action @(m.IsActive ? "" : "edit")"
                                                 title="@(m.IsActive ? "Hide from partners" : "Show to partners")">
-                                            <i class="bi @(m.IsActive ? "bi-eye-slash" : "bi-eye")"></i>
+                                            <i class="bi @(m.IsActive ? "bi-toggle-on" : "bi-toggle-off")"></i>
                                         </button>
                                     </form>
                                     <form asp-action="DeleteMarketingKitItem" method="post" class="d-inline" onsubmit="return confirm('Delete this asset?');">

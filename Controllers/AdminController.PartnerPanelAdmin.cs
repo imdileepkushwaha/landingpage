@@ -104,6 +104,42 @@ public partial class AdminController
         return RedirectToAction(nameof(MarketingKitAdmin));
     }
 
+    public async Task<IActionResult> ViewMarketingKitItem(int id)
+    {
+        var item = await _context.MarketingKitItems.AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Id == id);
+        if (item == null) return NotFound();
+
+        var relative = item.FilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+        var full = Path.GetFullPath(Path.Combine(_env.WebRootPath, relative));
+        var root = Path.GetFullPath(_env.WebRootPath);
+        if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase) || !System.IO.File.Exists(full))
+        {
+            TempData["ErrorMessage"] = "File is missing on disk. Re-upload this asset.";
+            return RedirectToAction(nameof(MarketingKitAdmin));
+        }
+
+        var ext = Path.GetExtension(full);
+        var ct = string.IsNullOrWhiteSpace(item.ContentType)
+            ? ext.ToLowerInvariant() switch
+            {
+                ".pdf" => "application/pdf",
+                ".png" => "image/png",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".webp" => "image/webp",
+                ".zip" => "application/zip",
+                _ => "application/octet-stream"
+            }
+            : item.ContentType;
+        var name = string.IsNullOrWhiteSpace(item.FileName) ? Path.GetFileName(full) : item.FileName;
+        var inline = ct.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(ct, "application/pdf", StringComparison.OrdinalIgnoreCase);
+
+        return inline
+            ? PhysicalFile(full, ct)
+            : PhysicalFile(full, ct, name);
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleMarketingKitItem(int id)

@@ -139,7 +139,7 @@ public static class AdminMenuCatalog
         "PartnerLeadTracking" or "AssignLeadToPartner" or "UnassignLeadFromPartner" => PartnerLeadTracking,
         "PartnerMeetings" or "AddPartnerMeeting" or "TogglePartnerMeeting" or "DeletePartnerMeeting" => PartnerMeetings,
         "PartnerTickets" or "ReplyPartnerTicket" => PartnerTickets,
-        "MarketingKitAdmin" or "AddMarketingKitItem" or "ToggleMarketingKitItem" or "DeleteMarketingKitItem" => MarketingKit,
+        "MarketingKitAdmin" or "AddMarketingKitItem" or "ViewMarketingKitItem" or "ToggleMarketingKitItem" or "DeleteMarketingKitItem" => MarketingKit,
 
         "PipelineBoard" => PipelineBoard,
         "ConfirmedClients" => ActiveDeals,
